@@ -1,0 +1,148 @@
+name: Client builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths:
+      - 'apps/client/**'
+      - 'apps/store/**'
+      - 'server/**'
+      - 'scripts/ci-build-sidecar.mjs'
+      - 'scripts/assemble-ui-web.mjs'
+      - 'deploy/nas-appstore/proxy/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/client-build.yml'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nas-web:
+    name: NAS H5 client and proxy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: deploy/nas-appstore/proxy/go.sum
+      - name: Build and verify H5 applications
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @space/client test
+          pnpm --filter @space/store test
+          pnpm --filter @space/client build
+          pnpm --filter @space/store build
+          node scripts/assemble-ui-web.mjs output/nas-client/web
+      - name: Build NAS proxy and archive client update
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          cd deploy/nas-appstore/proxy
+          go build -trimpath -ldflags='-s -w' -o ../../../output/nas-client/space-proxy .
+          cd ../../..
+          tar -czf output/nas-client-linux-amd64.tgz -C output/nas-client web space-proxy
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nas-client-linux-amd64
+          path: output/nas-client-linux-amd64.tgz
+          if-no-files-found: error
+          retention-days: 14
+  desktop:
+    name: Unsigned ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: app
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: app
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Install Linux build libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - name: Select Rust stable and target
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add '${{ matrix.target }}'
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify client
+        run: |
+          pnpm --filter @space/client typecheck
+          pnpm --filter @space/client test
+      - name: Build matching Go sidecar
+        run: node scripts/ci-build-sidecar.mjs '${{ matrix.target }}'
+      - name: Build unsigned desktop installers
+        run: >-
+          pnpm --filter @space/client tauri build --ci --no-sign
+          --target '${{ matrix.target }}' --bundles '${{ matrix.bundles }}'
+          --config '{"build":{"beforeBuildCommand":"pnpm build"}}' -- --locked
+      - name: Archive macOS application with executable permissions
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p output/desktop
+          tar -czf 'output/desktop/space-desktop-${{ matrix.target }}-unsigned.tgz' \
+            -C 'apps/client/src-tauri/target/${{ matrix.target }}/release/bundle/macos' 'Space Desktop.app'
+      - name: Upload unsigned build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: space-desktop-${{ matrix.target }}-unsigned
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            output/desktop/*.tgz
+            apps/client/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+            apps/client/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+            apps/client/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            apps/client/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi

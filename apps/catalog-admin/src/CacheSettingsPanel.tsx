@@ -1,0 +1,10 @@
+import {useEffect,useState} from 'react';
+import {adminApi} from './api';
+type Entry={key:string;image:string;sizeBytes:number;hits:number;lastUsed:number};
+type Pool={enabled:boolean;maxBytes:number;usedBytes:number;items:Entry[]};
+export function CacheSettingsPanel(){
+ const [pool,setPool]=useState<Pool>(),[size,setSize]=useState('5'),[enabled,setEnabled]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ async function load(){const p=await adminApi.request<Pool>('store/admin/image-cache');setPool(p);setSize(String(p.maxBytes/(1024**3)||5));setEnabled(p.enabled)}
+ useEffect(()=>{void load().catch(e=>setError(e instanceof Error?e.message:'无法读取缓存池'))},[]);
+ return <article className="cache-settings"><h2>应用镜像缓存池</h2><p>优先缓存安装和访问较多的应用。超过容量淘汰热度较低的旧镜像；NAS 拉取失败会使用原始镜像地址。</p><form onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{await adminApi.request('store/admin/image-cache',{enabled,maxBytes:Math.round(Number(size)*1024**3)});await load();setNotice('缓存池设置已保存，后台开始填充热门镜像。')}catch(e){setError(e instanceof Error?e.message:'保存失败')}finally{setBusy(false)}}}><label className="check-field"><input type="checkbox" aria-label="启用镜像缓存池" checked={enabled} onChange={e=>setEnabled(e.target.checked)}/>启用缓存池</label><label>容量（GiB）<input aria-label="缓存池容量" type="number" min="0.016" max="1024" step="0.001" required value={size} onChange={e=>setSize(e.target.value)}/></label><button className="primary" disabled={!pool||busy}>保存缓存设置</button></form>{!pool&&<button className="secondary" onClick={()=>void load().catch(e=>setError(e.message))}>重新读取缓存设置</button>}{pool&&<><p>已使用 {(pool.usedBytes/1024**3).toFixed(3)} GiB / {(pool.maxBytes/1024**3).toFixed(3)} GiB <button className="secondary" onClick={()=>void load().catch(e=>setError(e.message))}>刷新缓存</button></p><div className="cache-entries">{pool.items.map(entry=><div key={entry.key}><code>{entry.image}</code><span>{(entry.sizeBytes/1024**2).toFixed(1)} MiB · 热度 {entry.hits}</span></div>)}</div></>}{error&&<p className="error" role="alert">{error}</p>}{notice&&<p className="success" role="status">{notice}</p>}</article>
+}

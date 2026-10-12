@@ -1,0 +1,87 @@
+name: space-catalog
+services:
+  catalog:
+    image: ${CATALOG_IMAGE:-space-catalog:local}
+    build:
+      context: ../../..
+      dockerfile: docker/catalog/Dockerfile
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${CATALOG_BIND_IP:-127.0.0.1}:${CATALOG_PORT:-18442}:18442"
+    environment:
+      SPACE_PUBLIC_ORIGIN: ${SPACE_PUBLIC_ORIGIN:?Set the public HTTP(S) origin}
+      SPACE_ADMIN_2FA_REQUIRED: ${SPACE_ADMIN_2FA_REQUIRED:-1}
+      SPACE_DB_HOST: postgres
+      SPACE_DB_USER: zstore
+      SPACE_DB_NAME: zstore
+      SPACE_DB_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - catalog-data:/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    networks: [default, database]
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://127.0.0.1:18442/api/health >/dev/null"]
+      interval: 30s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
+  # Only for the first administrator, before the normal catalog starts.
+  # The central service imports this local administrator on its next startup.
+  bootstrap:
+    profiles: [bootstrap]
+    image: ${CATALOG_IMAGE:-space-catalog:local}
+    user: 10001:10001
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    entrypoint: [/usr/local/bin/space-gateway]
+    command: [--listen=127.0.0.1:18542, --data-dir=/data, --engine=disabled]
+    volumes:
+      - catalog-data:/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://127.0.0.1:18542/api/health >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zstore
+      POSTGRES_DB: zstore
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U zstore -d zstore"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+networks:
+  database:
+    internal: true
+volumes:
+  catalog-data:
+  postgres-data:
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE:-./.env.postgres-password}

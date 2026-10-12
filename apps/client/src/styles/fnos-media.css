@@ -1,0 +1,2630 @@
+/*
+ * 飞牛 fnOS 媒体与系统应用皮肤：相册、影视中心、音乐、下载中心、任务中心、系统/存储/网络/设备应用、帮助。
+ * 依赖 styles/fnos-theme.css 令牌与 styles/fnos-controls.css 的通用控件皮肤。
+ * 选择器统一以 .media-module / .system-module / .module-main 作用域，
+ * 特异性与 styles.css 的模块规则持平或更高。
+ */
+
+/* ---------- 媒体窗口外壳 ---------- */
+.media-module,
+.system-module,
+.padded-module {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--fn-window-surface);
+  color: var(--fn-text-1);
+}
+/* 相册/影视/音乐：内容窗格即飞牛 app-container 白底；照片查看器等浮层以此为定位父级。
+   撑满窗格高度后，列表在模块内部滚动、空状态在内容区垂直居中。 */
+.media-module {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 顶部标题条：飞牛式白色标题条（原彩色渐变 hero 已移除）。
+   右侧 150px 按任务要求留给窗口按钮；实测飞牛窗口按钮在 44px 标题栏内，
+   并不与本标题条重叠。字号为推导值：标题 16/24/600、说明 12/18/400。 */
+.media-module .media-hero,
+.media-module.video .media-hero,
+.media-module.music .media-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px 150px 8px 20px;
+  background: var(--fn-pane-bg);
+  border-bottom: 0;
+  color: var(--fn-text-1);
+  overflow: visible;
+}
+/* 应用标记：36px 飞牛真实应用图标（回退为 36px 圆角方块 + 20px 单色图标） */
+.media-module .media-hero > svg,
+.media-module .media-hero > .app-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.media-module .media-hero > svg {
+  padding: 8px;
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+}
+.media-module.photos .media-hero > svg,
+.media-module.video .media-hero > svg,
+.media-module.music .media-hero > svg {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+}
+.media-module .media-hero .eyebrow {
+  display: none;
+}
+/* 应用名（外壳标题栏不再重复显示应用名，这里由应用自带标题区给出） */
+.media-module .media-hero-text {
+  min-width: 0;
+}
+.media-module .media-hero .media-hero-app {
+  display: block;
+  font-size: var(--fn-font-size-sm);
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--fn-text-2);
+}
+.media-module .media-hero h1 {
+  font-size: var(--fn-font-size-body);
+  line-height: var(--fn-line-height-body);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--fn-text-0);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.media-module .media-hero p {
+  font-size: var(--fn-font-size-sm);
+  line-height: 18px;
+  color: var(--fn-text-2);
+  margin: 2px 0 0;
+}
+/* 紧凑工具栏：36px 控件 + 6px 上下内边距 ≈ 实测 49px；白底 + 细分隔线，
+   与文件管理工具栏（--fn-pane-bg + --fn-divider-2）保持一致 */
+.media-module .toolbar {
+  min-height: 49px;
+  padding: 6px 16px;
+  gap: 8px;
+  background: var(--fn-pane-bg);
+  border-bottom: 1px solid var(--fn-divider-2);
+}
+
+/* 空/未连接/加载/错误状态：整块（图标 + 标题 + 说明 + 主按钮）在内容区居中 */
+.media-module > .media-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 20px 48px;
+  overflow-y: auto;
+}
+.media-module > .media-stage > .state-panel {
+  min-height: 0;
+  padding: 0;
+  gap: 12px;
+  color: var(--fn-text-3);
+}
+.media-module > .media-stage > .state-panel strong,
+.media-module > .media-stage > .state-panel h3 {
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fn-text-1);
+}
+.media-module > .media-stage > .state-panel p {
+  font-size: var(--fn-font-size-sm);
+  line-height: 18px;
+  color: var(--fn-text-3);
+  max-width: 420px;
+}
+.media-module > .media-stage > .media-stage-action {
+  flex-shrink: 0;
+}
+
+/* ---------- 媒体卡片 ---------- */
+/* 卡片规格为推导值（真实飞牛 VM 无存储空间，相册/影视网格未测得）：
+   圆角 12px 缩略图 + 8px 卡片、悬停上浮 2px + --fn-shadow-card、
+   标题 14/20/500、副标题 12/18/400 —— 对齐设计系统 §1.5/§1.6 的卡片与控件档位。 */
+.media-module .media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 16px 20px 24px;
+  align-content: start;
+  overflow-y: auto;
+  min-height: 0;
+}
+.media-module .media-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  min-width: 0;
+  border-radius: var(--fn-radius-card);
+  background: transparent;
+  text-align: left;
+  transition: transform var(--fn-duration-fast) var(--fn-ease);
+}
+.media-module .media-card:hover {
+  transform: translateY(-2px);
+}
+.media-module .media-card:focus-visible {
+  outline: 2px solid var(--fn-focus-border);
+  outline-offset: 2px;
+}
+.media-module .media-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--fn-radius-lg);
+  border: 1px solid var(--fn-divider-2);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-3);
+  transition:
+    border-color var(--fn-duration-fast) var(--fn-ease),
+    box-shadow var(--fn-duration-fast) var(--fn-ease);
+}
+.media-module .media-card:hover .media-art,
+.media-module .media-card:focus-visible .media-art {
+  border-color: var(--fn-border);
+  box-shadow: var(--fn-shadow-card);
+}
+.media-module.photos .media-art,
+.media-module.music .media-art {
+  aspect-ratio: 1 / 1;
+}
+.media-module.video .media-art {
+  aspect-ratio: 0.72;
+}
+.media-module .media-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.media-module .media-art > svg {
+  width: 40px;
+  height: 40px;
+  color: var(--fn-text-3);
+}
+/* 悬停播放按钮：飞牛主色圆形按钮（原半透明白圆已替换） */
+.media-module .media-art .play-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fn-radius-pill);
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+  box-shadow: var(--fn-shadow-card);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+  transition:
+    opacity var(--fn-duration-fast) var(--fn-ease),
+    transform var(--fn-duration-fast) var(--fn-ease);
+}
+.media-module .media-art .play-overlay svg {
+  width: 18px;
+  height: 18px;
+  color: var(--fn-on-primary);
+}
+.media-module .media-card:hover .media-art .play-overlay,
+.media-module .media-card:focus-visible .media-art .play-overlay {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.media-module .media-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+}
+.media-module .media-caption strong {
+  display: block;
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fn-text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-module .media-caption small {
+  display: block;
+  font-size: var(--fn-font-size-sm);
+  line-height: 18px;
+  color: var(--fn-text-3);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 歌曲列表 ---------- */
+/* 行规格为推导值：行高 56px、圆角 6px、悬停 --fn-fill-0（对齐设计系统 §5.7 列表项 hover）。 */
+.media-module .song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.media-module .song-list .media-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-bottom: 0;
+  border-radius: var(--fn-radius-sm);
+  min-width: 0;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.media-module .song-list .media-card:hover {
+  transform: none;
+  background: var(--fn-fill-0);
+}
+.media-module .song-list .media-card:focus-visible {
+  background: var(--fn-fill-0);
+  outline: 2px solid var(--fn-focus-border);
+  outline-offset: -2px;
+}
+.media-module .song-list .media-art {
+  width: 40px;
+  height: 40px;
+  aspect-ratio: auto;
+  border-radius: var(--fn-radius-sm);
+  flex-shrink: 0;
+}
+.media-module .song-list .media-art > svg {
+  width: 20px;
+  height: 20px;
+}
+.media-module .song-list .media-caption {
+  flex: 1;
+}
+.media-module .song-list .play-overlay {
+  display: none;
+}
+.media-module .song-list .media-card > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-text-3);
+  flex-shrink: 0;
+}
+.media-module .song-list .media-card:hover > svg {
+  color: var(--fn-primary);
+}
+
+/* ---------- 照片查看器 ---------- */
+/* 真实飞牛相册查看器未测得（VM 无存储空间）；以下为按设计系统推导的浅色查看器：
+   白色工具条（49px）+ --fn-bg-0 画布 + 白色 12px 圆角图片容器。 */
+.media-module .photo-viewer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: var(--fn-bg-0);
+  color: var(--fn-text-1);
+  overflow: hidden;
+}
+.media-module .photo-viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 49px;
+  padding: 6px 20px;
+  background: var(--fn-pane-bg);
+  border-bottom: 1px solid var(--fn-divider-2);
+  flex-shrink: 0;
+}
+.media-module .photo-viewer h3 {
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--fn-text-0);
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-module .photo-viewer .secondary {
+  flex-shrink: 0;
+}
+.media-module .image-preview {
+  flex: 1;
+  width: auto;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  margin: 16px 20px 20px;
+  padding: 12px;
+  border: 1px solid var(--fn-divider-2);
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-1);
+  overflow: hidden;
+}
+.media-module .image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.media-module .image-preview-loading,
+.media-module .image-preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.media-module .image-preview-error {
+  color: var(--fn-danger);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 影视详情 ---------- */
+/* 详情页排版为推导值（预览模式无真实媒体库，未实测）：
+   详情头部右侧同样留 150px；海报 132px / 12px 圆角；选集行 48px + 悬停 --fn-fill-0。 */
+.video-details {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  background: var(--fn-window-surface);
+  color: var(--fn-text-1);
+}
+.video-details > .toolbar {
+  min-height: 49px;
+  padding: 6px 16px;
+  gap: 8px;
+  background: var(--fn-pane-bg);
+  border-bottom: 1px solid var(--fn-divider-2);
+}
+.video-details .video-detail-heading {
+  display: flex;
+  gap: 18px;
+  padding: 18px 150px 18px 20px;
+  border-bottom: 1px solid var(--fn-divider-2);
+}
+.video-details .video-detail-poster {
+  width: 132px;
+  aspect-ratio: 0.72;
+  border-radius: var(--fn-radius-lg);
+  border: 1px solid var(--fn-divider-2);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-3);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.video-details .video-detail-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video-details .video-detail-poster > svg {
+  width: 40px;
+  height: 40px;
+}
+.video-details .video-detail-heading > div:last-child {
+  min-width: 0;
+  flex: 1;
+}
+.video-details .video-detail-heading h1 {
+  font-size: var(--fn-font-size-title);
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--fn-text-0);
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.video-details .video-detail-heading p {
+  font-size: var(--fn-font-size-base);
+  line-height: 22px;
+  color: var(--fn-text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.video-details .video-detail-heading .eyebrow {
+  color: var(--fn-primary);
+}
+.video-details .video-episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 16px;
+  overflow-y: auto;
+}
+.video-details .video-episode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-1);
+  text-align: left;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.video-details .video-episode:hover:not(:disabled) {
+  background: var(--fn-fill-0);
+}
+.video-details .video-episode:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.video-details .video-episode:disabled strong,
+.video-details .video-episode:disabled small {
+  color: var(--fn-text-3);
+}
+.video-details .video-episode.active {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+}
+.video-details .video-episode > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--fn-text-3);
+  flex-shrink: 0;
+}
+.video-details .video-episode > span:first-of-type {
+  min-width: 0;
+  flex: 1;
+}
+.video-details .video-episode strong {
+  display: block;
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fn-text-0);
+  overflow-wrap: anywhere;
+}
+.video-details .video-episode small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fn-font-size-sm);
+  line-height: 18px;
+  color: var(--fn-text-2);
+  overflow-wrap: anywhere;
+}
+.video-details .video-file-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 20px 4px;
+}
+.video-details .video-file-heading h2 {
+  font-size: var(--fn-font-size-base);
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--fn-text-1);
+  margin: 0;
+}
+.video-details .video-file-heading span {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.video-details .video-file-size {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+  white-space: nowrap;
+}
+/* 影片目录面包屑（复用 toolbar 的 49px 白条） */
+.video-details .breadcrumb,
+.video-details .crumb button {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-1);
+  padding: 0 2px;
+}
+.video-details .breadcrumb:hover,
+.video-details .crumb button:hover {
+  color: var(--fn-primary);
+}
+.video-details .crumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fn-text-3);
+}
+.video-details .crumb svg {
+  width: 12px;
+  height: 12px;
+  color: var(--fn-text-3);
+  flex-shrink: 0;
+}
+
+/* ---------- 下载中心与任务中心 ---------- */
+.media-module .download-list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 12px 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.media-module .download-list > * {
+  border-bottom: 1px solid var(--fn-divider);
+}
+.media-module .transfer-detail,
+.module-main .transfer-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  font-size: var(--fn-font-size-base);
+  color: var(--fn-text-1);
+}
+.media-module .transfer-icon,
+.module-main .transfer-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  flex-shrink: 0;
+}
+.media-module .transfer-actions,
+.module-main .transfer-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.module-main .file-download-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* ---------- 系统应用 ---------- */
+.system-module .module-sidebar button.selected,
+.system-module .module-sidebar button.selected svg,
+.module-split {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.module-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ---------- 存储与介质选择 ---------- */
+.storage-picker,
+.storage-register,
+.storage-candidates,
+.media-root-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+}
+.storage-section-title {
+  font-size: var(--fn-font-size-sm);
+  font-weight: 500;
+  color: var(--fn-text-0);
+  margin: 6px 0 2px;
+}
+.storage-success {
+  color: var(--fn-success);
+  font-size: var(--fn-font-size-sm);
+}
+
+/* ---------- 帮助与实例页 ---------- */
+.help,
+.instance-landing {
+  padding: 20px;
+  color: var(--fn-text-1);
+}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 700px) {
+  .media-module .media-hero {
+    gap: 10px;
+    padding: 12px 14px 6px;
+  }
+  .media-module .media-hero > svg,
+  .media-module .media-hero > .app-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .media-module .media-hero > svg {
+    padding: 7px;
+  }
+  .media-module .media-hero h1 {
+    font-size: var(--fn-font-size-base);
+  }
+  .media-module .toolbar {
+    flex-wrap: wrap;
+    padding: 6px 12px;
+  }
+  .media-module .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    padding: 12px 14px 20px;
+  }
+  .media-module .song-list {
+    padding: 6px 8px 16px;
+  }
+  .media-module > .media-stage {
+    padding: 16px 14px 40px;
+  }
+  .media-module .photo-viewer-bar {
+    padding: 6px 14px;
+  }
+  .media-module .image-preview {
+    margin: 10px 12px 12px;
+  }
+  .module-split {
+    flex-direction: column;
+  }
+  .video-details .video-detail-heading {
+    padding: 14px;
+    gap: 14px;
+  }
+  .video-details .video-detail-poster {
+    width: 96px;
+  }
+  .video-details .video-episode {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+}
+
+/* ---------- 下载中心：飞牛式统计卡 + 任务行 ---------- */
+.module-main .stats-row,
+.padded-module .stats-row {
+  display: flex;
+  gap: 12px;
+  padding: 4px 20px 14px;
+  flex-wrap: wrap;
+}
+.padded-module .stats-row > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-radius: var(--fn-radius-card);
+  border: 1px solid var(--fn-border);
+  background: var(--fn-bg-1);
+  box-shadow: var(--fn-shadow-card);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-sm);
+}
+.padded-module .stats-row svg {
+  width: 20px;
+  height: 20px;
+  color: var(--fn-primary);
+}
+.padded-module .stats-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.padded-module .stats-row strong {
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.padded-module .stats-row .small-text {
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+}
+.padded-module .tabs {
+  padding: 0 20px;
+}
+.module-main .download-list article,
+.padded-module .download-list article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--fn-divider);
+  color: var(--fn-text-1);
+}
+.padded-module .download-list article > svg {
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  flex-shrink: 0;
+}
+.padded-module .download-list article strong {
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  color: var(--fn-text-0);
+}
+.padded-module .download-list article p {
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+}
+
+/* ---------- 窄屏补充 ---------- */
+@media (max-width: 700px) {
+  .padded-module .stats-row {
+    padding: 4px 14px 12px;
+  }
+}
+
+/* ---------- 使用帮助：飞牛设置卡式说明页 ---------- */
+.help .eyebrow {
+  color: var(--fn-primary);
+  letter-spacing: 1.4px;
+}
+.help h1 {
+  font-size: var(--fn-font-size-title);
+  font-weight: 600;
+  color: var(--fn-text-0);
+  margin: 6px 0 8px;
+}
+.help > p {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-base);
+  max-width: 720px;
+}
+.help .settings-card {
+  margin-top: 18px;
+  padding: 4px 20px;
+  border-radius: var(--fn-radius-lg);
+  border: 1px solid var(--fn-border);
+  background: var(--fn-window-surface);
+  box-shadow: var(--fn-shadow-card);
+  max-width: 820px;
+}
+.help .settings-card h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+  margin: 18px 0 6px;
+}
+.help .settings-card p {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-base);
+  line-height: var(--fn-line-height-body);
+  margin-bottom: 14px;
+}
+.help .settings-card h3:first-child {
+  margin-top: 18px;
+}
+
+/* ---------- 播放器倍速条（Safari/WKWebView 原生控件没有倍速入口） ---------- */
+.player-speeds {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 2px;
+}
+.player-speeds button {
+  min-width: 46px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.player-speeds button:hover {
+  background: var(--fn-hover);
+}
+.player-speeds button.active {
+  background: var(--fn-primary);
+  color: #fff;
+  font-weight: 600;
+}
+:root[data-theme="dark"] .player-speeds button {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fn-text-1);
+}
+:root[data-theme="dark"] .player-speeds button.active {
+  background: var(--fn-primary);
+  color: #fff;
+}
+
+/* ==========================================================================
+   影视中心 / 音乐：飞牛 App 的「左侧栏 + 内容区」外壳
+   --------------------------------------------------------------------------
+   参照 docs/design-assets/fnos-reference/（真机截图）：
+   - 飞牛影视：左栏 264px、蓝色强调色、每项右侧计数、右上角圆形图标按钮
+   - 飞牛音乐：左栏 190px、粉红强调色、底部居中播放条胶囊
+   我们的窗口在 fnOS 桌面里，所以保留浅/深色主题，只对齐结构、比例与强调色用法。
+   ========================================================================== */
+
+.media-module.fnos-app {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  --app-accent: var(--fn-brand-5);          /* 飞牛影视的蓝 */
+  --app-accent-soft: var(--fn-brand-0);
+}
+.media-module.fnos-app.music {
+  --app-accent: #f5222d;          /* 飞牛音乐的粉红 */
+  --app-accent-soft: rgba(245, 34, 45, 0.12);
+}
+
+/* 相册沿用原有版式：两个包装层不参与布局 */
+.media-module:not(.fnos-app) > .app-rail,
+.media-module:not(.fnos-app) > .app-content {
+  display: contents;
+}
+
+.media-module.fnos-app > .app-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 14px 10px 18px;
+  overflow: auto;
+  border-right: 1px solid var(--fn-border);
+  background: var(--fn-fill-0);
+}
+
+/* 顶部品牌块：图标 + 应用名（原来是 hero 横幅，这里压扁成左栏头部） */
+.media-module.fnos-app > .app-rail .media-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 6px 12px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  min-height: 40px;
+}
+.media-module.fnos-app > .app-rail .media-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.media-module.fnos-app > .app-rail .media-hero-app {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.media-module.fnos-app > .app-rail .media-hero .eyebrow,
+.media-module.fnos-app > .app-rail .media-hero h1,
+.media-module.fnos-app > .app-rail .media-hero p {
+  display: none;              /* 左栏只留应用名，标题移到内容区顶栏 */
+}
+
+/* 导航：原来的横向 tabs 竖过来，选中项 = 强调色实心块（飞牛的选中态） */
+.media-module.fnos-app > .app-rail .toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.media-module.fnos-app > .app-rail .toolbar .tabs {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.media-module.fnos-app > .app-rail .toolbar .tabs button {
+  justify-content: flex-start;
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.media-module.fnos-app > .app-rail .toolbar .tabs button:hover {
+  background: var(--fn-fill-0);
+}
+/*
+ * 选中态对齐绿联：**圆角浅色底 + 亮文字**，不是实心强调色块。
+ * 实心蓝块在深色侧栏里太重，也和绿联的观感差得最远。
+ */
+.media-module.fnos-app > .app-rail .toolbar .tabs button.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.media-module.fnos-app > .app-rail .toolbar > .icon-button {
+  align-self: flex-start;
+  margin: 4px 0 0 6px;
+}
+
+/* 内容区 */
+.media-module.fnos-app > .app-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  /* 内容自己滚：hero 占掉一截后，下方的网格不能被压扁（截图里就是这样挤成一条的） */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px 12px;
+}
+/*
+ * hero 不再用负边距出血。
+ *
+ * 之前写的是 `margin: 0 -20px` 想让它贴边，结果内容比容器宽 40px，
+ * 而 .app-content 是 overflow-x: hidden —— 于是**静默裁掉 40px**，
+ * 窄窗口巡检报 "video-hero 静默裁字 40"。宁可留 20px 内边距，不要悄悄裁内容。
+ */
+.media-module.fnos-app > .app-content .app-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+.media-module.fnos-app > .app-content .app-head h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+/* 右上角圆形图标按钮（与飞牛一致：圆底 + 居中图标） */
+.media-module.fnos-app .app-round {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--fn-fill-0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.media-module.fnos-app .app-round:hover {
+  background: var(--fn-fill-1);
+}
+.media-module.fnos-app .app-head .search,
+.media-module.fnos-app .app-head input[type="search"],
+.media-module.fnos-app .app-head input {
+  border-radius: 999px;
+  min-width: 200px;
+}
+/* 海报网格：飞牛的卡片是圆角 + 悬停浮起 */
+.media-module.fnos-app .media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 16px;
+}
+.media-module.fnos-app .media-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.media-module.fnos-app .media-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px var(--fn-fill-2);
+}
+.media-module.fnos-app .media-art {
+  border-radius: 12px;
+}
+.media-module.fnos-app .media-card.active .media-art,
+.media-module.fnos-app .tabs button.active .media-art {
+  outline: 2px solid var(--app-accent);
+}
+/* 空状态/失败态的主按钮用应用强调色 */
+.media-module.fnos-app .media-stage-action {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #fff;
+  border-radius: 999px;
+}
+
+/* 深色主题下左栏与圆形按钮的底色 */
+:root[data-theme="dark"] .media-module.fnos-app > .app-rail {
+  background: rgba(255, 255, 255, 0.03);
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .media-module.fnos-app .app-round,
+:root[data-theme="dark"] .media-module.fnos-app > .app-rail .toolbar .tabs button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 左栏「分类」分组（飞牛：小号灰字标题 + 缩进列表，右侧灰色数量） */
+.media-module.fnos-app > .app-rail .rail-section {
+  margin: 14px 12px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--fn-text-3);
+}
+.media-module.fnos-app > .app-rail .rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.media-module.fnos-app > .app-rail .rail-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 13px;
+  text-align: left;
+}
+.media-module.fnos-app > .app-rail .rail-list button:hover {
+  background: var(--fn-fill-0);
+}
+.media-module.fnos-app > .app-rail .rail-list button.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 600;
+}
+.media-module.fnos-app > .app-rail .rail-list button.active svg {
+  color: var(--app-accent);
+}
+.media-module.fnos-app > .app-rail .rail-list .rail-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-module.fnos-app > .app-rail .rail-list .rail-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fn-text-3);
+}
+:root[data-theme="dark"] .media-module.fnos-app > .app-rail .rail-list button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   音乐播放器：飞牛音乐的底部居中播放条胶囊
+   --------------------------------------------------------------------------
+   参照 docs/design-assets/fnos-reference/fnos-music-app.png：
+   深色圆角胶囊、居中悬浮在窗口底部，里面是 ⏮ ▶ ⏭ + 曲目信息 + 🔁 ♡ ≡ 🔊。
+   我们用同样的排布：左边运输键、中间曲目与进度、右边队列/倍速/关闭。
+   ========================================================================== */
+.global-player.music {
+  left: 50%;
+  right: auto;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 48px));
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: rgba(28, 28, 32, 0.92);
+  color: #f3f3f5;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "lyrics lyrics lyrics"
+    "head head head"
+    "transport transport transport"
+    "foot speeds close";
+  align-items: center;
+  gap: 8px 12px;
+}
+.global-player.music header {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px;
+  background: none;
+  border: 0;
+  color: inherit;
+}
+.global-player.music header strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+}
+.global-player.music header .icon-button,
+.global-player.music .music-transport .icon-button {
+  color: #f3f3f5;
+  background: rgba(255, 255, 255, 0.08);
+}
+.global-player.music header .icon-button:hover,
+.global-player.music .music-transport .icon-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+/* 自绘运输区：与飞牛一致——按钮在左，进度条铺满右侧 */
+.global-player.music .music-transport {
+  grid-area: transport;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.global-player.music .music-transport .icon-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex: none;
+}
+.global-player.music .music-progress {
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.18);
+}
+.global-player.music .music-progress::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+.global-player.music .music-time {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.66);
+}
+.global-player.music footer {
+  grid-area: foot;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.global-player.music footer .icon-button {
+  color: #f3f3f5;
+  background: rgba(255, 255, 255, 0.08);
+}
+.global-player.music footer span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.66);
+  font-variant-numeric: tabular-nums;
+}
+.global-player.music .player-speeds {
+  grid-area: speeds;
+  justify-content: flex-end;
+  background: none;
+  padding: 0;
+}
+.global-player.music .player-speeds button {
+  color: rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+}
+.global-player.music .player-speeds button.active {
+  background: var(--app-accent, #f5222d);
+  color: #fff;
+}
+/* 播放条模式下不显示大封面与原生控件 */
+.global-player.music audio {
+  display: none;
+}
+.global-player.music .queue-list {
+  grid-column: 1 / -1;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+/* ==========================================================================
+   媒体窗口精修（taste-skill / redesign-skill 审计后的修复）
+   --------------------------------------------------------------------------
+   审计结论与修复：
+   1. 强调色过饱和 → 每个应用只留一个强调色，饱和度压到 80% 以下
+      （影视 var(--fn-brand-5)、音乐 #e04a5f），其余颜色一律中性。
+   2. 圆角各自为政 → 锁定一套：容器 14 / 卡片 12 / 控件 9 / 圆形按钮与胶囊 full。
+   3. 没有 hover / active / focus 状态 → 全部补齐，统一 200ms 过渡。
+   4. 转圈加载 → 换成与最终布局同形的骨架屏。
+   5. 卡片副标题出现 "library"/"photo" 原始英文 → 改为真实元数据，没有就留空。
+   6. 阴影是纯黑 → 改成带背景色相的染色阴影。
+   ========================================================================== */
+.media-module.fnos-app {
+  --app-accent: var(--fn-brand-5);
+  --app-accent-soft: rgba(43, 108, 212, 0.12);
+  --radius-container: 14px;
+  --radius-card: 12px;
+  --radius-control: 9px;
+  --shadow-hover: 0 10px 28px rgba(24, 42, 84, 0.16);
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+.media-module.fnos-app.music {
+  --app-accent: #e04a5f;
+  --app-accent-soft: rgba(224, 74, 95, 0.12);
+  --shadow-hover: 0 10px 28px rgba(96, 26, 40, 0.16);
+}
+
+/* 统一交互反馈：hover 有回应、按下有位移、键盘有焦点环 */
+.media-module.fnos-app button,
+.media-module.fnos-app .media-card {
+  transition:
+    background-color 200ms var(--ease),
+    color 200ms var(--ease),
+    transform 200ms var(--ease),
+    box-shadow 200ms var(--ease),
+    border-color 200ms var(--ease);
+}
+.media-module.fnos-app button:active {
+  transform: scale(0.98);
+}
+.media-module.fnos-app button:focus-visible,
+.media-module.fnos-app .media-card:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+/* 内容区顶栏：面包屑 + 搜索 + 圆形刷新 */
+.media-module.fnos-app > .app-content .app-head h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.media-module.fnos-app .app-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.media-module.fnos-app .app-crumbs svg {
+  width: 14px;
+  height: 14px;
+  color: var(--fn-text-3);
+}
+.media-module.fnos-app .app-crumbs button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fn-text-3);
+  font: inherit;
+}
+.media-module.fnos-app .app-crumbs button:hover {
+  color: var(--app-accent);
+}
+.media-module.fnos-app .app-crumbs span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fn-text-1);
+}
+
+/* 海报墙：2:3 海报比例、悬停浮起 + 播放按钮淡入 */
+.media-module.fnos-app .media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 18px 16px;
+  align-content: start;
+}
+.media-module.fnos-app .media-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.media-module.fnos-app .media-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--fn-fill-0);
+  box-shadow: 0 1px 2px rgba(24, 42, 84, 0.08);
+}
+.media-module.fnos-app .media-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.media-module.fnos-app .media-card:hover .media-art {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+.media-module.fnos-app .media-card:hover .media-art img {
+  transform: scale(1.04);
+}
+.media-module.fnos-app .media-art img {
+  transition: transform 320ms var(--ease);
+}
+.media-module.fnos-app .play-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(to top, rgba(8, 12, 24, 0.62), rgba(8, 12, 24, 0.06));
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+}
+.media-module.fnos-app .play-overlay svg {
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--app-accent);
+}
+.media-module.fnos-app .media-card:hover .play-overlay,
+.media-module.fnos-app .media-card:focus-visible .play-overlay {
+  opacity: 1;
+}
+.media-module.fnos-app .art-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(10, 14, 26, 0.62);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(6px);
+}
+.media-module.fnos-app .media-card.seen .media-art::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--app-accent);
+}
+.media-module.fnos-app .media-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.media-module.fnos-app .media-caption strong {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--fn-text-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.media-module.fnos-app .media-caption small {
+  font-size: 12px;
+  color: var(--fn-text-3);
+  font-variant-numeric: tabular-nums;
+  min-height: 15px;
+}
+
+/* 歌曲列表：QQ 音乐式的行——封面 + 标题/艺人 + 悬停播放 + 右侧时长 */
+.media-module.fnos-app .song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0;
+}
+.media-module.fnos-app .song-list .media-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  background: none;
+}
+.media-module.fnos-app .song-list .media-card:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+.media-module.fnos-app .song-list .media-art {
+  aspect-ratio: 1 / 1;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.media-module.fnos-app .song-list .media-card:hover .media-art {
+  transform: none;
+  box-shadow: none;
+}
+.media-module.fnos-app .song-list .play-overlay {
+  background: rgba(8, 12, 24, 0.5);
+}
+.media-module.fnos-app .song-list .play-overlay svg {
+  width: 26px;
+  height: 26px;
+  padding: 6px;
+  background: transparent;
+  color: #fff;
+}
+.media-module.fnos-app .song-list .media-caption {
+  flex: 1;
+  gap: 1px;
+}
+.media-module.fnos-app .song-list .media-caption strong {
+  -webkit-line-clamp: 1;
+  font-size: 13.5px;
+}
+.media-module.fnos-app .song-list .media-card > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-text-3);
+}
+.media-module.fnos-app .song-list .media-card:hover > svg {
+  color: var(--app-accent);
+}
+
+/* 骨架屏：形状与最终布局一致，代替转圈 */
+.media-module.fnos-app .skeleton-grid,
+.media-module.fnos-app .skeleton-list {
+  display: grid;
+  gap: 18px 16px;
+}
+.media-module.fnos-app .skeleton-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+}
+.media-module.fnos-app .skeleton-list {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.media-module.fnos-app .skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.media-module.fnos-app .skeleton-list .skeleton-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+}
+.media-module.fnos-app .skeleton-art,
+.media-module.fnos-app .skeleton-line {
+  display: block;
+  border-radius: var(--radius-card);
+  background: linear-gradient(90deg, var(--fn-fill-0), var(--fn-fill-1), var(--fn-fill-0));
+  background-size: 200% 100%;
+  animation: media-shimmer 1.4s linear infinite;
+}
+.media-module.fnos-app .skeleton-art {
+  aspect-ratio: 2 / 3;
+}
+.media-module.fnos-app .skeleton-list .skeleton-art {
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  flex: none;
+}
+.media-module.fnos-app .skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+}
+.media-module.fnos-app .skeleton-line.short {
+  width: 45%;
+}
+.media-module.fnos-app .skeleton-list .skeleton-card .skeleton-line {
+  flex: 1;
+}
+@keyframes media-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* 空 / 错误状态：居中插画 + 一句说明 + 一个主按钮 */
+.media-module.fnos-app .media-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+.media-module.fnos-app .media-stage-action {
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-weight: 500;
+  box-shadow: 0 6px 18px rgba(24, 42, 84, 0.16);
+}
+
+/* 深色主题下的对应调整（同一套 token，只换表面） */
+:root[data-theme="dark"] .media-module.fnos-app .media-art,
+:root[data-theme="dark"] .media-module.fnos-app .skeleton-art,
+:root[data-theme="dark"] .media-module.fnos-app .skeleton-line {
+  background: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .media-module.fnos-app .song-list .media-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .media-module.fnos-app .media-caption strong,
+:root[data-theme="dark"] .media-module.fnos-app .app-crumbs span {
+  color: #f2f2f4;
+}
+
+/* 动效降级：系统要求减少动态时全部关掉 */
+@media (prefers-reduced-motion: reduce) {
+  .media-module.fnos-app *,
+  .global-player.music * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- 音乐播放条细节：封面、艺人、音量、真玻璃（1px 内描边 + 内阴影） ---- */
+.global-player.music {
+  border-radius: var(--radius-container, 14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 44px rgba(10, 14, 26, 0.42);
+}
+.global-player.music .music-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+}
+.global-player.music .music-artist {
+  flex: none;
+  max-width: 30%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+.global-player.music .music-volume {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.global-player.music .music-volume svg {
+  width: 15px;
+  height: 15px;
+}
+.global-player.music .music-volume input {
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+}
+.global-player.music .music-volume input::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+}
+.global-player.music header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* 布局修正：内容区可滚动，网格/列表按自身高度排布
+   （否则网格作为 flex 子项会被压扁，海报被挤成一条细缝） */
+.media-module.fnos-app > .app-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.media-module.fnos-app > .app-content > .media-grid,
+.media-module.fnos-app > .app-content > .song-list,
+.media-module.fnos-app > .app-content > .skeleton-grid,
+.media-module.fnos-app > .app-content > .skeleton-list {
+  flex: 0 0 auto;
+}
+.media-module.fnos-app > .app-content > .media-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.media-module.fnos-app > .app-content > .pagination {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+/* 播放条悬浮在窗口之上时，给音乐内容区留出底部空间，避免遮住最后几行 */
+body:has(.global-player.music) .media-module.music > .app-content {
+  padding-bottom: 104px;
+}
+
+/* ===== 歌词面板（QQ 音乐式：跟随高亮 + 点行跳转） ===== */
+.lyrics-panel {
+  grid-area: lyrics;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 46vh;
+  margin-bottom: 8px;
+  padding: 10px 12px 6px;
+  border-radius: 14px;
+  background: rgba(20, 20, 24, 0.94);
+  color: #ececf0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+.lyrics-panel header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lyrics-panel header strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.lyrics-panel header small {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.lyrics-panel header .spacer {
+  flex: 1;
+}
+.lyrics-panel .icon-button {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+}
+.lyrics-panel ol {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  scroll-behavior: smooth;
+}
+.lyric-line {
+  display: block;
+  width: 100%;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  transition: color 200ms cubic-bezier(0.32, 0.72, 0, 1), transform 200ms;
+}
+.lyric-line:hover:not(:disabled) {
+  color: #fff;
+}
+.lyric-line.active {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  transform: translateX(2px);
+}
+.lyric-line:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.lyrics-empty,
+.lyrics-note {
+  margin: 8px 4px 4px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== 播放队列面板（QQ 音乐式右侧列表） ===== */
+.global-player.music .queue-panel {
+  grid-area: lyrics;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 42vh;
+  margin-bottom: 8px;
+  padding: 8px 10px 4px;
+  border-radius: 14px;
+  background: rgba(20, 20, 24, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.global-player.music .queue-panel header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 2px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.global-player.music .queue-panel header strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f2f2f5;
+}
+.global-player.music .queue-panel header small,
+.global-player.music .queue-panel header .spacer {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.global-player.music .queue-panel header .spacer {
+  flex: 1;
+}
+.global-player.music .queue-panel .icon-button {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+}
+.global-player.music .queue-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.global-player.music .queue-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  text-align: left;
+  transition: background-color 200ms cubic-bezier(0.32, 0.72, 0, 1), color 200ms;
+}
+.global-player.music .queue-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.global-player.music .queue-row.active {
+  background: var(--app-accent, #e04a5f);
+  color: #fff;
+}
+.global-player.music .queue-index {
+  flex: none;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.global-player.music .queue-index svg {
+  width: 14px;
+  height: 14px;
+}
+.global-player.music .queue-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.global-player.music .queue-text strong {
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.global-player.music .queue-text small {
+  font-size: 11px;
+  opacity: 0.7;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.global-player.music .queue-now {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 播放失败时的「跳过这一首」：音乐队列里遇到解不了的编码，给一条明确出路 */
+.global-player.music .skip-track {
+  justify-self: center;
+  align-self: start;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f2f2f5;
+  font-size: 12.5px;
+}
+.global-player.music .skip-track:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+.global-player.music .skip-track:disabled {
+  opacity: 0.45;
+}
+
+/* ===== 相册大图查看器 =====
+   背景/文字/层级交给既有的 .media-module .photo-viewer（跟随主题变量），
+   这里只补交互所需的布局与控件样式——浅色主题里突然来一块深色底是设计事故。 */
+.photo-viewer {
+  display: flex;
+  flex-direction: column;
+}
+.photo-viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--fn-divider);
+}
+.photo-viewer-bar h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  max-width: 40%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.photo-viewer-bar .secondary {
+  color: var(--fn-text-1);
+  background: var(--fn-fill-0);
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+.photo-viewer-bar .secondary:hover {
+  background: var(--fn-bg-3);
+}
+.photo-viewer-bar .icon-button {
+  color: var(--fn-text-1);
+  background: var(--fn-fill-0);
+  border-radius: 999px;
+}
+.photo-viewer-bar .icon-button:hover:not(:disabled) {
+  background: var(--fn-bg-3);
+}
+.photo-viewer-bar .icon-button:disabled {
+  opacity: 0.35;
+}
+.photo-viewer-bar .spacer {
+  flex: 1;
+}
+.photo-counter,
+.photo-zoom {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fn-text-2);
+  min-width: 44px;
+  text-align: center;
+}
+/* 舞台：图片按容器缩放居中，zoom/pan 通过变量作用到内部 img 上 */
+.photo-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.photo-stage.zoomed {
+  cursor: grab;
+}
+.photo-stage.zoomed.dragging {
+  cursor: grabbing;
+}
+.photo-stage .image-preview {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.photo-stage .image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform: translate(var(--pan-x, 0), var(--pan-y, 0)) scale(var(--zoom, 1));
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+.photo-stage.dragging .image-preview img {
+  transition: none;
+}
+.photo-viewer-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--fn-divider);
+  font-size: 12px;
+  color: var(--fn-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.photo-viewer-foot .photo-hint {
+  margin-left: auto;
+  opacity: 0.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-stage .image-preview img {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* 「全部影片」里部分媒体库读取失败时的提示（不让片子悄悄变少） */
+.media-partial {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: var(--fn-radius-sm);
+  background: color-mix(in srgb, var(--fn-warning) 12%, transparent);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-sm);
+}
+
+/*
+ * 媒体库封面：用库里前几张海报拼 2×2（设备的分类接口不返回封面）。
+ * 填满卡片、不留缝隙，四角跟随卡片的圆角。
+ */
+.media-module.video .art-collage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* 绿联「文件夹」页的封面是横排三联图，不是 2×2 */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  grid-template-rows: 1fr;
+  gap: 1px;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--fn-border);
+}
+.media-module.video .art-collage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+ * 相册时间线：按天分组的小标题。
+ * 网格里插一个整行标题，日期单独一行、贴在顶部（滚动时保持可见）。
+ */
+.media-module.photos .media-grid.photo-timeline {
+  grid-auto-rows: auto;
+}
+.media-module.photos .timeline-day {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 6px 0 2px;
+  padding: 8px 2px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fn-text-2);
+  background: linear-gradient(var(--fn-pane-bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* 相册时间线：只有画面（文字块用 hidden 属性整体隐藏，悬停 title 仍看得到文件名） */
+.media-module.photos .media-card .media-caption[hidden] {
+  display: none;
+}
+.media-module.photos .media-card {
+  align-items: stretch;
+}
+
+/* 评分角标：海报右下角的橙色数字（绿联影视的写法） */
+.media-module.video .art-score {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffab2e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* 绿联首页：横版背景铺满内容区，文字位于左下，底部渐变接入列表。 */
+.media-module.video,
+.video-details {
+  --fn-pane-bg: #101217;
+  --fn-window-surface: #101217;
+  --fn-text-1: #f2f3f7;
+  --fn-text-2: #c9cbd3;
+  --fn-text-3: #9296a2;
+  --fn-fill-0: #1a1d25;
+  --fn-fill-1: #282c36;
+  --fn-border: rgba(255, 255, 255, 0.08);
+  color: var(--fn-text-1);
+  background: var(--fn-pane-bg);
+}
+.media-module.video .app-head .search,
+.media-module.video .app-head input[type="search"] {
+  background: rgba(38, 41, 50, 0.86);
+  color: var(--fn-text-1);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.media-module.video .app-head input::placeholder { color: var(--fn-text-3); }
+.desktop-icons .desktop-shortcut { text-decoration: none; color: inherit; }
+.media-module.video .app-head .icon-button,
+.media-module.video .media-tools .tool-button {
+  color: var(--fn-text-2);
+  background: rgba(38, 41, 50, 0.72);
+}
+.media-module.video > .app-content.video-home {
+  position: relative;
+  padding: 0;
+  gap: 0;
+}
+.media-module.video > .video-home > .app-head {
+  position: absolute;
+  inset: 14px 20px auto;
+  z-index: 2;
+  color: #fff;
+}
+.media-module.video > .video-home > .media-grid,
+.media-module.video > .video-home > .media-stage {
+  margin: 18px 20px;
+}
+.media-module.video > .video-home > .media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+}
+.media-module.video > .video-home .media-art {
+  aspect-ratio: 16 / 9;
+}
+.media-module.video .video-hero {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 340px;
+  height: 55%;
+  display: flex;
+  align-items: flex-end;
+  padding: 88px 36px 36px;
+  background: #151820;
+  overflow: hidden;
+}
+.media-module.video .video-hero .hero-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+.media-module.video .video-hero .hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(8, 9, 12, 0.76) 0%, rgba(8, 9, 12, 0.36) 48%, rgba(8, 9, 12, 0.08) 100%),
+    linear-gradient(180deg, rgba(8, 9, 12, 0.2) 0%, transparent 40%, var(--fn-pane-bg) 100%);
+  pointer-events: none;
+}
+.media-module.video .video-hero .hero-art-unavailable {
+  position: absolute;
+  right: 24px;
+  top: 82px;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.media-module.video .video-hero .hero-text {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+.media-module.video .video-hero h1 {
+  margin: 0;
+  font-size: clamp(28px, 3.5vw, 46px);
+  line-height: 1.2;
+  font-weight: 700;
+  color: #fff;
+}
+
+.image-preview-quality {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(20, 23, 30, 0.84);
+  color: #fff;
+  font-size: 12px;
+}
+.photo-quality { display: flex; padding: 3px; border-radius: 8px; background: var(--fn-bg-secondary, #f1f2f5); }
+.photo-quality button { border: 0; border-radius: 6px; background: transparent; color: var(--fn-text-secondary, #888); padding: 6px 9px; white-space: nowrap; font-size: 12px; }
+.photo-quality button[aria-pressed="true"] { background: var(--fn-surface, #fff); color: #5385ff; }
+.photo-quality-notice { position: absolute; inset: auto 4px 4px; padding: 4px 6px; border-radius: 5px; background: #20232bbf; color: #fff; font-size: 10px; line-height: 1.4; }
+@media (max-width: 900px) {
+  .photos-toolbar { flex-wrap: wrap; gap: 8px; }
+  .photos-toolbar .official-search { min-width: 120px; }
+}
+.media-module.video .video-hero .hero-meta {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.media-module.video .video-hero .hero-error { margin: 0; color: #ffb5aa; font-size: 13px; }
+.media-module.video .video-hero .hero-story {
+  margin: 0;
+  max-width: 660px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.66);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.media-module.video .video-hero .hero-play {
+  align-self: flex-start;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  min-width: 180px;
+  justify-content: center;
+  padding: 0 30px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(22, 24, 30, 0.72);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.media-module.video .video-hero .hero-play:hover {
+  background: rgba(38, 42, 52, 0.86);
+}
+.media-module.video .video-hero .hero-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.media-module.video .video-hero .hero-dots button {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  cursor: pointer;
+  transition: width 160ms, background 160ms;
+}
+.media-module.video .video-hero .hero-dots button.active {
+  width: 26px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+
+/* 影视工具条（绿联右上角那排按钮）：排序 + 网格/列表 */
+.media-module.video .media-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.media-module.video .tool-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-2);
+  font-size: 13px;
+  cursor: pointer;
+}
+.media-module.video .tool-button svg {
+  width: 16px;
+  height: 16px;
+}
+.media-module.video .tool-button:hover {
+  color: var(--fn-text-0);
+}
+.media-module.video .tool-button.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/*
+ * 列表视图（绿联的列表版式）：左海报 + 右侧标题 / 元信息 / 简介，
+ * 单列，一行一个条目。
+ */
+.media-module.video .media-grid.video-list {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.media-module.video .media-grid.video-list .media-card {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--fn-fill-0);
+  text-align: left;
+}
+.media-module.video .media-grid.video-list .media-art {
+  width: 92px;
+  height: 138px;
+  border-radius: 8px;
+}
+.media-module.video .media-grid.video-list .media-caption {
+  align-items: flex-start;
+  padding-top: 4px;
+}
+.media-module.video .media-grid.video-list .media-caption strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 列表视图的简介：两行截断，弱于标题 */
+.media-module.video .media-grid.video-list .list-story {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fn-text-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/*
+ * 影片详情页（对齐绿联详情页版式）
+ * 背景大图 + 海报 + 标题 + 元信息行 + 蓝色播放胶囊 + 圆形操作按钮。
+ */
+.media-module.video .video-detail-hero,
+.video-details .video-detail-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  min-height: 260px;
+  padding: 22px 24px 20px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center 30%;
+  overflow: hidden;
+}
+.video-details .video-detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: scale(1.14);
+  background: inherit;
+  background-size: cover;
+  background-position: center 30%;
+  filter: blur(32px) saturate(1.15) brightness(0.6);
+}
+.video-details .video-detail-hero .hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(8, 9, 12, 0.92) 0%, rgba(8, 9, 12, 0.6) 50%, rgba(8, 9, 12, 0.35) 100%),
+    linear-gradient(180deg, rgba(8, 9, 12, 0.4) 0%, var(--fn-pane-bg) 100%);
+}
+.video-details .video-detail-poster {
+  position: relative;
+  width: 128px;
+  height: 192px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.video-details .video-detail-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.video-details .video-detail-copy {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.video-details .video-detail-copy h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+}
+.video-details .video-detail-meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.74);
+}
+.video-details .video-detail-meta .detail-score {
+  color: #ffab2e;
+  font-weight: 700;
+}
+.video-details .video-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+.video-details .detail-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 30px;
+  border: 0;
+  border-radius: 8px;
+  background: #2f6bff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.video-details .detail-play:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.video-details .detail-round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(22, 24, 30, 0.66);
+  color: rgba(255, 255, 255, 0.72);
+}
+.video-details button.detail-round {
+  cursor: pointer;
+}
+.video-details .detail-round.on {
+  color: #2f6bff;
+  border-color: rgba(47, 107, 255, 0.5);
+}
+.video-details .video-detail-story {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--fn-text-2);
+}
+/* 选集：一排编号方块，当前集蓝色实心（绿联的做法） */
+.video-details .video-episode-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.video-details .video-episode-chip {
+  width: 48px;
+  height: 40px;
+  border: 1px solid var(--fn-border);
+  border-radius: 8px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-1);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.video-details .video-episode-chip:hover {
+  background: #2f6bff;
+  border-color: #2f6bff;
+  color: #fff;
+}
+/* 演职人员：圆形头像占位 + 姓名 */
+.video-details .video-cast h2 {
+  margin: 4px 0 12px;
+  font-size: 15px;
+}
+.video-details .video-cast ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.video-details .video-cast li {
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.video-details .cast-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fn-text-1);
+  font-size: 24px;
+  font-weight: 600;
+}
+.video-details .video-cast strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.video-details .video-cast small {
+  font-size: 11.5px;
+  color: var(--fn-text-3);
+}
+
+/*
+ * 窄窗口适配（巡检在 760 / 640 宽度下抓到的真问题）：
+ *   - 影视工具条（排序 + 网格/列表 + 搜索 + 刷新）在 646px 里放不下，
+ *     搜索框与刷新键分别越界 15px / 21px；
+ *   - hero 固定 min-height: 300px 且 overflow: hidden，窄窗口里标题被裁掉 40px。
+ * 这里让工具条可换行、窄屏只留图标，并压缩 hero。
+ */
+@media (max-width: 900px) {
+  .media-module.fnos-app > .app-content .app-head {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .media-module.fnos-app > .app-content .app-head .search,
+  .media-module.fnos-app > .app-content .app-head input[type="search"] {
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+  .media-module.video .media-tools .tool-button {
+    padding: 0 8px;
+  }
+  /* 窄屏只留图标：文字标签收起来，避免把工具条挤爆 */
+  .media-module.video .media-tools .tool-button {
+    font-size: 0;
+    gap: 0;
+  }
+  .media-module.video .media-tools .tool-button svg {
+    font-size: 16px;
+  }
+  .media-module.video .video-hero {
+    min-height: 280px;
+    padding: 98px 22px 28px;
+  }
+  .media-module.video .video-hero h1 {
+    font-size: 22px;
+  }
+  .media-module.video .video-hero .hero-story {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .media-module.video .video-hero {
+    min-height: 260px;
+  }
+  .media-module.video > .video-home > .app-head {
+    inset: 12px 14px auto;
+  }
+  .media-module.video .video-hero .hero-play {
+    height: 44px;
+    min-width: 140px;
+  }
+}
+
+/* hero 里的元信息行允许换行，长标题也允许换行 —— 不要靠裁切收场 */
+.media-module.video .video-hero .hero-meta {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+.media-module.video .video-hero h1 {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* 窄屏搜索框再收一点，避免越界 14px */
+@media (max-width: 900px) {
+  .media-module.fnos-app > .app-content .app-head .search,
+  .media-module.fnos-app > .app-content .app-head input[type="search"] {
+    flex: 1 1 120px;
+  }
+}
+
+/* 窄屏：搜索框允许收缩，别再越界 12px */
+@media (max-width: 900px) {
+  .media-module.fnos-app > .app-content .app-head {
+    min-width: 0;
+  }
+  .media-module.fnos-app > .app-content .app-head > * {
+    min-width: 0;
+  }
+}
+
+/*
+ * 搜索框还会越界 12px / 3px（窄窗口巡检最后两项）。
+ * 它是 flex 项，默认 `min-width: auto` 会按内容（placeholder）撑住不肯缩，
+ * 所以光给容器 min-width:0 不够 —— 它自己也要允许收缩。
+ */
+@media (max-width: 900px) {
+  .media-module.fnos-app > .app-content .app-head .search,
+  .media-module.fnos-app > .app-content .app-head .search input,
+  .media-module.fnos-app > .app-content .app-head input {
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+}

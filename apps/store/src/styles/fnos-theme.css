@@ -1,0 +1,240 @@
+/*
+ * 飞牛 fnOS 视觉令牌（第三方客户端“空间桌面”共用）
+ *
+ * 数值来源：真实 fnOS Web 端样式表与界面实测（Semi Design 主题 + fnOS 覆盖）。
+ * 参照记录见 docs/design-assets/2026-10-11-fnos-design-system.md。
+ *
+ * 约定：本文件只声明设计令牌，不编写具体组件规则；应用皮肤写在 fnos-*.css，
+ * 并允许在既有 styles.css 之后覆盖同名选择器。所有皮肤必须使用这里的变量，
+ * 不要在组件皮肤里硬编码颜色。
+ */
+
+:root {
+  /* 品牌色：fnOS 蓝（--semi-brand-*，light 主题取 5 为主色） */
+  --fn-brand-0: #e6f4ff;
+  --fn-brand-1: #d7edff;
+  --fn-brand-2: #abdbff;
+  --fn-brand-3: #75bfff;
+  --fn-brand-4: #3385ff;
+  --fn-brand-5: #0066ff;
+  --fn-brand-6: #005eeb;
+  --fn-brand-7: #0043b8;
+  --fn-brand-8: #002d70;
+  --fn-brand-9: #001f4d;
+
+  --fn-primary: #0066ff; /* light 取 brand-5；深色同样是 #0066FF */
+  --fn-primary-hover: #005eeb;
+  --fn-primary-active: #0043b8;
+  --fn-primary-soft: rgba(0, 102, 255, 0.12); /* --semi-color-primary-light-default */
+  --fn-primary-soft-hover: rgba(0, 102, 255, 0.2);
+  --fn-on-primary: #ffffff;
+
+  /* 表面层次：飞牛刻度从“最深”到“最亮”（--semi-color-bg-0..4） */
+  --fn-bg-0: #f3f3f3; /* 页面最底 */
+  --fn-bg-1: #ffffff; /* 卡片/内容面板 */
+  --fn-bg-2: #ffffff; /* 弹窗 */
+  --fn-bg-3: #ffffff; /* toast/浮层 */
+  --fn-bg-4: #ffffff;
+  --fn-window-base: #f3f3f3; /* --semi-color-app：应用窗口底板 */
+  --fn-window-surface: #ffffff; /* 内容窗格 */
+  --fn-window-sidebar: #fafafa; /* --semi-color-nav-bg */
+  --fn-window-titlebar: transparent; /* 飞牛标题栏完全透明 */
+  --fn-window-titlebar-inactive: transparent;
+  --fn-overlay: rgba(0, 0, 0, 0.7);
+
+  /* 文字 */
+  --fn-text-0: #0b0b0c;
+  --fn-text-1: rgba(11, 11, 12, 0.8);
+  --fn-text-2: rgba(11, 11, 12, 0.62);
+  --fn-text-3: rgba(11, 11, 12, 0.42);
+  --fn-text-4: rgba(11, 11, 12, 0.28);
+  --fn-text-anti: #ffffff;
+
+  /* 描边与分隔 */
+  --fn-border: rgba(11, 11, 12, 0.16);
+  --fn-card-border: rgba(11, 11, 12, 0.08);
+  --fn-border-strong: rgba(11, 11, 12, 0.24);
+  --fn-divider: rgba(11, 11, 12, 0.06);
+  --fn-focus-border: #0066ff;
+
+  /* 语义色 */
+  --fn-success: #009e61;
+  --fn-warning: #e06c00;
+  --fn-danger: #db382c;
+  --fn-info: #0066ff;
+
+  /* 语义浅底（提示条、错误条、成功提示的底色） */
+  --fn-success-soft: #e6f7ef;
+  --fn-warning-soft: #fdf2e6;
+  --fn-danger-soft: #fdeceb;
+  --fn-info-soft: var(--fn-primary-soft);
+
+  /* 交互底色 */
+  --fn-row-hover: #f3f3f3;
+  --fn-card-hover: #fafbfc;
+
+  /* 圆角阶梯：与飞牛实测一致 3 / 6 / 8 / 12 / 16 / 32 */
+  --fn-radius-xs: 3px;
+  --fn-radius-sm: 6px;
+  --fn-radius-md: 6px;
+  --fn-radius-lg: 12px;
+  --fn-radius-xl: 16px;
+  --fn-radius-card: 8px;
+  --fn-radius-login: 32px;
+  --fn-radius-pill: 9999px;
+
+  /* 阴影：飞牛 --semi-shadow-app / elevated / dropdown 的实测字面值 */
+  --fn-shadow-window:
+    0px 15px 20px 0px rgba(11, 11, 12, 0.05),
+    8px 8px 16px -6px rgba(3, 3, 3, 0.08),
+    1px 12px 42px -4px rgba(10, 10, 10, 0.08);
+  --fn-shadow-window-inactive:
+    0px 10px 18px 0px rgba(11, 11, 12, 0.04),
+    1px 8px 24px -4px rgba(10, 10, 10, 0.06);
+  --fn-shadow-popover:
+    0px 10px 20px 0px rgba(0, 0, 0, 0.08),
+    0px 10px 40px 0px rgba(0, 0, 0, 0.12);
+  --fn-shadow-dropdown:
+    0px 12px 42px -4px rgba(20, 23, 26, 0.12),
+    0px 8px 18px -6px rgba(20, 23, 26, 0.2);
+  --fn-shadow-card: 0 1px 3px rgba(15, 20, 28, 0.06);
+  --fn-shadow-text:
+    0px 0px 4px rgba(0, 0, 0, 0.5),
+    0px 1px 6px rgba(0, 0, 0, 0.2);
+
+  /* 尺寸：外壳与窗口几何（全部来自飞牛实测） */
+  --fn-rail-width: 66px; /* 应用栏容器宽；玻璃条 52px */
+  --fn-rail-bar-width: 52px;
+  --fn-topbar-height: 44px;
+  --fn-window-titlebar-height: 44px;
+  --fn-window-radius: 16px;
+  --fn-window-default-width: 1100px;
+  --fn-window-default-height: 640px;
+  --fn-window-control-width: 46px;
+  --fn-window-control-height: 44px;
+  --fn-window-sidebar-width: 220px;
+  --fn-sidebar-item-width: 204px;
+  --fn-desktop-cell-width: 144px;
+  --fn-desktop-cell-height: 120px;
+  --fn-widget-width: 266px;
+  --fn-widget-height: 36px;
+  --fn-control-height: 36px;
+  --fn-control-height-lg: 40px;
+  --fn-control-height-sm: 28px;
+  --fn-row-height: 36px;
+
+  /* 字体：与 fnOS 一致的中英文族与常用字号 */
+  --fn-font-family: "PingFang SC", "SF Pro Text", "Helvetica Neue", Helvetica,
+    "Noto Sans SC", "Microsoft YaHei", Arial, sans-serif;
+  --fn-font-size-xs: 11px;
+  --fn-font-size-sm: 12px;
+  --fn-font-size-base: 14px;
+  --fn-font-size-md: 14px;
+  --fn-font-size-body: 16px; /* 飞牛正文/分组标题档 16px，行高 24px */
+  --fn-font-size-lg: 18px;
+  --fn-font-size-title: 20px;
+  --fn-line-height: 20px;
+  --fn-line-height-body: 24px;
+
+  /* 动效 */
+  --fn-duration-fast: 180ms;
+  --fn-duration-base: 600ms;
+  --fn-duration-faster: 120ms;
+  --fn-ease: cubic-bezier(0, 0, 0.2, 1);
+  --fn-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- 飞牛原语别名（同名同值，便于对照设计系统文档） ---- */
+  --fn-window-base: #f3f3f3; /* --semi-color-app：应用窗口底板 */
+  --fn-pane-bg: #ffffff; /* --semi-color-app-container：内容窗格 */
+  --fn-nav-bg: #fafafa; /* --semi-color-nav-bg */
+  --fn-menu-bg: #ffffff; /* 下拉/右键菜单 */
+  --fn-rail-bg: rgba(134, 164, 179, 0.05);
+  --fn-rail-border: rgba(255, 255, 255, 0.2);
+  --fn-primary-tint-12: rgba(0, 102, 255, 0.12);
+  --fn-primary-tint-20: rgba(0, 102, 255, 0.2);
+  --fn-fill-0: rgba(11, 11, 12, 0.04);
+  --fn-fill-1: rgba(11, 11, 12, 0.06);
+  --fn-fill-2: rgba(11, 11, 12, 0.12);
+  --fn-border-modal: rgba(11, 11, 12, 0.06);
+  --fn-divider-1: rgba(11, 11, 12, 0.12);
+  --fn-divider-2: rgba(11, 11, 12, 0.06);
+  --fn-disabled-text: rgba(11, 11, 12, 0.25);
+  --fn-scrollbar: rgba(90, 91, 92, 0.16);
+  --fn-scrollbar-hover: rgba(90, 91, 92, 0.32);
+}
+
+/* 深色主题：飞牛深色（--semi-color-bg-0 最深 #0C0C0D，primary 仍是 #0066FF） */
+:root[data-theme="dark"],
+.desktop.dark,
+[data-fn-theme="dark"] {
+  --fn-primary: #0066ff;
+  --fn-primary-hover: #0054db;
+  --fn-primary-active: #0043b8;
+  --fn-primary-soft: rgba(0, 102, 255, 0.1);
+  --fn-primary-soft-hover: rgba(0, 102, 255, 0.2);
+
+  --fn-bg-0: #0c0c0d;
+  --fn-bg-1: #1f2021;
+  --fn-bg-2: #1f2021;
+  --fn-bg-3: #2e2f30;
+  --fn-bg-4: #414245;
+  --fn-window-base: #0c0c0d;
+  --fn-window-surface: #1f2021;
+  --fn-window-sidebar: #2e2f30;
+  --fn-window-titlebar: transparent;
+  --fn-window-titlebar-inactive: transparent;
+  --fn-overlay: rgba(0, 0, 0, 0.7);
+
+  --fn-text-0: #ffffff;
+  --fn-text-1: rgba(242, 243, 244, 0.8);
+  --fn-text-2: rgba(242, 243, 244, 0.6);
+  --fn-text-3: rgba(242, 243, 244, 0.35);
+  --fn-text-4: rgba(242, 243, 244, 0.25);
+  --fn-text-anti: #0c0c0d;
+
+  --fn-border: rgba(255, 255, 255, 0.16);
+  --fn-card-border: rgba(255, 255, 255, 0.08);
+  --fn-border-strong: rgba(255, 255, 255, 0.24);
+  --fn-divider: rgba(255, 255, 255, 0.08);
+
+  --fn-success-soft: #10301f;
+  --fn-warning-soft: #35240f;
+  --fn-danger-soft: #351713;
+  --fn-row-hover: #2e2f30;
+  --fn-card-hover: #262728;
+
+  --fn-shadow-window: 0 14px 36px rgba(0, 0, 0, 0.5);
+  --fn-shadow-window-inactive: 0 8px 20px rgba(0, 0, 0, 0.4);
+  --fn-shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  /* 飞牛原语别名（深色） */
+  --fn-window-base: #0c0c0d;
+  --fn-pane-bg: #1f2021;
+  --fn-nav-bg: #2e2f30;
+  --fn-menu-bg: #2e2f30;
+  --fn-rail-bg: rgba(12, 13, 13, 0.6);
+  --fn-primary-tint-12: rgba(0, 102, 255, 0.1);
+  --fn-primary-tint-20: rgba(0, 102, 255, 0.2);
+  --fn-fill-0: rgba(255, 255, 255, 0.04);
+  --fn-fill-1: rgba(255, 255, 255, 0.06);
+  --fn-fill-2: rgba(255, 255, 255, 0.12);
+  --fn-border-modal: rgba(255, 255, 255, 0.12);
+  --fn-divider-1: rgba(255, 255, 255, 0.1);
+  --fn-divider-2: rgba(255, 255, 255, 0.08);
+  --fn-disabled-text: rgba(242, 243, 244, 0.35);
+  --fn-scrollbar: rgba(255, 255, 255, 0.16);
+  --fn-scrollbar-hover: rgba(255, 255, 255, 0.32);
+}
+
+@media (prefers-color-scheme: dark) {
+  /*
+   * fnOS 桌面在浅色资源下保持中性浅色，不跟随系统深色；深色只由显式
+   * [data-theme="dark"] 开启（见上方规则）。这里不再自动切换，避免同一台机器上
+   * 因系统外观不同而出现“外壳浅色、窗口深色”的混搭。
+   */
+}
+
+/* 全应用统一字体族（fnOS 中文优先 PingFang SC） */
+:root {
+  font-family: var(--fn-font-family);
+}

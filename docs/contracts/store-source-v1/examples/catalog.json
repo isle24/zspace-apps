@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "store.catalog.v1",
+  "sourceId": "contract-example",
+  "sequence": 1,
+  "publishedAt": "2026-10-12T00:00:00Z",
+  "apps": [
+    {
+      "appId": "datatotal",
+      "latestReleaseId": "2026.10.07-13-r1",
+      "releases": [
+        {
+          "releaseId": "2026.10.07-13-r1",
+          "releaseNumber": 1,
+          "manifest": {
+            "path": "examples/datatotal.json",
+            "sha256": "910a8f1d412639ca0657d9930b519e420621c268fff2804b574fb1aeacf11d19",
+            "sizeBytes": 3914
+          }
+        }
+      ]
+    },
+    {
+      "appId": "nasreader",
+      "latestReleaseId": "0.1.0-licensed-20261010",
+      "releases": [
+        {
+          "releaseId": "0.1.0-licensed-20261010",
+          "releaseNumber": 1,
+          "manifest": {
+            "path": "examples/nasreader.json",
+            "sha256": "3f3c477f7601ed0604602d39799dd033a80de91fb962394581741336cf58e4c9",
+            "sizeBytes": 3916
+          }
+        }
+      ]
+    }
+  ],
+  "withdrawn": []
+}

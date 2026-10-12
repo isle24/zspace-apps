@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+ <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#1e6980"/><stop offset="1" stop-color="#183f65"/></linearGradient><linearGradient id="s" x2="0" y2="1"><stop stop-color="#f1f6f6"/><stop offset="1" stop-color="#adbec9"/></linearGradient><filter id="sh"><feDropShadow dx="0" dy="25" stdDeviation="22" flood-color="#062539" flood-opacity=".3"/></filter></defs>
+ <rect x="74" y="74" width="876" height="876" rx="210" fill="url(#b)"/>
+ <g filter="url(#sh)"><rect x="234" y="235" width="556" height="548" rx="95" fill="url(#s)"/><rect x="273" y="296" width="478" height="362" rx="57" fill="#142c44"/><rect x="309" y="325" width="113" height="304" rx="27" fill="#8ba6b6"/><rect x="455" y="325" width="113" height="304" rx="27" fill="#8ba6b6"/><rect x="600" y="325" width="113" height="304" rx="27" fill="#8ba6b6"/><path d="M335 352h59m87 0h59m88 0h59" stroke="#d4e3e5" stroke-width="8" stroke-linecap="round"/><circle cx="697" cy="717" r="13" fill="#40a18b"/><path d="M300 717h115" stroke="#6e8699" stroke-width="13" stroke-linecap="round"/></g>
+</svg>

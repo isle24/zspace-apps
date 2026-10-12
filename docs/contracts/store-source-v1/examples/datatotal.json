@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "store.app.v1",
+  "minStoreProtocol": 1,
+  "requiredCapabilities": [
+    "image.registry",
+    "ports.tcp",
+    "profile.host-monitor-v1",
+    "parameters.secret",
+    "probe.http-json"
+  ],
+  "appId": "datatotal",
+  "releaseId": "2026.10.07-13-r1",
+  "releaseNumber": 1,
+  "metadata": {
+    "name": "NAS Traffic Lens",
+    "version": "2026.10.07-13",
+    "description": "NAS 流量与宿主状态监控；本地契约样例，未发布或安装。",
+    "category": "monitoring",
+    "author": "isle24",
+    "sourceUrl": "https://github.com/isle24/datatotal",
+    "license": "未声明",
+    "icon": {
+      "kind": "monogram",
+      "text": "DT",
+      "background": "#0B7B77"
+    }
+  },
+  "runtime": {
+    "platforms": [
+      "linux/amd64"
+    ],
+    "permissionProfile": "host-monitor-v1",
+    "minimumMemoryBytes": 268435456,
+    "services": [
+      {
+        "id": "app",
+        "image": {
+          "type": "registry",
+          "repository": "docker.io/isle204/nas-traffic-lens",
+          "tag": "2026.10.07-13",
+          "manifestDigest": "sha256:9bbd2a86f20e51806812f2f8ca692ea1d6d30e47be93a0cc1411f86aad2ac298",
+          "configId": "sha256:88d0c6a3bc964722a9e646aa8d0a7fc08ba0b65846125f45e8f29e20e1ab9f31",
+          "platform": "linux/amd64"
+        },
+        "userMode": "image-default",
+        "environment": {
+          "APP_PORT": {
+            "portRef": "web"
+          },
+          "GO_COLLECTOR_PORT": {
+            "portRef": "collector"
+          },
+          "DASHBOARD_PASSWORD": {
+            "secretRef": "dashboard-password"
+          }
+        },
+        "ports": [
+          {
+            "id": "web",
+            "mode": "host",
+            "protocol": "tcp",
+            "publish": true,
+            "defaultHostPort": 28088,
+            "bind": "lan"
+          },
+          {
+            "id": "collector",
+            "mode": "host",
+            "protocol": "tcp",
+            "publish": true,
+            "defaultHostPort": 28089,
+            "bind": "loopback"
+          }
+        ],
+        "mounts": [
+          {
+            "volumeId": "data",
+            "target": "/data",
+            "readOnly": false
+          },
+          {
+            "volumeId": "logs",
+            "target": "/logs",
+            "readOnly": false
+          },
+          {
+            "volumeId": "socket",
+            "target": "/var/run/docker.sock",
+            "readOnly": false
+          }
+        ],
+        "dependsOn": [],
+        "health": {
+          "type": "http",
+          "portId": "web",
+          "path": "/api/auth/status",
+          "expectedStatuses": [
+            200
+          ],
+          "intervalSeconds": 30,
+          "timeoutSeconds": 10,
+          "retries": 5,
+          "startPeriodSeconds": 30
+        },
+        "stopTimeoutSeconds": 90
+      }
+    ],
+    "volumes": [
+      {
+        "id": "data",
+        "kind": "managed",
+        "role": "data"
+      },
+      {
+        "id": "logs",
+        "kind": "managed",
+        "role": "data"
+      },
+      {
+        "id": "socket",
+        "kind": "docker-socket"
+      }
+    ],
+    "entry": {
+      "serviceId": "app",
+      "portId": "web",
+      "path": "/"
+    }
+  },
+  "parameters": {
+    "dashboard-password": {
+      "type": "secret",
+      "label": "独立应用管理员口令",
+      "required": true,
+      "minLength": 12,
+      "maxLength": 256
+    }
+  },
+  "upgrade": {
+    "strategy": "copy-switch",
+    "fromReleaseIds": []
+  },
+  "backup": {
+    "strategy": "cold-copy",
+    "volumes": [
+      "data",
+      "logs"
+    ]
+  },
+  "initialization": {
+    "mode": "http-json",
+    "serviceId": "app",
+    "portId": "web",
+    "path": "/api/auth/status",
+    "pointer": "/enabled",
+    "requiredValue": false
+  },
+  "nativeLicense": {
+    "requirement": "none",
+    "message": "原生环境口令的 daemon 持久化边界仍待批准；此样例不构成部署授权。"
+  }
+}

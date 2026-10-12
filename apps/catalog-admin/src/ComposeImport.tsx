@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {adminApi,type CloudApp} from './api';
+
+export type ComposeImportProps={onImport:(app:CloudApp,warnings:string[])=>void;onCancel?:()=>void};
+export function ComposeImport({onImport,onCancel}:ComposeImportProps){
+ const [compose,setCompose]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[warnings,setWarnings]=useState<string[]>([]);
+ async function importDraft(){if(!compose.trim()||busy)return;setBusy(true);setError('');setWarnings([]);try{const result=await adminApi.request<{app:CloudApp;warnings:string[]}>('store/admin/import-compose',{compose});setWarnings(result.warnings??[]);onImport(result.app,result.warnings??[])}catch(e){setError(e instanceof Error?e.message:'Compose 导入失败')}finally{setBusy(false)}}
+ return <section className="compose-import" aria-label="Compose 导入"><h2>从 Docker Compose 添加</h2><p>粘贴单服务 Compose，生成可继续编辑的应用草稿。多服务及无法保留的权限、命令或网络配置会显示具体错误。</p><label>Compose 内容<textarea aria-label="Docker Compose 内容" rows={14} maxLength={128*1024} spellCheck={false} placeholder={'services:\n  reader:\n    image: ghcr.io/作者/应用:版本\n    ports:\n      - "8080:8080"\n    volumes:\n      - data:/data\nvolumes:\n  data: {}'} disabled={busy} value={compose} onChange={e=>setCompose(e.target.value)}/></label><p className="hint">主机路径由 NAS 的数据目录代替，密码与令牌改为安装时填写。导入后不会自动发布。</p>{error&&<p className="error" role="alert">{error}</p>}{warnings.length>0&&<div role="status"><ul>{warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul></div>}<div className="compose-actions">{onCancel&&<button className="secondary" type="button" disabled={busy} onClick={onCancel}>取消导入</button>}<button className="primary" type="button" disabled={busy||!compose.trim()} onClick={()=>void importDraft()}>{busy?'正在导入…':'导入为应用草稿'}</button></div></section>
+}

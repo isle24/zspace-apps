@@ -1,0 +1,29 @@
+name: space-ui
+services:
+  ui:
+    image: ${UI_IMAGE:-space-ui:local}
+    build:
+      context: ../../..
+      dockerfile: docker/ui/Dockerfile
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "${UI_BIND_IP:-127.0.0.1}:${UI_PORT:-18436}:18436"
+    environment:
+      NAS_ORIGIN: ${NAS_ORIGIN:?Set the fixed canonical NAS_ORIGIN}
+      SPACE_STORE_ENDPOINT: ${SPACE_STORE_ENDPOINT:-}
+    volumes:
+      - ui-data:/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://127.0.0.1:18436/healthz >/dev/null"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+volumes:
+  ui-data:

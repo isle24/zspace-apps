@@ -1,0 +1,11 @@
+{
+  "name": "space-desktop-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "pnpm --filter @space/client dev",
+    "build": "pnpm --filter @space/client build",
+    "test": "pnpm --filter @space/client test",
+    "typecheck": "pnpm --filter @space/client typecheck"
+  }
+}

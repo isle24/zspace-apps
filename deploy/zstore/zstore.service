@@ -1,0 +1,21 @@
+[Unit]
+Description=Space Store catalog and administration
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=zstore
+Group=zstore
+WorkingDirectory=/opt/zspace-store
+Environment="SPACE_CLOUD_DATABASE_URL=host=/run/zstore-postgresql user=zstore dbname=zstore sslmode=disable"
+ExecStart=/opt/zspace-store/space-gateway --listen=127.0.0.1:18442 --data-dir=/var/lib/zspace-store --web-root=/opt/zspace-store/web --engine=disabled --catalog-only --api-only --public-origin=https://zstore.2iwm.com
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWriteDirectories=/var/lib/zspace-store
+[Install]
+WantedBy=multi-user.target

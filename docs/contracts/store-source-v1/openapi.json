@@ -1,0 +1,3816 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Space Store generic Docker catalogue and runtime API",
+    "version": "1.0.0-design",
+    "description": "DESIGN ONLY: v3 contract, not implemented or deployed. Existing v2 endpoints remain unchanged. Published app files are verified data, never client-provided Docker arguments."
+  },
+  "servers": [
+    {
+      "url": "/api/store/v3",
+      "description": "Same-origin NAS store backend"
+    }
+  ],
+  "security": [
+    {
+      "storeAdmin": []
+    }
+  ],
+  "paths": {
+    "/capabilities": {
+      "get": {
+        "operationId": "getCapabilities",
+        "summary": "Read fixed engine capabilities, profiles and grants",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Capabilities"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/sources": {
+      "get": {
+        "operationId": "listSources",
+        "summary": "Read registered application sources",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SourceList"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "registerSource",
+        "summary": "Register an HTTPS source and pinned public key without granting container privileges",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/{sourceId}/refresh": {
+      "post": {
+        "operationId": "refreshSource",
+        "summary": "Queue verified source refresh",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobAccepted"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/catalog/refresh": {
+      "post": {
+        "operationId": "refreshCatalog",
+        "summary": "Queue refresh of all enabled sources",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobAccepted"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "operationId": "getCatalog",
+        "summary": "Read verified applications with explicit blockers",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CatalogPage"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "linux/amd64"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/apps/{appId}": {
+      "get": {
+        "operationId": "getApp",
+        "summary": "Read application details; sourceId required when ambiguous",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AppDetail"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          }
+        ]
+      }
+    },
+    "/apps/{appId}/releases": {
+      "get": {
+        "operationId": "listReleases",
+        "summary": "Read immutable releases ordered by releaseNumber",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReleaseList"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          }
+        ]
+      }
+    },
+    "/apps/{appId}/releases/{releaseId}": {
+      "get": {
+        "operationId": "getRelease",
+        "summary": "Read exact verified manifest and current policy result",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Release"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "releaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          }
+        ]
+      }
+    },
+    "/publication/validate": {
+      "post": {
+        "operationId": "validateManifest",
+        "summary": "Validate a manifest without Docker execution, signing or publication",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ValidateResult"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateInput"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          }
+        ],
+        "description": "Hash the original request-body bytes. Return normalizedManifest separately; never describe a reserialized body hash as the original manifest hash. Body limit 1 MiB."
+      }
+    },
+    "/publication/resolve-images": {
+      "post": {
+        "operationId": "resolveImages",
+        "summary": "Resolve immutable images read-only using allowed registries",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ResolvedImages"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveImagesInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/secret-sets": {
+      "post": {
+        "operationId": "createSecretSet",
+        "summary": "Create a RAM-only secret set bound to user and immutable release",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SecretSet"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretSetInput"
+              }
+            }
+          }
+        },
+        "description": "Maximum body 16 KiB, TTL 900 seconds, user/session/release binding. RAM only; logout/restart/expiry invalidate the handle. No secret readback or request logging."
+      }
+    },
+    "/plans": {
+      "post": {
+        "operationId": "createPlan",
+        "summary": "Create an immutable generic application operation plan",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanInput"
+              }
+            }
+          }
+        },
+        "description": "Only declared non-secret parameter values are accepted. Bind source/app/release and original manifest hash; private secrets are supplied during execution by a RAM-only handle. Foreign or undeclared volumes/ports/permissions are rejected."
+      }
+    },
+    "/plans/{planId}": {
+      "get": {
+        "operationId": "getPlan",
+        "summary": "Read an existing plan without secret values",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/execute": {
+      "post": {
+        "operationId": "executePlan",
+        "summary": "Idempotently enqueue a reviewed immutable plan",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobAccepted"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batches": {
+      "post": {
+        "operationId": "executeBatch",
+        "summary": "Idempotently enqueue all ordered plans or reject the entire batch",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BatchAccepted"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "summary": "Read persistent job state and actual stage",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JobList"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/jobs/{jobId}": {
+      "get": {
+        "operationId": "getJob",
+        "summary": "Read persistent state for one job",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/jobs/{jobId}/retry-plan": {
+      "post": {
+        "operationId": "createRetryPlan",
+        "summary": "Recheck retained resources and create a new plan",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/instances": {
+      "get": {
+        "operationId": "listInstances",
+        "summary": "Read owned instances and exact release identities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InstanceList"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/instances/{instanceId}": {
+      "get": {
+        "operationId": "getInstance",
+        "summary": "Read an owned instance without native credentials",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Instance"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/instances/reconcile": {
+      "post": {
+        "operationId": "reconcileInstances",
+        "summary": "Recheck owned identities without adopting foreign resources",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReconcileResult"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instances/{instanceId}/logs": {
+      "get": {
+        "operationId": "getInstanceLogs",
+        "summary": "Read bounded redacted logs of a verified owned service",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Logs"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ]
+      }
+    },
+    "/snapshots": {
+      "get": {
+        "operationId": "listSnapshots",
+        "summary": "Read private cold-copy snapshot metadata",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SnapshotList"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/snapshots/{snapshotId}": {
+      "get": {
+        "operationId": "getSnapshot",
+        "summary": "Read snapshot integrity and software binding",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Snapshot"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidManifest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "snapshotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/jobs/events": {
+      "get": {
+        "operationId": "jobEvents",
+        "summary": "Authenticated SSE using Authorization header; no credentials in URL",
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persistent job updates; event id supports readback. No fabricated percentage.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/snapshots/{snapshotId}/download": {
+      "get": {
+        "operationId": "downloadSnapshot",
+        "summary": "Download a verified private snapshot with normal administrator authorization",
+        "parameters": [
+          {
+            "name": "snapshotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private verified archive bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "storeAdmin": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Existing normal store administrator session; no SSH identity substitution."
+      }
+    },
+    "schemas": {
+      "AppManifest": {
+        "$ref": "./app-manifest.schema.json"
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Issue"
+                },
+                "maxItems": 128
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Binding": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "releaseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "releaseNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "manifestSha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "sourceId",
+          "appId",
+          "releaseId",
+          "releaseNumber",
+          "manifestSha256"
+        ],
+        "additionalProperties": false
+      },
+      "PermissionProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "standard-v1",
+              "restricted-v1",
+              "host-monitor-v1"
+            ]
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "managed-bridge",
+              "host"
+            ]
+          },
+          "pid": {
+            "type": "string",
+            "enum": [
+              "private",
+              "host"
+            ]
+          },
+          "privileged": {
+            "type": "boolean"
+          },
+          "dockerSocket": {
+            "type": "boolean"
+          },
+          "capDrop": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 64
+          },
+          "noNewPrivileges": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "network",
+          "pid",
+          "privileged",
+          "dockerSocket",
+          "capDrop",
+          "noNewPrivileges"
+        ],
+        "additionalProperties": false
+      },
+      "Grant": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "sourceId",
+          "appId",
+          "profile"
+        ],
+        "additionalProperties": false
+      },
+      "Capabilities": {
+        "type": "object",
+        "properties": {
+          "protocol": {
+            "const": 1
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "linux/amd64"
+              ]
+            },
+            "maxItems": 1
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 64
+          },
+          "permissionProfiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionProfile"
+            },
+            "maxItems": 3
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grant"
+            },
+            "maxItems": 1000
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "envelopeBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65536
+              },
+              "catalogBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2097152
+              },
+              "manifestBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1048576
+              },
+              "iconBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 524288
+              },
+              "authorArchiveBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 536870912
+              },
+              "servicesPerApp": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16
+              },
+              "portsPerApp": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "volumesPerApp": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32
+              },
+              "parametersPerApp": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              }
+            },
+            "required": [
+              "envelopeBytes",
+              "catalogBytes",
+              "manifestBytes",
+              "iconBytes",
+              "authorArchiveBytes",
+              "servicesPerApp",
+              "portsPerApp",
+              "volumesPerApp",
+              "parametersPerApp"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "protocol",
+          "platforms",
+          "features",
+          "permissionProfiles",
+          "grants",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "SourceInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "keyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "publicKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 44,
+            "pattern": "^[A-Za-z0-9+/]{43}=$"
+          },
+          "registries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 32
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "keyId",
+          "publicKey",
+          "registries",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "Source": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "keyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "catalogSha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "lastAcceptedAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable",
+              "invalid",
+              "empty",
+              "disabled"
+            ]
+          },
+          "error": {
+            "$ref": "#/components/schemas/Issue"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "enabled",
+          "keyId",
+          "sequence",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "SourceList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogItem": {
+        "type": "object",
+        "properties": {
+          "binding": {
+            "$ref": "#/components/schemas/Binding"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "icon": {
+            "$ref": "./app-manifest.schema.json#/$defs/icon"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "sourceUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "permissionProfile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "installable": {
+            "type": "boolean"
+          },
+          "blockingReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "binding",
+          "name",
+          "version",
+          "description",
+          "category",
+          "icon",
+          "license",
+          "sourceUrl",
+          "permissionProfile",
+          "installable",
+          "blockingReasons"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogItem"
+            },
+            "maxItems": 200
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "categories"
+        ],
+        "additionalProperties": false
+      },
+      "Release": {
+        "type": "object",
+        "properties": {
+          "binding": {
+            "$ref": "#/components/schemas/Binding"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AppManifest"
+          },
+          "installable": {
+            "type": "boolean"
+          },
+          "blockingReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "binding",
+          "manifest",
+          "installable",
+          "blockingReasons"
+        ],
+        "additionalProperties": false
+      },
+      "ReleaseList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Release"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "AppDetail": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "latestRelease": {
+            "$ref": "#/components/schemas/Release"
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Binding"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "sourceId",
+          "appId",
+          "latestRelease",
+          "releases"
+        ],
+        "additionalProperties": false
+      },
+      "ValidateInput": {
+        "type": "object",
+        "description": "The request body is the exact raw UTF-8 application manifest, not a JSON wrapper. Duplicate and invalid fields are reported as validation errors."
+      },
+      "ValidateResult": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "manifestSha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "normalizedManifest": {
+            "$ref": "#/components/schemas/AppManifest"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 128
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 128
+          }
+        },
+        "required": [
+          "valid",
+          "errors",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "ResolveImageInput": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "repository": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "linux/amd64"
+            ]
+          }
+        },
+        "required": [
+          "serviceId",
+          "repository",
+          "tag",
+          "platform"
+        ],
+        "additionalProperties": false
+      },
+      "ResolveImagesInput": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolveImageInput"
+            },
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "sourceId",
+          "images"
+        ],
+        "additionalProperties": false
+      },
+      "ResolvedImage": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "repository": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "linux/amd64"
+            ]
+          },
+          "manifestDigest": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 71,
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "configId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 71,
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "serviceId",
+          "repository",
+          "tag",
+          "platform",
+          "manifestDigest",
+          "configId"
+        ],
+        "additionalProperties": false
+      },
+      "ResolvedImages": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedImage"
+            },
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "SecretSetInput": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "releaseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "manifestSha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "values": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 64,
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "writeOnly": true
+            }
+          }
+        },
+        "required": [
+          "sourceId",
+          "appId",
+          "releaseId",
+          "manifestSha256",
+          "values"
+        ],
+        "additionalProperties": false
+      },
+      "SecretSet": {
+        "type": "object",
+        "properties": {
+          "secretSetId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expiresAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "secretSetId",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "PlanInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "install",
+              "start",
+              "stop",
+              "restart",
+              "update",
+              "backup",
+              "restore",
+              "archive",
+              "reactivate"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "releaseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "manifestSha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "snapshotId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "rootId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "directory": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+          },
+          "ports": {
+            "type": "object",
+            "maxProperties": 64,
+            "propertyNames": {
+              "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
+          },
+          "media": {
+            "type": "object",
+            "maxProperties": 32,
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "rootId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "relativePath": {
+                  "type": "string",
+                  "maxLength": 512,
+                  "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\?#%])[A-Za-z0-9._/-]*$"
+                }
+              },
+              "required": [
+                "rootId",
+                "relativePath"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "parameters": {
+            "type": "object",
+            "maxProperties": 64,
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "integer",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "install"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sourceId",
+                "appId",
+                "releaseId",
+                "manifestSha256",
+                "rootId",
+                "directory"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "update"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "instanceId",
+                "sourceId",
+                "appId",
+                "releaseId",
+                "manifestSha256"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "start",
+                    "stop",
+                    "restart",
+                    "backup",
+                    "restore",
+                    "archive",
+                    "reactivate"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "instanceId"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "restore"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "snapshotId"
+              ]
+            }
+          }
+        ]
+      },
+      "PlannedPort": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "portId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "container",
+              "host"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ]
+          },
+          "hostPort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "containerPort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "bind": {
+            "type": "string",
+            "enum": [
+              "lan",
+              "loopback"
+            ]
+          }
+        },
+        "required": [
+          "serviceId",
+          "portId",
+          "mode",
+          "protocol",
+          "hostPort",
+          "bind"
+        ],
+        "additionalProperties": false
+      },
+      "PlannedVolume": {
+        "type": "object",
+        "properties": {
+          "volumeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "managed",
+              "media-readonly",
+              "docker-socket"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "readOnly": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "volumeId",
+          "kind",
+          "path",
+          "readOnly"
+        ],
+        "additionalProperties": false
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "protocol": {
+            "const": "store.plan.v1"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "install",
+              "start",
+              "stop",
+              "restart",
+              "update",
+              "backup",
+              "restore",
+              "archive",
+              "reactivate"
+            ]
+          },
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "binding": {
+            "$ref": "#/components/schemas/Binding"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AppManifest"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PermissionProfile"
+          },
+          "policySha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "storageIdentity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "dockerStorageIdentity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "expiresAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "ports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedPort"
+            },
+            "maxItems": 64
+          },
+          "volumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedVolume"
+            },
+            "maxItems": 32
+          },
+          "parameters": {
+            "type": "object",
+            "maxProperties": 64,
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "integer",
+                "boolean"
+              ]
+            }
+          },
+          "requiredSecrets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "maxItems": 64
+          },
+          "preservesOriginalData": {
+            "const": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 64
+          },
+          "generationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "serviceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "identity": {
+                  "$ref": "./app-manifest.schema.json#/$defs/image"
+                }
+              },
+              "required": [
+                "serviceId",
+                "identity"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "protocol",
+          "kind",
+          "instanceId",
+          "binding",
+          "manifest",
+          "profile",
+          "policySha256",
+          "storageIdentity",
+          "dockerStorageIdentity",
+          "expiresAt",
+          "ports",
+          "volumes",
+          "parameters",
+          "requiredSecrets",
+          "preservesOriginalData",
+          "warnings",
+          "generationId",
+          "images"
+        ],
+        "additionalProperties": false
+      },
+      "ExecuteInput": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "secretSetId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "planId",
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "BatchInput": {
+        "type": "object",
+        "properties": {
+          "planIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": true
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "secretSets": {
+            "type": "object",
+            "maxProperties": 64,
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        "required": [
+          "planIds",
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "JobAccepted": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "const": "queued"
+          },
+          "jobId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "status",
+          "jobId"
+        ],
+        "additionalProperties": false
+      },
+      "BatchAccepted": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobAccepted"
+            },
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "install",
+              "start",
+              "stop",
+              "restart",
+              "update",
+              "backup",
+              "restore",
+              "archive",
+              "reactivate",
+              "source-refresh",
+              "catalog-refresh"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "needs_attention",
+              "completed",
+              "failed"
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "createdAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "planId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Issue"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "stage",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "JobList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            },
+            "maxItems": 200
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "Instance": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "binding": {
+            "$ref": "#/components/schemas/Binding"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "activeGenerationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "prepared",
+              "running",
+              "stopped",
+              "failed",
+              "unknown",
+              "archived"
+            ]
+          },
+          "health": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "unhealthy",
+              "starting",
+              "unverified",
+              "unknown"
+            ]
+          },
+          "initialization": {
+            "type": "string",
+            "enum": [
+              "required",
+              "completed",
+              "not_required",
+              "unknown"
+            ]
+          },
+          "nativeLicense": {
+            "type": "string",
+            "enum": [
+              "none",
+              "application-managed"
+            ]
+          },
+          "accessUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "binding",
+          "name",
+          "activeGenerationId",
+          "state",
+          "health",
+          "initialization",
+          "nativeLicense",
+          "accessUrl",
+          "archived"
+        ],
+        "additionalProperties": false
+      },
+      "InstanceList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Instance"
+            },
+            "maxItems": 200
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "Logs": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            },
+            "maxItems": 500
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "instanceId",
+          "serviceId",
+          "lines",
+          "truncated"
+        ],
+        "additionalProperties": false
+      },
+      "Snapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "generationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "binding": {
+            "$ref": "#/components/schemas/Binding"
+          },
+          "sha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1099511627776
+          },
+          "createdAt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "format": "date-time"
+          },
+          "integrity": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "unverified",
+              "failed"
+            ]
+          },
+          "volumes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "id",
+          "instanceId",
+          "generationId",
+          "binding",
+          "sha256",
+          "sizeBytes",
+          "createdAt",
+          "integrity",
+          "volumes"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            },
+            "maxItems": 200
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "ReconcileResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Instance"
+            },
+            "maxItems": 200
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "items",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "Empty": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed or duplicate-key JSON / unknown request field",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Normal store administrator session required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Administrator rights or fixed profile grant missing",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested immutable resource does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Stale plan, identity/port/storage change, ambiguous source or idempotency conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "TooLarge": {
+        "description": "Body, artifact or configured limit exceeded",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InvalidManifest": {
+        "description": "Unsupported capability or invalid semantic reference",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Source, daemon or dependency unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

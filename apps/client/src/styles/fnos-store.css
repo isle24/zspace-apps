@@ -1,0 +1,1325 @@
+/*
+ * 飞牛 fnOS 皮肤：应用商店（应用中心）窗口 + 独立商店页（store.html）。
+ *
+ * 规则来源：docs/superpowers/plans/2026-10-11-fnos-full-ui.md 的视觉契约，
+ * 以及真实 fnOS「应用中心」参照（见 docs/design-assets/ 与 output/verification/
+ * 20261011-fnos-files-reference.png）：左侧浅灰分类栏 + 右侧白色内容面 + 卡片网格。
+ *
+ * 约定：
+ * - 颜色/圆角/阴影/字号只用 styles/fnos-theme.css 的 --fn-* 令牌，不硬编码颜色。
+ * - 通用控件（.primary/.secondary/.tabs/.toolbar/.search/.field/.state-panel/
+ *   .pagination/.icon-button 等）已在 styles/fnos-controls.css 定义，本文件只写
+ *   商店专属结构，并在 .store-module / .standalone-store 作用域内做必要覆盖。
+ * - 浅色为默认；不使用 @media (prefers-color-scheme: dark)。
+ */
+
+/* ==================== 1. 模块骨架 ==================== */
+.store-module {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--fn-window-surface);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+  line-height: var(--fn-line-height);
+}
+
+/* 顶部应用栏：应用图标 + 名称/副标题 + 右上角操作 */
+.store-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 16px;
+  background: var(--fn-window-surface);
+  border-bottom: 1px solid var(--fn-divider);
+}
+.store-header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.store-header > div > svg {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+}
+.store-header strong {
+  display: block;
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+  line-height: 1.35;
+}
+.store-header small {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+  line-height: 1.35;
+}
+.store-header .primary,
+.store-header .secondary {
+  min-height: var(--fn-control-height);
+  padding: 0 16px;
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+}
+.store-header .primary svg,
+.store-header .secondary svg {
+  width: 15px;
+  height: 15px;
+}
+/* 共用控件的 icon-button hover 底色是 --fn-bg-3（浅色下为白），在白色栏上不可见 */
+.store-module .icon-button:hover:not(:disabled) {
+  background: var(--fn-row-hover);
+}
+
+/* 左栏 + 右内容面：两栏各自滚动，顶部应用栏与侧栏底部设置始终可见 */
+.store-layout {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.store-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--fn-window-surface);
+}
+/* 内容面自身滚动：子块不参与压缩，避免横幅/卡片被挤扁 */
+.store-main > * {
+  flex: 0 0 auto;
+}
+
+/* ==================== 2. 左侧分类栏 ==================== */
+.store-sidebar {
+  flex: 0 0 var(--fn-window-sidebar-width);
+  width: var(--fn-window-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 8px 14px;
+  background: var(--fn-window-sidebar);
+  border-right: 1px solid var(--fn-border);
+}
+.store-sidebar-search {
+  padding: 0 2px 8px;
+}
+.store-sidebar .search {
+  width: 100%;
+  background: var(--fn-bg-1);
+}
+.store-sidebar .search input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 视图分组（发现 / 已安装 / 安装任务）——原来是横向标签页，这里作为侧栏条目 */
+.store-sidebar .store-navigation {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+.store-sidebar .tabs {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.store-sidebar .tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: var(--fn-row-height);
+  padding: 0 10px;
+  border-radius: var(--fn-radius-md);
+  font-size: var(--fn-font-size-base);
+  color: var(--fn-text-1);
+  text-align: left;
+}
+.store-sidebar .tabs button svg {
+  width: 17px;
+  height: 17px;
+  color: var(--fn-text-3);
+}
+.store-sidebar .tabs button:hover {
+  background: var(--fn-row-hover);
+  color: var(--fn-text-0);
+}
+.store-sidebar .tabs button:hover svg {
+  color: var(--fn-text-2);
+}
+.store-sidebar .tabs button.active {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  font-weight: 500;
+}
+.store-sidebar .tabs button.active svg {
+  color: var(--fn-primary);
+}
+
+/* 分组标题（分类） */
+.store-sidebar-heading {
+  padding: 12px 10px 4px;
+  font-size: var(--fn-font-size-xs);
+  font-weight: 400;
+  color: var(--fn-text-3);
+  letter-spacing: 0.4px;
+}
+
+/* 分类条目 */
+.store-module .store-filters {
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+.store-module .chips {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
+.store-module .chips button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: var(--fn-row-height);
+  padding: 0 10px;
+  border-radius: var(--fn-radius-md);
+  background: transparent;
+  font-size: var(--fn-font-size-base);
+  color: var(--fn-text-1);
+  text-align: left;
+  transition:
+    background var(--fn-duration-fast) var(--fn-ease),
+    color var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .chips button svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-text-4);
+}
+.store-module .chips button:hover {
+  background: var(--fn-row-hover);
+  color: var(--fn-text-0);
+}
+.store-module .chips button.active {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  font-weight: 500;
+}
+.store-module .chips button.active svg {
+  color: var(--fn-primary);
+}
+.store-module .chips button.active:hover {
+  background: var(--fn-primary-soft-hover);
+}
+
+/* 数量徽标（安装任务） */
+.store-module .count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--fn-radius-pill);
+  background: var(--fn-fill-2);
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-xs);
+  line-height: 16px;
+  text-align: center;
+}
+.store-module .tabs button.active .count {
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+}
+
+/* 侧栏底部：商店服务设置（对应飞牛「设置」入口） */
+.store-sidebar-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--fn-border);
+}
+.store-module .store-service-settings {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+}
+.store-module .store-service-settings summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--fn-row-height);
+  padding: 0 10px;
+  border-radius: var(--fn-radius-md);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+  font-weight: 400;
+  list-style: none;
+  cursor: pointer;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .store-service-settings summary::-webkit-details-marker {
+  display: none;
+}
+.store-module .store-service-settings summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-right: 1.5px solid var(--fn-text-4);
+  border-bottom: 1.5px solid var(--fn-text-4);
+  transform: rotate(45deg);
+  transition: transform var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .store-service-settings[open] summary::after {
+  transform: rotate(-135deg);
+}
+.store-module .store-service-settings summary svg {
+  width: 17px;
+  height: 17px;
+  color: var(--fn-text-3);
+}
+.store-module .store-service-settings summary:hover {
+  background: var(--fn-row-hover);
+}
+.store-module .store-service-settings > p {
+  margin: 6px 0 0;
+  padding: 0 10px;
+  font-size: var(--fn-font-size-xs);
+  line-height: 1.7;
+  color: var(--fn-text-3);
+}
+.store-module .store-service-settings .field {
+  margin: 10px 0;
+  padding: 0 10px;
+  gap: 4px;
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-2);
+}
+.store-module .store-service-settings input {
+  width: 100%;
+  min-height: var(--fn-control-height);
+  padding: 0 10px;
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .store-service-settings small {
+  font-size: var(--fn-font-size-xs);
+  line-height: 1.6;
+  color: var(--fn-text-4);
+}
+.store-module .store-service-settings .secondary {
+  margin: 2px 10px 8px;
+  min-height: var(--fn-control-height);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .store-service-settings .storage-success {
+  margin: 6px 10px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-success-soft);
+  font-size: var(--fn-font-size-xs);
+  line-height: 1.6;
+  color: var(--fn-success);
+}
+.store-module .store-service-settings .inline-error {
+  margin: 8px 10px;
+  font-size: var(--fn-font-size-xs);
+}
+
+/* ==================== 3. 右侧内容面 ==================== */
+/* 引擎/执行模式状态行：保持真实可见，只做轻量信息条 */
+.store-module .store-target {
+  margin: 12px 16px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--fn-divider);
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-fill-0);
+  font-size: var(--fn-font-size-xs);
+  line-height: 1.7;
+  color: var(--fn-text-3);
+}
+
+/* 商店会话 / NAS 授权块 */
+.store-module .auth-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 12px 16px 0;
+  padding: 16px;
+  background: var(--fn-fill-0);
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-lg);
+}
+.store-module .auth-box > div {
+  width: 100%;
+}
+.store-module .auth-box h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .auth-box p {
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.7;
+  color: var(--fn-text-2);
+}
+.store-module .auth-box dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 10px 0;
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .auth-box dt {
+  color: var(--fn-text-3);
+}
+.store-module .auth-box dd {
+  margin: 0;
+  color: var(--fn-text-1);
+  overflow-wrap: anywhere;
+}
+.store-module .auth-box label {
+  flex: 1;
+  min-width: 140px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .auth-box label input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  min-height: var(--fn-control-height-lg);
+  font-size: var(--fn-font-size-base);
+}
+.store-module .auth-box .primary,
+.store-module .auth-box .secondary {
+  min-height: var(--fn-control-height);
+  padding: 0 14px;
+  font-size: var(--fn-font-size-base);
+}
+.store-module .auth-box > p.error-text {
+  width: 100%;
+}
+/* 没有任何待展示内容时不留空面板（NAS 授权按钮与错误提示仍照常渲染） */
+.store-module .auth-box:empty {
+  display: none;
+}
+
+/* 错误 / 提示 / 执行设备说明：浅底 + 令牌色文字，状态不隐藏 */
+.store-module .inline-error {
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--fn-border);
+  border-left: 3px solid var(--fn-danger);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-danger-soft);
+  color: var(--fn-danger);
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.7;
+}
+.store-module .notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--fn-border);
+  border-left: 3px solid var(--fn-warning);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-warning-soft);
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .notice svg {
+  width: 18px;
+  height: 18px;
+  color: var(--fn-warning);
+}
+.store-module .engine-guidance {
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-fill-0);
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .engine-guidance summary {
+  color: var(--fn-primary);
+  font-weight: 500;
+}
+.store-module .engine-guidance p {
+  margin-top: 10px;
+  line-height: 1.8;
+  color: var(--fn-text-2);
+}
+
+/* 主按钮/次按钮在内容面里去掉旧发光阴影，保持 fnOS 扁平语言 */
+.store-module .primary {
+  box-shadow: none;
+}
+
+/* 推荐位横幅：fnOS 浅蓝渐变 + 圆角卡片 */
+.store-module .store-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: auto;
+  margin: 16px 16px 12px;
+  padding: 20px 22px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-lg);
+  background: linear-gradient(120deg, var(--fn-primary-soft), var(--fn-bg-1));
+}
+.store-banner .eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.4px;
+  color: var(--fn-primary);
+}
+.store-module .store-banner h1 {
+  margin: 6px 0;
+  font-size: var(--fn-font-size-title);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--fn-text-0);
+}
+.store-module .store-banner p {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .banner-orbit {
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  transform: rotate(-12deg);
+  opacity: 0.14;
+}
+.store-module .banner-orbit svg {
+  width: 128px;
+  height: 128px;
+  color: var(--fn-primary);
+}
+
+/* 状态页（加载/未登录/错误/空）由 fnos-controls.css 提供，这里只约束间距 */
+.store-module .store-main > .state-panel {
+  padding: 40px 24px;
+}
+
+/* ---------- 应用卡片网格 ---------- */
+.store-module .catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 4px 16px 24px;
+}
+.store-module .catalog-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 132px;
+  padding: 16px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-window-surface);
+  transition:
+    border-color var(--fn-duration-fast) var(--fn-ease),
+    box-shadow var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .catalog-card:hover {
+  border-color: var(--fn-brand-3);
+  background: var(--fn-card-hover);
+  box-shadow: var(--fn-shadow-card);
+}
+.store-module .catalog-card > div {
+  flex: 1;
+  min-width: 0;
+  padding-right: 52px;
+}
+.store-module .catalog-card h3 {
+  margin: 1px 0 4px;
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .catalog-card small {
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+}
+.store-module .catalog-card p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 8px 0 10px;
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.6;
+  color: var(--fn-text-2);
+}
+.store-module .catalog-card > .secondary {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  min-height: var(--fn-control-height-sm);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--fn-radius-pill);
+  background: var(--fn-fill-1);
+  color: var(--fn-text-3);
+  font-size: var(--fn-font-size-xs);
+  line-height: 16px;
+}
+
+/* ---------- 应用图标方块 ---------- */
+.store-module .store-app-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-fill-1);
+  color: var(--fn-primary);
+}
+.store-module .store-app-icon svg {
+  width: 26px;
+  height: 26px;
+}
+.store-module .store-app-icon:has(.application-logo) {
+  background: var(--fn-bg-1);
+}
+.store-module .store-app-icon .application-logo {
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+  border-radius: var(--fn-radius-md);
+}
+/* 旧皮肤的每应用渐变底统一收敛为 fnOS 中性图标底 */
+.store-module .store-app-icon.app-jellyfin,
+.store-module .store-app-icon.app-navidrome,
+.store-module .store-app-icon.app-audiobookshelf,
+.store-module .store-app-icon.app-kavita {
+  background: var(--fn-fill-1);
+  color: var(--fn-primary);
+}
+
+/* ---------- 已安装 / 安装任务 ---------- */
+.store-module .padded-module {
+  padding: 18px 16px 24px;
+}
+.store-module .padded-module > h1 {
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .padded-module > .muted {
+  margin-top: 2px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .instance-list,
+.store-module .job-list {
+  margin-top: 4px;
+}
+.store-module .instance-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-window-surface);
+  transition:
+    border-color var(--fn-duration-fast) var(--fn-ease),
+    box-shadow var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .instance-card:hover {
+  border-color: var(--fn-brand-3);
+  background: var(--fn-card-hover);
+  box-shadow: var(--fn-shadow-card);
+}
+.store-module .instance-info {
+  min-width: 0;
+  flex: 1;
+}
+.store-module .instance-info h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .instance-info p {
+  margin-top: 5px;
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.6;
+  color: var(--fn-text-2);
+}
+.store-module .instance-info small {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fn-font-size-xs);
+  line-height: 1.6;
+  color: var(--fn-text-3);
+}
+.store-module .instance-info .field {
+  margin-top: 12px;
+  gap: 5px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .instance-info .field select {
+  width: 100%;
+  max-width: 320px;
+  min-height: var(--fn-control-height);
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .instance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.store-module .instance-actions .primary,
+.store-module .instance-actions .secondary {
+  min-height: var(--fn-control-height);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-sm);
+  font-weight: 500;
+}
+.store-module .instance-actions svg {
+  width: 15px;
+  height: 15px;
+}
+
+.store-module .job-list article {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-window-surface);
+  font-size: var(--fn-font-size-base);
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.store-module .job-list article:hover {
+  background: var(--fn-row-hover);
+}
+.store-module .job-list article > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--fn-primary);
+}
+.store-module .job-list article > div {
+  flex: 1;
+  min-width: 0;
+}
+.store-module .job-list article strong {
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .job-list article p {
+  margin-top: 4px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .job-list article details {
+  margin-top: 8px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .job-list article summary {
+  cursor: pointer;
+  color: var(--fn-text-3);
+}
+
+/* 详情键值表 */
+.store-module .data-values {
+  margin: 10px 0 0;
+}
+.store-module .data-values > div {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--fn-divider);
+}
+.store-module .data-values dt {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .data-values dd {
+  font-size: var(--fn-font-size-base);
+  color: var(--fn-text-1);
+}
+
+/* ==================== 4. 安装向导与对话框 ==================== */
+/* 窗口内弹层：只压暗商店窗口自身，桌面其余部分保持原样 */
+.store-module > .wizard-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--fn-overlay);
+  backdrop-filter: blur(2px);
+}
+.store-module .install-wizard {
+  display: flex;
+  flex-direction: column;
+  width: 580px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-xl);
+  background: var(--fn-bg-2);
+  box-shadow: var(--fn-shadow-window);
+  color: var(--fn-text-1);
+}
+.store-module .install-wizard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--fn-divider);
+}
+.store-module .install-wizard h2 {
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .install-wizard > header .secondary {
+  min-height: var(--fn-control-height-sm);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-sm);
+}
+.store-module .wizard-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 20px;
+  background: var(--fn-fill-0);
+  border-bottom: 1px solid var(--fn-divider);
+  list-style: none;
+}
+.store-module .wizard-steps li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .wizard-steps li > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--fn-border-strong);
+  border-radius: var(--fn-radius-pill);
+  font-size: var(--fn-font-size-xs);
+}
+.store-module .wizard-steps li svg {
+  width: 12px;
+  height: 12px;
+}
+.store-module .wizard-steps li.active {
+  color: var(--fn-primary);
+  font-weight: 500;
+}
+.store-module .wizard-steps li.active > span {
+  border-color: var(--fn-primary);
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+}
+.store-module .wizard-steps li.done {
+  color: var(--fn-primary-hover);
+}
+.store-module .wizard-steps li.done > span {
+  border-color: var(--fn-primary);
+  color: var(--fn-primary);
+}
+.store-module .wizard-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px;
+}
+.store-module .wizard-body > p {
+  margin: 14px 0;
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.7;
+  color: var(--fn-text-2);
+}
+.store-module .wizard-body > h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .wizard-body .field {
+  margin-top: 16px;
+  gap: 6px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .wizard-body .field input,
+.store-module .wizard-body .field select {
+  width: 100%;
+  min-height: var(--fn-control-height-lg);
+  font-size: var(--fn-font-size-base);
+}
+.store-module .wizard-body .notice {
+  margin: 14px 0;
+}
+.store-module .wizard-body .check-field {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-fill-0);
+}
+.store-module .wizard-body details {
+  margin-top: 16px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.store-module .wizard-body summary {
+  cursor: pointer;
+  color: var(--fn-text-3);
+}
+.store-module .app-detail {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.store-module .app-detail h1 {
+  font-size: var(--fn-font-size-title);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--fn-text-0);
+}
+.store-module .app-detail p {
+  margin-top: 4px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .check-list {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-fill-0);
+}
+.store-module .check-list p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fn-font-size-sm);
+  line-height: 2.4;
+  color: var(--fn-text-2);
+}
+.store-module .check-list svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-primary);
+}
+.store-module .install-wizard > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--fn-divider);
+  background: var(--fn-bg-1);
+}
+.store-module .install-wizard > footer .primary,
+.store-module .install-wizard > footer .secondary {
+  min-height: var(--fn-control-height);
+  padding: 0 16px;
+  font-size: var(--fn-font-size-base);
+}
+.store-module .initialization-dialog {
+  max-width: 560px;
+}
+.store-module .initialization-ready > svg {
+  width: 44px;
+  height: 44px;
+  color: var(--fn-success);
+}
+.store-module .initialization-ready h3 {
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .initialization-ready p {
+  margin-top: 4px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+}
+.store-module .initialization-open {
+  margin-top: 18px;
+}
+.store-module .initialization-handoff {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--fn-divider);
+}
+.store-module .initialization-handoff h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.store-module .initialization-handoff > p {
+  margin: 8px 0;
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.7;
+  color: var(--fn-text-2);
+}
+.store-module .initialization-handoff .secondary {
+  margin-top: 8px;
+  font-size: var(--fn-font-size-sm);
+}
+
+/* ==================== 5. 独立商店页（store.html） ==================== */
+.standalone-store {
+  min-height: 100dvh;
+  padding: 0 24px 24px;
+  background: var(--fn-bg-0);
+  color: var(--fn-text-1);
+  font-family: var(--fn-font-family);
+}
+.standalone-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--fn-border);
+}
+.standalone-brand > svg {
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-1);
+  border: 1px solid var(--fn-border);
+  color: var(--fn-primary);
+}
+.standalone-brand strong {
+  display: block;
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+  color: var(--fn-text-0);
+}
+.standalone-brand p {
+  margin-top: 2px;
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+}
+.standalone-brand > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 5px 12px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-pill);
+  background: var(--fn-bg-1);
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-2);
+}
+.standalone-brand > span svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-primary);
+}
+.standalone-intro {
+  max-width: 1180px;
+  margin: 28px auto 20px;
+}
+.standalone-intro .eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.4px;
+  color: var(--fn-primary);
+}
+.standalone-intro h1 {
+  margin: 10px 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--fn-text-0);
+}
+.standalone-intro p {
+  max-width: 660px;
+  font-size: var(--fn-font-size-base);
+  line-height: 1.8;
+  color: var(--fn-text-2);
+}
+.standalone-content {
+  max-width: 1180px;
+  min-height: 560px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-xl);
+  background: var(--fn-bg-1);
+  box-shadow: var(--fn-shadow-card);
+}
+.standalone-store .store-module .store-header {
+  position: static;
+}
+/* 独立页按文档流滚动：内容面随内容增高，不产生内层滚动条 */
+.standalone-store .store-module {
+  height: auto;
+  min-height: 560px;
+  overflow: visible;
+}
+.standalone-store .store-module .store-main {
+  overflow-y: visible;
+}
+.standalone-store .store-module .catalog-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  padding: 4px 20px 24px;
+}
+.standalone-store .store-module .store-banner {
+  margin: 18px 20px 12px;
+}
+.standalone-store .store-module .store-target,
+.standalone-store .store-module .inline-error,
+.standalone-store .store-module .notice,
+.standalone-store .store-module .engine-guidance,
+.standalone-store .store-module .auth-box {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.standalone-store .store-module .store-main > .state-panel {
+  padding: 56px 24px;
+}
+.standalone-store .store-module > .wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+.standalone-store .store-module .install-wizard {
+  max-height: calc(100dvh - 48px);
+}
+.standalone-footer {
+  max-width: 1180px;
+  margin: 18px auto 0;
+  font-size: var(--fn-font-size-xs);
+  text-align: center;
+  color: var(--fn-text-3);
+}
+
+/* ==================== 6. 窄屏（桌面窄窗口 / 移动端 390×844） ==================== */
+@media (max-width: 700px) {
+  .store-header {
+    padding: 8px 12px;
+    min-height: 52px;
+  }
+  .store-header .primary,
+  .store-header .secondary {
+    padding: 0 10px;
+  }
+  /* 分类栏折到内容上方：搜索 → 视图 → 分类，均可横向滚动 */
+  .store-layout {
+    flex-direction: column;
+  }
+  .store-sidebar {
+    flex: 0 0 auto;
+    width: 100%;
+    gap: 8px;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--fn-border);
+  }
+  .store-sidebar-search {
+    padding: 0;
+  }
+  .store-sidebar .tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+    padding-bottom: 2px;
+  }
+  .store-sidebar .tabs button {
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--fn-control-height);
+    padding: 0 12px;
+    border-radius: var(--fn-radius-pill);
+  }
+  .store-sidebar-heading {
+    padding: 4px 2px 2px;
+  }
+  .store-module .chips {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+  .store-module .chips button {
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--fn-control-height-sm);
+    padding: 0 12px;
+    border-radius: var(--fn-radius-pill);
+    background: var(--fn-bg-1);
+    border: 1px solid var(--fn-border);
+    font-size: var(--fn-font-size-sm);
+  }
+  .store-module .chips button.active {
+    border-color: var(--fn-primary);
+    background: var(--fn-primary-soft);
+  }
+  .store-sidebar-footer {
+    margin-top: 0;
+    padding-top: 4px;
+  }
+  .store-module .store-service-settings summary {
+    min-height: var(--fn-control-height-lg);
+  }
+  .store-module .store-target {
+    margin: 10px 12px 0;
+  }
+  .store-module .inline-error,
+  .store-module .notice,
+  .store-module .engine-guidance,
+  .store-module .auth-box {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .store-module .store-banner {
+    margin: 12px 12px 10px;
+    padding: 16px;
+  }
+  .store-module .banner-orbit {
+    display: none;
+  }
+  .store-module .catalog-grid {
+    grid-template-columns: 1fr;
+    padding: 4px 12px 20px;
+  }
+  .store-module .padded-module {
+    padding: 14px 12px 20px;
+  }
+  .store-module .instance-card,
+  .store-module .job-list article {
+    flex-wrap: wrap;
+  }
+  .store-module .instance-actions .primary,
+  .store-module .instance-actions .secondary {
+    min-height: var(--fn-control-height-lg);
+  }
+  .store-module > .wizard-backdrop {
+    padding: 0;
+  }
+  .store-module .install-wizard {
+    width: 100%;
+    max-height: 100%;
+    border-radius: var(--fn-radius-lg);
+  }
+  .store-module .wizard-steps {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .store-module .install-wizard > footer {
+    flex-direction: column-reverse;
+  }
+  .store-module .install-wizard > footer .primary,
+  .store-module .install-wizard > footer .secondary {
+    width: 100%;
+    min-height: var(--fn-control-height-lg);
+  }
+
+  /* 独立商店页 */
+  .standalone-store {
+    padding: 0 0 20px;
+  }
+  .standalone-brand {
+    padding: 14px 16px;
+  }
+  .standalone-brand strong {
+    font-size: var(--fn-font-size-md);
+  }
+  .standalone-intro {
+    margin: 18px 16px 16px;
+  }
+  .standalone-intro h1 {
+    font-size: 22px;
+  }
+  .standalone-intro p {
+    font-size: var(--fn-font-size-sm);
+  }
+  .standalone-content {
+    min-height: calc(100dvh - 240px);
+    border-left: 0;
+    border-right: 0;
+    border-radius: var(--fn-radius-lg);
+  }
+  .standalone-store .store-module .catalog-grid {
+    padding: 4px 12px 20px;
+  }
+  .standalone-store .store-module .store-target,
+  .standalone-store .store-module .inline-error,
+  .standalone-store .store-module .notice,
+  .standalone-store .store-module .engine-guidance,
+  .standalone-store .store-module .auth-box {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .standalone-store .store-module .store-banner {
+    margin: 12px 12px 10px;
+  }
+  .standalone-footer {
+    padding: 0 16px;
+  }
+}
+
+/* 空间商店按需加载时的占位（模块本身 465 KB，第一次打开会有短暂空档） */
+.store-loading {
+  margin: 0;
+  padding: 28px 20px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-base);
+}

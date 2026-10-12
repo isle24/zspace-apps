@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "store.app.v1",
+  "minStoreProtocol": 1,
+  "requiredCapabilities": [
+    "image.author-archive",
+    "ports.tcp",
+    "profile.restricted-v1",
+    "volumes.media-readonly",
+    "probe.http-json"
+  ],
+  "appId": "nasreader",
+  "releaseId": "0.1.0-licensed-20261010",
+  "releaseNumber": 1,
+  "metadata": {
+    "name": "nasReader",
+    "version": "0.1.0",
+    "description": "图书阅读服务；历史交付 licensed-amd64-20261010，本地契约样例。",
+    "category": "reading",
+    "author": "isle24",
+    "sourceUrl": "https://github.com/isle24/nasreader-client",
+    "license": "AGPL-3.0",
+    "icon": {
+      "kind": "monogram",
+      "text": "NR",
+      "background": "#3558A8"
+    }
+  },
+  "runtime": {
+    "platforms": [
+      "linux/amd64"
+    ],
+    "permissionProfile": "restricted-v1",
+    "minimumMemoryBytes": 268435456,
+    "services": [
+      {
+        "id": "app",
+        "image": {
+          "type": "author-archive",
+          "path": "artifacts/90e7de4c1d97c548a838d086190b80ab52f7feb4be3abef013f3fcf4562fd491.tar",
+          "archiveSha256": "90e7de4c1d97c548a838d086190b80ab52f7feb4be3abef013f3fcf4562fd491",
+          "sizeBytes": 44854784,
+          "configId": "sha256:0f1ea3da17ac3c2a37a7525323dbaeb5ea1c3c0ae7a5508329ca8f6a008f9ccb",
+          "diffIds": [
+            "sha256:e63b02c2b5c761df2cb95e657d744f27d95da4e051235a13c80b88cd68eab188",
+            "sha256:15a1fd6977575dfbd3ce1a551140eeb3210e944b7d50bf69e69f5815b8506c7a",
+            "sha256:f8b32a7528ea40fb89aa834497fa3562c9099801ee2abbdc7e87714f48839408",
+            "sha256:54f59a3b6c5d3204c4d96327b21b1484fcb57919cbe1b72d6aa99adb311592b4",
+            "sha256:e36189ddb1f2188fd22b562f2a5551aec748aade5ba6a1c9204991e3c90ff2a7",
+            "sha256:287a4a9a15206855817ba3624df195400b576c9a78326bc156625555c2cfe25a"
+          ],
+          "platform": "linux/amd64"
+        },
+        "userMode": "host",
+        "environment": {},
+        "ports": [
+          {
+            "id": "web",
+            "mode": "container",
+            "protocol": "tcp",
+            "containerPort": 8080,
+            "publish": true,
+            "defaultHostPort": 28090,
+            "bind": "lan"
+          }
+        ],
+        "mounts": [
+          {
+            "volumeId": "data",
+            "target": "/data",
+            "readOnly": false
+          },
+          {
+            "volumeId": "inbox",
+            "target": "/inbox",
+            "readOnly": false
+          },
+          {
+            "volumeId": "library",
+            "target": "/library",
+            "readOnly": true
+          }
+        ],
+        "dependsOn": [],
+        "health": {
+          "type": "http",
+          "portId": "web",
+          "path": "/health",
+          "expectedStatuses": [
+            200
+          ],
+          "intervalSeconds": 30,
+          "timeoutSeconds": 10,
+          "retries": 5,
+          "startPeriodSeconds": 30
+        },
+        "stopTimeoutSeconds": 90
+      }
+    ],
+    "volumes": [
+      {
+        "id": "data",
+        "kind": "managed",
+        "role": "data"
+      },
+      {
+        "id": "inbox",
+        "kind": "managed",
+        "role": "data"
+      },
+      {
+        "id": "library",
+        "kind": "media-readonly"
+      }
+    ],
+    "entry": {
+      "serviceId": "app",
+      "portId": "web",
+      "path": "/"
+    }
+  },
+  "parameters": {},
+  "upgrade": {
+    "strategy": "copy-switch",
+    "fromReleaseIds": []
+  },
+  "backup": {
+    "strategy": "cold-copy",
+    "volumes": [
+      "data",
+      "inbox"
+    ]
+  },
+  "initialization": {
+    "mode": "http-json",
+    "serviceId": "app",
+    "portId": "web",
+    "path": "/api/v1/setup",
+    "pointer": "/required",
+    "requiredValue": true
+  },
+  "nativeLicense": {
+    "requirement": "application-managed",
+    "message": "授权待应用内核验；不复制旧账户、租约或自动激活。示例归档路径尚未发布。"
+  }
+}

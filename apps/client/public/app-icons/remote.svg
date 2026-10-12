@@ -1,0 +1,25 @@
+<svg width="224" height="224" viewBox="0 0 224 224" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 远程访问：按飞牛 fnOS 应用图标规格绘制（224 画布、28px 圆角、蓝色渐变、白色字形） -->
+  <defs>
+    <linearGradient id="bg" x1="112" y1="0" x2="112" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4673FF"/>
+      <stop offset="0.55" stop-color="#4465FF"/>
+      <stop offset="1" stop-color="#3F62FE"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(70 34) rotate(52) scale(190 150)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="0.62" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="224" height="224" rx="28" fill="url(#bg)"/>
+  <rect width="224" height="224" rx="28" fill="url(#gloss)"/>
+  <!-- 地球：白色描边 + 经纬线 -->
+  <g stroke="#FFFFFF" stroke-width="9" fill="none" stroke-linecap="round">
+    <circle cx="112" cy="112" r="52"/>
+    <ellipse cx="112" cy="112" rx="22" ry="52"/>
+    <path d="M62 96h100"/>
+    <path d="M62 128h100"/>
+  </g>
+</svg>

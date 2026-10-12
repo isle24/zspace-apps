@@ -1,0 +1,23 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,fireEvent,render,screen} from '@testing-library/react';
+import {CloudAccountPanel} from './CloudAccountPanel';
+import {cloud} from '../api/cloud-catalog';
+import {api} from '../api/client';
+vi.mock('./StoragePicker',()=>({allowedStorage:(s:any)=>s?.installAllowed===true&&!s.systemDisk,StoragePicker:({onSelect,onSafety}:any)=><button type="button" onClick={()=>{onSelect('disk');onSafety(true)}}>选择数据盘</button>}));
+afterEach(()=>{cleanup();vi.restoreAllMocks();cloud.clear()});
+it('requires consent and sends application secrets only to the NAS plan endpoint',async()=>{
+ vi.spyOn(cloud,'user','get').mockReturnValue({id:'user',username:'alice',role:'user'});
+ const requests=vi.spyOn(cloud,'request').mockImplementation(async(path)=>({items:path==='catalog'?[{id:'secret-app',icon:'',name:'私密配置应用',description:'安装验证',version:'1',manifestDigest:'a'.repeat(64),environment:[{name:'API_KEY',label:'应用密钥',secret:true}]}]:[]} as never));
+ vi.spyOn(api,'store').mockResolvedValue({items:[{id:'disk',storage:{installAllowed:true,systemDisk:false}}]});
+ const plan=vi.spyOn(cloud,'planForNas').mockResolvedValue({id:'private-plan',kind:'install',appId:'cloud-secret-app',targetVersion:'1',expiresAt:new Date(Date.now()+60000).toISOString(),recipe:{name:'私密配置应用',services:[]},secretParameterNames:['api-key']});
+ render(<CloudAccountPanel/>);fireEvent.click(await screen.findByRole('button',{name:'安装到当前 NAS'}));
+ fireEvent.click(await screen.findByRole('button',{name:'选择数据盘'}));
+ fireEvent.change(screen.getByLabelText('应用访问端口'),{target:{value:'18511'}});
+ fireEvent.change(screen.getByLabelText('应用私密配置 API_KEY'),{target:{value:'synthetic-private-value'}});
+ const submit=screen.getByRole('button',{name:'生成安装计划'});expect(submit).toBeDisabled();
+ fireEvent.click(screen.getByRole('checkbox',{name:'允许将这些私密配置保存到当前 NAS 并用于此应用'}));fireEvent.click(submit);
+ await screen.findByRole('dialog',{name:'确认操作计划'});
+ expect(plan).toHaveBeenCalledWith(api,expect.objectContaining({parameters:{},secretParameters:{'api-key':'synthetic-private-value'},allowSecretEnvironment:true}));
+ expect(requests.mock.calls.some(([,body])=>JSON.stringify(body)?.includes('synthetic-private-value'))).toBe(false);
+ expect(screen.queryByDisplayValue('synthetic-private-value')).not.toBeInTheDocument();
+});

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    为什么必须有这一条：
+    客户端要连局域网里的 NAS（例如 http://192.168.3.56:5055）。macOS 15 起，
+    访问局域网需要用户授权，系统弹窗里显示的就是这段文字；不声明的话，
+    要么看不到明确的授权理由，要么被静默拒绝。
+
+    这不是理论风险：本机打包出来的 Playwright WebKit **正是**因为缺这条权限，
+    访问 192.168.3.56 时报 "The Internet connection appears to be offline"，
+    而同一台机器上 127.0.0.1 与 192.168.3.1 都正常 —— 说明限制确实生效。
+  -->
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>空间桌面需要访问本地网络，才能连接你家 NAS 上的极空间服务（例如 192.168.3.56:5055）。</string>
+</dict>
+</plist>

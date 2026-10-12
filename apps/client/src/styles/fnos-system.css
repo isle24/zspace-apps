@@ -1,0 +1,674 @@
+/*
+ * 控制面板 / 系统概览：卡片 + 进度条，替代之前把官方 JSON 摊平的 key/value 列表。
+ * 取值口径见 modules/SystemOverview.tsx 顶部注释（2026-10-11 实测抓包）。
+ */
+.sys-module {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+.sys-card {
+  border: 1px solid var(--fn-card-border);
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-1);
+  padding: 16px 18px;
+}
+.sys-card h3 {
+  margin: 0 0 12px;
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+}
+.sys-device header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sys-device header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.sys-device header p {
+  margin: 3px 0 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.sys-device header .icon-button {
+  margin-left: auto;
+}
+.sys-device-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.sys-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+.sys-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-bg-0);
+}
+.sys-fact-icon {
+  color: var(--fn-text-2);
+  font-size: 20px;
+  line-height: 1;
+  margin-top: 2px;
+}
+.sys-fact-label {
+  display: block;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.sys-fact strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.sys-fact small {
+  display: block;
+  margin-top: 2px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sys-capacity {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sys-capacity span {
+  display: block;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.sys-capacity strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.sys-meter {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fn-bg-0);
+  overflow: hidden;
+}
+.sys-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--fn-primary);
+}
+.sys-meter.warn > span { background: #ff9500; }
+.sys-meter.danger > span { background: #ff3b30; }
+.sys-disks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sys-disks li {
+  display: grid;
+  grid-template-columns: 90px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--fn-card-border);
+}
+.sys-disks li:first-child { border-top: 0; }
+.sys-disk-name { font-weight: 600; }
+.sys-disk-figure,
+.sys-disk-temp {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sys-disk-temp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 62px;
+  justify-content: flex-end;
+}
+.sys-module .hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+:root[data-theme="dark"] .sys-card { background: var(--fn-window-surface); }
+:root[data-theme="dark"] .sys-fact { background: rgba(255, 255, 255, 0.04); }
+:root[data-theme="dark"] .sys-meter { background: rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] .sys-device-icon { background: rgba(10, 132, 255, 0.18); }
+
+/* ---------- 存储池 ---------- */
+.sys-pool-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sys-pool-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.sys-pool-head p {
+  margin: 3px 0 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.sys-pool-size {
+  margin-left: auto;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sys-card .sys-capacity {
+  margin: 12px 0 0;
+}
+
+/* 网络连接：每张网卡一张卡（状态点 + 名称 + 类型标签 + 明细） */
+.network-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.network-card {
+  border: 1px solid var(--fn-border);
+  border-radius: 14px;
+  padding: 14px 16px 10px;
+  background: var(--fn-fill-0);
+}
+.network-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--fn-border);
+}
+.network-card header strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.network-card header svg {
+  width: 15px;
+  height: 15px;
+}
+.network-card header svg:last-of-type {
+  color: #2e9e5b;
+}
+.network-card .net-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #b6b6bd;
+  flex: none;
+}
+.network-card .net-dot.up {
+  background: #2e9e5b;
+  box-shadow: 0 0 0 3px rgba(46, 158, 91, 0.16);
+}
+.network-card .net-tag {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--fn-fill-0);
+  font-size: 11px;
+  color: var(--fn-text-3);
+}
+.network-card .net-status {
+  font-size: 12px;
+  color: var(--fn-text-3);
+}
+.network-card .spacer {
+  flex: 1;
+}
+.network-card dl {
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.network-card dl > div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+.network-card dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--fn-text-3);
+}
+.network-card dt svg {
+  width: 13px;
+  height: 13px;
+}
+.network-card dd {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+.network-card .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+/* 系统设置：左分组右明细 */
+.settings-split {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.settings-split > nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-split > nav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 13px;
+  text-align: left;
+  transition: background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.settings-split > nav button:hover {
+  background: var(--fn-fill-0);
+}
+.settings-split > nav button.active {
+  background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
+  color: var(--fn-brand-5);
+  font-weight: 600;
+}
+.settings-split > nav small {
+  font-size: 11px;
+  color: var(--fn-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.settings-panel {
+  border: 1px solid var(--fn-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.settings-panel h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-panel dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.settings-panel dl > div {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 10px;
+}
+.settings-panel dt {
+  font-size: 12px;
+  color: var(--fn-text-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-all;
+}
+.settings-panel dd {
+  margin: 0;
+  font-size: 13px;
+}
+.settings-panel pre {
+  margin: 0;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--fn-text-2);
+}
+.settings-empty {
+  color: var(--fn-text-3);
+  font-size: 13px;
+}
+:root[data-theme="dark"] .network-card,
+:root[data-theme="dark"] .settings-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/* ===== Docker 窗口（只读）===== */
+.docker-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  min-height: 0;
+}
+.docker-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.docker-tabs > button:not(.icon-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 13px;
+  transition: background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.docker-tabs > button svg {
+  width: 15px;
+  height: 15px;
+}
+.docker-tabs > button:hover {
+  background: var(--fn-fill-0);
+}
+.docker-tabs > button.active {
+  background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
+  color: var(--fn-brand-5);
+  font-weight: 600;
+}
+.docker-tabs .spacer {
+  flex: 1;
+}
+.docker-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fn-text-3);
+}
+.docker-note.warn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(214, 158, 46, 0.12);
+  color: #8a6116;
+}
+.docker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.docker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--fn-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--fn-fill-0);
+  transition: box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1), transform 200ms;
+}
+.docker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(24, 42, 84, 0.14);
+}
+.docker-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.docker-card header strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.docker-card .spacer {
+  flex: 1;
+}
+.docker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: #b6b6bd;
+}
+.docker-dot.up {
+  background: #2e9e5b;
+  box-shadow: 0 0 0 3px rgba(46, 158, 91, 0.16);
+}
+.docker-dot.down {
+  background: #b6b6bd;
+}
+.docker-state {
+  font-size: 11.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-3);
+}
+.docker-state.up {
+  background: rgba(46, 158, 91, 0.14);
+  color: #23794a;
+}
+.docker-image,
+.docker-ports {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fn-text-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.docker-image {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.docker-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+.docker-card footer small {
+  font-size: 11px;
+  color: var(--fn-text-3);
+}
+.docker-logs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fn-fill-0);
+  font-size: 12px;
+  color: var(--fn-text-2);
+}
+.docker-logs:hover {
+  background: var(--fn-fill-2);
+}
+.docker-logs svg {
+  width: 13px;
+  height: 13px;
+}
+.docker-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--fn-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.docker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 170px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--fn-border);
+}
+.docker-row:last-child {
+  border-bottom: 0;
+}
+.docker-row:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+.docker-row-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.docker-row-name em {
+  font-style: normal;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-3);
+}
+.docker-created {
+  color: var(--fn-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+/* 日志面板：右侧滑出 */
+.docker-logpanel {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(560px, 82%);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #14161c;
+  color: #e8e8ec;
+  box-shadow: -16px 0 40px rgba(10, 14, 26, 0.34);
+  overflow: hidden;
+}
+.docker-logpanel header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.docker-logpanel header svg {
+  width: 15px;
+  height: 15px;
+}
+.docker-logpanel .spacer {
+  flex: 1;
+}
+.docker-logpanel .icon-button {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+.docker-logpanel pre {
+  flex: 1;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  font-size: 11.5px;
+  line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+:root[data-theme="dark"] .docker-card,
+:root[data-theme="dark"] .docker-table {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/* ===== 远程访问 ===== */
+.remote-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.remote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.remote-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--fn-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--fn-fill-0);
+}
+.remote-card > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--fn-brand-5);
+  flex: none;
+  margin-top: 2px;
+}
+.remote-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.remote-card span {
+  font-size: 12px;
+  color: var(--fn-text-3);
+}
+.remote-card strong {
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+.remote-card small {
+  font-size: 11.5px;
+  color: var(--fn-text-3);
+}
+.remote-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fn-text-3);
+  max-width: 65ch;
+}
+:root[data-theme="dark"] .remote-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.09);
+}

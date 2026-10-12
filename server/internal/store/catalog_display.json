@@ -1,0 +1,37 @@
+{
+  "uptime-kuma": {
+    "description": "持续监测网站与服务的可用性，提供状态页面、历史记录和故障通知。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/uptime-kuma/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/uptime-kuma.svg"
+  },
+  "navidrome": {
+    "description": "扫描 NAS 音乐目录，按专辑和歌手管理音乐，支持网页与兼容 Subsonic 的客户端播放。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/navidrome/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/navidrome.png"
+  },
+  "jellyfin": {
+    "description": "建立个人电影、剧集和家庭视频资料库，整理海报与介绍，支持多设备播放。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/jellyfin/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/jellyfin.svg"
+  },
+  "immich": {
+    "description": "管理和备份手机照片，提供时间线、人物识别和共享相册。安装包括照片服务、识别服务、数据库与缓存。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/immich/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/immich.svg"
+  },
+  "syncthing": {
+    "description": "在 NAS 与电脑或手机之间同步专用文件夹，支持版本记录和端到端传输。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/syncthing/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/syncthing.svg"
+  },
+  "nasreader": {
+    "description": "为 NAS 上的电子书提供阅读服务，支持已授权服务器归档与只读书库。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/nasreader/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/nasreader.svg"
+  },
+  "datatotal": {
+    "description": "查看 NAS 服务流量与运行数据，帮助了解各应用的网络使用情况。",
+    "documentation": "https://github.com/isle24/nas-app-store-catalog/blob/main/apps/datatotal/README.md",
+    "iconUrl": "https://raw.githubusercontent.com/isle24/nas-app-store-catalog/df21e7b9a44291be2e73cec5963f3a45067dcb7e/assets/icons/datatotal.svg"
+  }
+}

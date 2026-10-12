@@ -1,0 +1,39 @@
+# 在极空间 NAS 上部署「空间桌面」新 UI（Docker Compose）
+#
+#   cd /tmp/zfsv3/nvme16/18181998187/data/docker/appstore
+#   docker compose up -d --build
+#
+# 访问 http://<NAS地址>:18436/          —— 新 UI（仿飞牛桌面）
+# 访问 http://<NAS地址>:18436/shop.html —— 独立商店页
+#
+# 说明：静态前端 + 极空间接口 + 独立商店接口全部由 space-proxy 在同一个端口提供。
+# 必须同源：极空间 5055 的 /v2/、/zmusic/、/zvideo/、/downloader/、/storagepool/、
+# /network-settings/ 等路由由 nginx 的 auth.lua 保护，它只认 cookie，且拒绝时
+# 不返回 CORS 头——浏览器跨源直连会拿不到响应（这正是之前"进入文件夹失败"的原因）。
+# 同源后浏览器把会话 cookie 发给本容器，容器再转发给 5055。
+# 独立项目名：避免与 NAS 上既有的 appstore_default 网络冲突
+name: space-desktop
+
+services:
+  space-desktop:
+    build: .
+    image: space-desktop:local
+    container_name: space-desktop
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-18436}:18436"
+    environment:
+      # 极空间接口地址：容器内的 space-proxy 把同源的 NAS 接口请求转发到这里
+      NAS_ORIGIN: "${NAS_ORIGIN:-http://192.168.3.56:5055}"
+    volumes:
+      # 用 Docker 命名卷而不是绑定挂载：极空间的存储是 FUSE（kufs）文件系统，
+      # 绑定挂载上 chmod 后 Go 的 stat 仍能看到组/其他权限位，space-gateway
+      # 会因此拒绝启动（要求数据目录 0700）。命名卷没有这个问题。
+      - space-desktop-data:/data
+      # Docker 管理适配器：每次请求校验正常 NAS 会话，写操作要求管理员。
+      # socket 的 :ro 不限制 Engine API；后端仅暴露受限管理动作，禁止数据删除与 exec。
+      # 不需要这个功能就删掉下面这行，Docker 窗口会如实显示"未启用"。
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  space-desktop-data:

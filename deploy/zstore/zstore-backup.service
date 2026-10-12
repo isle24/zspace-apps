@@ -1,0 +1,7 @@
+[Unit]
+Description=Verified PostgreSQL backup for Space Store
+After=docker.service zstore.service
+[Service]
+Type=oneshot
+ExecStart=/opt/zspace-store/deploy/backup.sh
+UMask=0077

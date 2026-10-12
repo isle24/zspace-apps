@@ -1,0 +1,37 @@
+[package]
+name = "space-desktop"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "space_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+# The default `cookies` feature writes NAS Set-Cookie values to a plaintext
+# cache. Native authentication comes only from the SDK's in-memory own Cookie.
+tauri-plugin-http = { version = "2", default-features = false, features = ["rustls-tls", "http2", "charset", "unsafe-headers"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["time", "sync"] }
+keyring = { version = "=3.6.3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+open = "5"
+getrandom = "0.3"
+tauri-plugin-dialog = "=2.7.3"
+cap-std = "=4.0.3"
+cap-fs-ext = "=4.0.3"
+same-file = "=1.0.6"
+percent-encoding = "2"
+regex = "1"
+md-5 = "=0.10.6"
+sha1 = "=0.10.6"
+sha2 = "=0.10.9"
+
+[dev-dependencies]
+urlpattern = "0.6"
+tempfile = "3"

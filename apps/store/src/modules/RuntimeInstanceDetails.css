@@ -1,0 +1,16 @@
+.runtime-instance-details {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.runtime-instance-details section {
+  margin-top: 12px;
+}
+
+.runtime-instance-details article + article {
+  margin-top: 20px;
+}
+
+.runtime-instance-details h4 {
+  overflow-wrap: anywhere;
+}

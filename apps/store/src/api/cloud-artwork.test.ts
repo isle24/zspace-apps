@@ -1,0 +1,2 @@
+import {expect,it} from 'vitest';import {cloudArtworkSources} from './cloud-artwork';
+it('uses backend first and GitHub as fallback',()=>{const original='https://raw.githubusercontent.com/isle24/nas-app-store-catalog/main/icons/example.png';expect(cloudArtworkSources(original)).toEqual(['https://zstore.2iwm.com/api/cloud/artwork?url='+encodeURIComponent(original),original]);expect(cloudArtworkSources('/api/cloud/icons/'+'a'.repeat(64))[1]).toContain('/main/icons/');expect(cloudArtworkSources('https://127.0.0.1/private.png')).toEqual([])});

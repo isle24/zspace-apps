@@ -1,0 +1,152 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "store.catalog.v1"
+    },
+    "sourceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "publishedAt": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "format": "date-time"
+    },
+    "apps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "latestReleaseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "releaseId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 96,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+                },
+                "releaseNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                },
+                "manifest": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512,
+                      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\?#%])[A-Za-z0-9._/-]+$"
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64,
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "sizeBytes": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1048576
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "sha256",
+                    "sizeBytes"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "releaseId",
+                "releaseNumber",
+                "manifest"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "appId",
+          "latestReleaseId",
+          "releases"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 1000,
+      "minItems": 0
+    },
+    "withdrawn": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "releaseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "appId",
+          "releaseId",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 10000,
+      "minItems": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "sourceId",
+    "sequence",
+    "publishedAt",
+    "apps",
+    "withdrawn"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Space Store versioned catalogue v1"
+}

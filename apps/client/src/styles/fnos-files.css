@@ -1,0 +1,740 @@
+/*
+ * 飞牛 fnOS 文件管理窗口皮肤（任务 1）
+ *
+ * 参照：
+ * - 真实飞牛 fnOS 文件管理窗口截图 output/verification/20261011-fnos-files-reference.png
+ * - 实测设计系统 docs/design-assets/2026-10-11-fnos-design-system.md §3.4 / §4.3
+ *   （窗口体 = #F3F3F3 底板 + 220px 透明侧栏 + 白色 12px 圆角内容窗格；工具栏控件 28px；
+ *    侧栏项 204×36 / 6px 圆角 / 14px 500；选中 = primary 12% 底 + #0066FF 字）
+ *
+ * 约定：
+ * - 只使用 styles/fnos-theme.css 的 --fn-* 令牌，不新增硬编码颜色。
+ * - styles/fnos-controls.css 已定义共用控件皮肤（.primary/.secondary/.icon-button/.toolbar/
+ *   .search/.state-panel/.pagination/.tabs/.card 等）；本文件不重复定义这些类，只写
+ *   .files-module 作用域内的文件窗口专属布局与度量，并新增 files-tool-button 修饰类。
+ * - 既有 styles.css 的 `/* fnOS-inspired Files window *\/` 段通过 .files-module 局部变量
+ *   （--files-surface/--files-sidebar/--files-line/--files-text/--files-muted/
+ *   --files-selected/--files-accent）着色；这里只把这些局部变量接到 --fn-* 令牌，
+ *   既有规则即自动获得 fnOS 配色。
+ * - 浅色为唯一默认外观；深色只由 fnos-theme.css 的显式 [data-theme="dark"] 提供，
+ *   本文件不写 prefers-color-scheme 媒体查询。
+ */
+
+/* ---------- 局部令牌：files-module 内部变量 → fnOS 令牌 ---------- */
+.files-module {
+  --files-surface: var(--fn-pane-bg);
+  --files-sidebar: var(--fn-window-base);
+  --files-line: var(--fn-border);
+  --files-text: var(--fn-text-0);
+  --files-muted: var(--fn-text-2);
+  --files-selected: var(--fn-primary-soft);
+  --files-accent: var(--fn-primary);
+  --files-row-height: calc(var(--fn-row-height) + 4px);
+  background: var(--fn-window-base);
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+}
+/* 深色同样走 fnOS 令牌（覆盖 styles.css 里旧的深蓝灰局部变量） */
+:root[data-theme="dark"] .files-module,
+.desktop.dark .files-module,
+[data-fn-theme="dark"] .files-module {
+  --files-surface: var(--fn-pane-bg);
+  --files-sidebar: var(--fn-window-base);
+  --files-line: var(--fn-border);
+  --files-text: var(--fn-text-0);
+  --files-muted: var(--fn-text-2);
+  --files-selected: var(--fn-primary-soft);
+  --files-accent: var(--fn-primary);
+}
+
+/* ---------- 左侧栏：220px 透明底（露出 #F3F3F3 窗口底板） ---------- */
+.files-module .module-sidebar {
+  width: var(--fn-window-sidebar-width);
+  padding: 8px 8px 8px;
+  gap: 2px;
+  background: transparent;
+  border-right: 0;
+}
+/* 分组标题行（fnOS 文件管理 “我的文件/团队文件” 一类浅灰分组行） */
+.files-module .module-sidebar > p {
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--fn-row-height) + 1px);
+  margin: 0;
+  padding: 0 8px;
+  border-radius: var(--fn-radius-sm);
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  line-height: 20px;
+}
+.files-module .module-sidebar > button,
+.files-module .file-pool-button {
+  width: 100%;
+  min-height: var(--fn-row-height);
+  padding: 0 8px;
+  gap: 8px;
+  border-radius: var(--fn-radius-sm);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  line-height: 20px;
+  transition:
+    background var(--fn-duration-fast) var(--fn-ease),
+    color var(--fn-duration-fast) var(--fn-ease);
+}
+.files-module .module-sidebar > button:hover,
+.files-module .file-pool-button:hover {
+  background: var(--fn-fill-0);
+  color: var(--fn-text-0);
+}
+.files-module .module-sidebar > button.selected,
+.files-module .file-pool-button.selected {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+}
+.files-module .module-sidebar > button svg,
+.files-module .file-pool-button svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+.files-module .file-pool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--fn-divider-2);
+}
+.files-module .file-pool-heading {
+  min-height: calc(var(--fn-row-height) + 1px);
+  padding: 0 2px 0 8px;
+}
+.files-module .file-pool-heading p {
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+}
+.files-module .file-pool-heading .icon-button {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border-radius: var(--fn-radius-sm);
+  color: var(--fn-text-1);
+}
+.files-module .file-pool-heading svg {
+  width: 16px;
+  height: 16px;
+}
+.files-module .file-pool-state {
+  padding: 4px 8px 8px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+.files-module .file-pool-state.error {
+  color: var(--fn-danger);
+}
+.files-module .module-sidebar .sidebar-bottom {
+  margin-top: auto;
+  padding: 10px 8px 2px;
+  gap: 8px;
+  border-top: 1px solid var(--fn-divider-2);
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+  line-height: 22px;
+}
+.files-module .sidebar-bottom svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-text-2);
+}
+.files-module .sidebar-bottom small {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+
+/* ---------- 内容窗格：白色、12px 圆角，右侧/底部 8px 留白 ---------- */
+.files-module .module-main {
+  margin: 0 8px 8px 0;
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-pane-bg);
+}
+
+/* ---------- 工具栏：28px 控件（实测后退/前进 28×28、刷新 28×28、路径框 flex-1、搜索 200×28） ---------- */
+.files-module .toolbar {
+  min-height: 48px;
+  padding: 10px 16px;
+  gap: 8px;
+  /* 窄窗口下允许换行：否则搜索框与范围下拉会顶出窗口右边缘（760×560 实测 +116px） */
+  flex-wrap: wrap;
+  row-gap: 6px;
+  background: var(--fn-pane-bg);
+  border-bottom: 1px solid var(--fn-divider-2);
+}
+.files-module .toolbar > .spacer {
+  display: none;
+}
+/* 新增修饰类：fnOS 工具栏 28×28 描边方按钮（图标 16×16） */
+.files-module .files-tool-button {
+  width: var(--fn-control-height-sm);
+  height: var(--fn-control-height-sm);
+  min-height: var(--fn-control-height-sm);
+  flex-shrink: 0;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-pane-bg);
+  color: var(--fn-text-1);
+}
+.files-module .files-tool-button:hover:not(:disabled) {
+  background: var(--fn-fill-0);
+  color: var(--fn-text-0);
+}
+.files-module .files-tool-button:disabled {
+  background: var(--fn-pane-bg);
+  border-color: var(--fn-divider-1);
+  color: var(--fn-text-3);
+}
+.files-module .files-tool-button svg {
+  width: 16px;
+  height: 16px;
+}
+/* 路径框：flex-1、高 28px、1px 描边浅色圆角框（不是按钮） */
+.files-module .file-path-trail {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--fn-control-height-sm);
+  padding: 0 12px;
+  gap: 4px;
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-pane-bg);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.files-module .file-path-trail::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+.files-module .breadcrumb,
+.files-module .crumb {
+  flex-shrink: 0;
+}
+.files-module .breadcrumb,
+.files-module .crumb button {
+  padding: 0;
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  font-weight: 400;
+  line-height: 20px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.files-module .breadcrumb:hover,
+.files-module .crumb button:hover {
+  color: var(--fn-primary);
+}
+.files-module .crumb {
+  gap: 4px;
+  color: var(--fn-text-3);
+}
+.files-module .crumb svg {
+  width: 12px;
+  height: 12px;
+  color: var(--fn-text-3);
+}
+/* 搜索表单在工具栏右侧；范围说明与索引说明仍留在工具栏下方 */
+.files-module .file-search-form {
+  flex: 0 1 auto;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.files-module .file-search-form .search {
+  flex: 0 1 200px;
+  max-width: 200px;
+  min-height: var(--fn-control-height-sm);
+  padding: 0 10px;
+  border-radius: var(--fn-radius-card);
+}
+.files-module .file-search-form .search svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fn-text-3);
+}
+.files-module .file-search-form .search input {
+  min-height: 26px;
+  font-size: var(--fn-font-size-base);
+}
+.files-module .file-search-form .search input::placeholder {
+  color: var(--fn-text-3);
+}
+.files-module .file-search-form select {
+  min-height: var(--fn-control-height-sm);
+  max-width: 120px;
+  padding: 0 8px;
+  border-radius: var(--fn-radius-sm);
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .file-search-form .secondary {
+  min-height: var(--fn-control-height-sm);
+  padding: 0 12px;
+  border-radius: var(--fn-radius-card);
+  font-size: var(--fn-font-size-sm);
+  white-space: nowrap;
+}
+
+/* ---------- 搜索提示（工具栏之下，真实约束不隐藏） ---------- */
+.files-module .file-search-panel {
+  margin: 0;
+  padding: 12px 16px 0;
+}
+.files-module .file-search-summary {
+  margin-top: 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+.files-module .file-search-note {
+  margin-top: 4px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+.files-module .recent-filter-note,
+.files-module .file-search-error {
+  margin: 12px 16px 0;
+}
+.files-module .file-search-error {
+  color: var(--fn-danger);
+  font-size: var(--fn-font-size-sm);
+}
+
+/* ---------- 标题区与操作区：fnOS 文件窗口没有大标题，保持紧凑 ---------- */
+.files-module .content-heading {
+  padding: 12px 16px 8px;
+  gap: 8px;
+}
+.files-module .content-heading h1 {
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-md);
+  font-weight: 600;
+  line-height: 22px;
+}
+.files-module .content-heading p {
+  margin-top: 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+.files-module .content-heading .search {
+  max-width: 200px;
+}
+.files-module .file-actions small {
+  color: var(--files-muted);
+}
+.files-module .file-actions {
+  padding: 0 16px 12px;
+  gap: 8px 12px;
+}
+
+/* ---------- 列表：表头 8/16 + text-2 + 600；行高 40px；悬停浅灰、选中浅蓝 + 蓝字 ---------- */
+.files-module .file-content {
+  padding: 0 16px 16px;
+  gap: 12px;
+}
+.files-module .file-list {
+  border: 1px solid var(--fn-divider-1);
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-pane-bg);
+}
+.files-module .file-table-heading {
+  grid-template-columns: minmax(0, 1fr) 96px 96px;
+  gap: 12px;
+  padding: 8px 16px;
+  min-height: 34px;
+  background: var(--fn-pane-bg);
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  font-weight: 600;
+  line-height: 16px;
+}
+.files-module .file-row {
+  grid-template-columns: minmax(0, 1fr) 96px 96px;
+  gap: 12px;
+  padding: 0 16px;
+  min-height: var(--files-row-height);
+  border-top: 1px solid var(--fn-divider-1);
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  transition: background var(--fn-duration-faster) var(--fn-ease);
+}
+.files-module .file-row:hover:not(.selected) {
+  background: var(--fn-row-hover);
+}
+.files-module .file-row.selected {
+  background: var(--fn-primary-soft);
+}
+.files-module .file-row.selected .file-name {
+  color: var(--fn-primary);
+}
+.files-module .file-row > span:not(:first-child) {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .file-name {
+  gap: 8px;
+}
+.files-module .file-name svg {
+  width: 20px;
+  height: 20px;
+}
+.files-module .folder {
+  color: var(--fn-primary);
+}
+.files-module .document {
+  color: var(--fn-brand-3);
+}
+
+/* ---------- 网格视图：6px 圆角卡片 ---------- */
+.files-module .file-grid {
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+}
+.files-module .file-grid .file-row {
+  border: 1px solid var(--fn-divider-1);
+  border-radius: var(--fn-radius-md);
+  min-height: 118px;
+  padding: 14px 10px;
+  gap: 8px;
+  background: var(--fn-pane-bg);
+}
+.files-module .file-grid .file-row:hover:not(.selected) {
+  background: var(--fn-card-hover);
+  box-shadow: var(--fn-shadow-card);
+}
+.files-module .file-grid .file-row.selected {
+  border-color: var(--fn-primary);
+}
+.files-module .file-grid .file-name svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* ---------- 右侧详情：fnOS 式浅底子面板 ---------- */
+.files-module .file-preview {
+  width: 232px;
+  padding: 16px 14px;
+  gap: 10px;
+  background: var(--fn-fill-0);
+  border: 0;
+  border-radius: var(--fn-radius-card);
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .file-preview > svg {
+  color: var(--fn-text-4);
+}
+.files-module .file-preview h3 {
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+  line-height: 20px;
+}
+.files-module .file-preview .data-values {
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .data-values > div {
+  padding: 8px 0;
+  border-color: var(--fn-divider-2);
+}
+.files-module .data-values dt {
+  color: var(--fn-text-2);
+}
+.files-module .data-values dd {
+  color: var(--fn-text-0);
+}
+
+/* ---------- 分页 ---------- */
+.files-module .pagination {
+  margin-top: 4px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--fn-divider-2);
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+
+/* ---------- 状态页：居中浅灰插画（fnOS 实测插画约 110×90）+ 说明 ---------- */
+.files-module .module-main > .state-panel {
+  min-height: 300px;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--fn-text-2);
+}
+.files-module .module-main > .state-panel svg,
+.files-module .module-main > .state-panel h3 {
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+  line-height: 22px;
+}
+.files-module .module-main > .state-panel p {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-base);
+  line-height: 22px;
+}
+
+/* ---------- 新建文件夹对话框（DirectoryCreate） ---------- */
+.files-module .directory-create-dialog {
+  background: var(--fn-bg-2);
+  color: var(--fn-text-0);
+  border: 1px solid var(--fn-border-modal);
+  border-radius: var(--fn-radius-lg);
+  box-shadow: var(--fn-shadow-popover);
+}
+.files-module .directory-create-dialog::backdrop {
+  background: var(--fn-overlay);
+}
+.files-module .directory-create-dialog > header {
+  padding: 16px;
+  border-bottom: 1px solid var(--fn-divider-2);
+}
+.files-module .directory-create-dialog h2 {
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+  line-height: 20px;
+}
+.files-module .directory-create-dialog > header .secondary {
+  min-height: var(--fn-control-height-sm);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .directory-create-dialog form {
+  padding: 16px;
+}
+.files-module .directory-create-parent {
+  margin-bottom: 16px;
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .directory-create-parent > span,
+.files-module .directory-create-hint {
+  color: var(--fn-text-2);
+}
+.files-module .directory-create-parent strong {
+  color: var(--fn-text-0);
+  font-weight: 600;
+}
+.files-module .directory-create-parent code {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .directory-create-dialog label {
+  gap: 8px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.files-module .directory-create-dialog input {
+  border: 1px solid var(--fn-border);
+  border-radius: var(--fn-radius-md);
+  min-height: var(--fn-control-height);
+  padding: 0 12px;
+  background: var(--fn-pane-bg);
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+}
+.files-module .directory-create-dialog footer {
+  margin-top: 16px;
+  gap: 8px;
+}
+.files-module .directory-create-dialog p {
+  font-size: var(--fn-font-size-sm);
+  line-height: 22px;
+}
+.files-module .directory-create-error {
+  color: var(--fn-danger);
+}
+.files-module .directory-create-action > small {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+}
+
+/* ---------- 窄屏（390px H5）：单列、44px 触控、不横向溢出 ---------- */
+@media (max-width: 700px) {
+  .files-module .module-sidebar {
+    width: auto;
+    padding: 12px;
+  }
+  .files-module .module-sidebar > button,
+  .files-module .file-pool-button {
+    min-height: 44px;
+  }
+  .files-module .module-main {
+    margin: 0 8px 8px;
+  }
+  .files-module .toolbar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .files-module .files-tool-button {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .files-module .file-path-trail {
+    height: 44px;
+    flex: 1 1 auto;
+  }
+  .files-module .breadcrumb,
+  .files-module .crumb button {
+    font-size: var(--fn-font-size-base);
+  }
+  .files-module .file-search-form {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+  .files-module .file-search-form .search {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-height: 44px;
+  }
+  .files-module .file-search-form .search input {
+    min-height: 40px;
+  }
+  .files-module .file-search-form select,
+  .files-module .file-search-form .secondary {
+    min-height: 44px;
+  }
+  .files-module .file-search-panel {
+    padding: 12px 14px 0;
+  }
+  .files-module .recent-filter-note,
+  .files-module .file-search-error {
+    margin: 12px 14px 0;
+  }
+  .files-module .content-heading {
+    padding: 12px 14px 8px;
+  }
+  .files-module .file-actions {
+    padding: 0 14px 12px;
+  }
+  .files-module .file-content {
+    padding: 0 14px 16px;
+  }
+  .files-module .file-table-heading {
+    display: none;
+  }
+  .files-module .file-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 60px;
+    padding: 12px;
+    gap: 8px 10px;
+  }
+  .files-module .file-grid .file-row {
+    min-height: 118px;
+  }
+  .files-module .file-preview {
+    width: 100%;
+  }
+  .files-module .module-main > .state-panel {
+    min-height: 240px;
+    padding: 40px 16px;
+  }
+  .files-module .module-main > .state-panel svg,
+  .files-module .pagination {
+    padding: 12px 14px 14px;
+  }
+  .files-module .directory-create-dialog form {
+    padding: 16px;
+  }
+}
+
+/* ===== 多选：选中行、选择条、提示 ===== */
+.file-select-hint {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--fn-text-2);
+}
+.file-row.picked {
+  background: color-mix(in srgb, var(--fn-brand-5) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--fn-brand-5);
+}
+.file-row.picked:hover {
+  background: color-mix(in srgb, var(--fn-brand-5) 28%, transparent);
+}
+.file-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
+  border: 1px solid var(--fn-brand-2);
+  font-size: 12.5px;
+}
+.file-selection-bar strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fn-brand-5);
+}
+.file-selection-bar span {
+  color: var(--fn-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.file-selection-bar .secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+}
+.file-selection-bar .secondary svg {
+  width: 14px;
+  height: 14px;
+}
+.file-selection-bar small {
+  margin-left: auto;
+  color: var(--fn-text-2);
+}
+
+/* 排序控件：三个按钮一组，当前列显示方向箭头 */
+.file-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--fn-fill-0);
+}
+.file-sort button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 12.5px;
+  transition: background-color var(--fn-duration-fast, 200ms) var(--fn-ease, ease), color 200ms;
+}
+.file-sort button:hover {
+  background: var(--fn-bg-3);
+}
+.file-sort button.active {
+  background: color-mix(in srgb, var(--fn-brand-5) 16%, transparent);
+  color: var(--fn-brand-5);
+  font-weight: 600;
+}
+.file-sort button span {
+  font-size: 11px;
+}

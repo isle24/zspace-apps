@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Space Store backup
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=zstore-backup.service
+[Install]
+WantedBy=timers.target

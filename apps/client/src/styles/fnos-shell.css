@@ -1,0 +1,1299 @@
+/*
+ * 飞牛 fnOS 外壳皮肤：桌面、左侧应用栏、资源挂件、桌面图标、应用窗口外壳、登录页。
+ * 依赖 styles/fnos-theme.css 的 --fn-* 令牌。只改外壳，不改应用内部（各应用有独立皮肤文件）。
+ */
+
+/* ---------- 桌面背景：飞牛真实壁纸（从用户 fnOS 导出 wallpaper-1.webp） ---------- */
+.desktop {
+  color: var(--fn-text-0);
+  background: #2a2c58 url("/wallpaper-fnos.webp") center / cover no-repeat fixed;
+}
+.desktop:before {
+  background:
+    radial-gradient(ellipse 60% 40% at 72% 78%, rgba(10, 14, 40, 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 60% at 30% 95%, rgba(12, 16, 48, 0.75) 0%, transparent 72%);
+}
+.desktop:after {
+  display: none;
+}
+
+/* ---------- 系统栏：只保留右上角资源挂件 + 通知/搜索/账号 ---------- */
+.system-bar {
+  top: 10px;
+  left: auto;
+  right: 12px;
+  height: auto;
+  min-height: 34px;
+  padding: 4px 12px;
+  gap: 12px;
+  border: 0;
+  border-radius: var(--fn-radius-md);
+  /* 透明容器：胶囊与图标直接浮在壁纸上（与飞牛一致），不再有整条白色底 */
+  background: transparent;
+  color: #2b2f36;
+  font-size: var(--fn-font-size-xs);
+}
+.system-bar .connection,
+.system-bar .system-metric,
+.system-bar time {
+  color: #2b2f36;
+}
+.system-brand {
+  display: none;
+}
+.system-bar .connection,
+.system-bar .system-metric {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-xs);
+}
+.system-bar .connection.connected {
+  color: var(--fn-success);
+}
+.system-bar time {
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-2);
+  font-weight: 500;
+}
+.account-menu {
+  top: 52px;
+  right: 12px;
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-1);
+  box-shadow: var(--fn-shadow-popover);
+  border: 1px solid var(--fn-border);
+}
+
+/* 菜单里的按钮：旧的 styles.css 写死了浅蓝底（#edf3fd），深色下变成"浅底浅字"完全看不见。
+   这里用令牌接管，两种主题都对。 */
+.account-menu button {
+  background: var(--fn-fill-0);
+  color: var(--fn-text-1);
+  border-radius: var(--fn-radius-sm);
+}
+.account-menu button:hover {
+  background: var(--fn-fill-1);
+}
+.account-menu button:active {
+  background: var(--fn-fill-2);
+}
+.account-menu small {
+  color: var(--fn-text-3);
+}
+
+/* ---------- 左侧应用栏：复刻飞牛三段式玻璃面板 ----------
+   结构：66px 容器 + 52px 玻璃面板（几乎通高）
+   面板内：顶部分组（桌面/全部应用）→ 分隔线 → 应用图标（可滚动）→ 底部分组（资源/通知/账号/设置）
+------------------------------------------------------------------ */
+.dock {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: auto;
+  height: auto; /* 覆盖基础样式里的 .dock{height:76px}，否则玻璃面板只有一小截 */
+  transform: none;
+  width: var(--fn-rail-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 16px 0 16px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  z-index: 9000;
+}
+/* 玻璃面板本体 */
+.dock:before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 14px;
+  width: var(--fn-rail-bar-width);
+  border-radius: 10px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.2) 45%,
+    rgba(255, 255, 255, 0.17) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 6px 22px rgba(12, 16, 40, 0.14);
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+}
+.dock:after {
+  display: none;
+}
+.dock > * {
+  position: relative;
+  z-index: 1;
+}
+/* 顶部分组：桌面 + 全部应用 */
+.dock-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 0 8px;
+  flex: 0 0 auto;
+}
+.dock-top button {
+  width: 47px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.dock-top button img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(12, 16, 40, 0.25));
+}
+/* 分隔线 */
+.dock-separator {
+  width: 32px;
+  height: 1px;
+  margin: 0 auto 8px;
+  background: rgba(255, 255, 255, 0.35);
+  flex: 0 0 auto;
+}
+/* 中部：应用图标（可滚动，图标少时不撑开） */
+.dock-apps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  width: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.dock-apps::-webkit-scrollbar {
+  display: none;
+}
+/* 底部分组固定在面板底部 */
+.dock-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 14px;
+  flex: 0 0 auto;
+}
+.dock-bottom button {
+  width: 47px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  transition: opacity var(--fn-duration-fast) var(--fn-ease);
+}
+.dock-bottom button:hover {
+  opacity: 0.75;
+}
+.dock-bottom button svg {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(12, 16, 40, 0.3));
+}
+.dock-bottom button.running {
+  color: #fff;
+  opacity: 1;
+}
+/* 应用图标项 */
+.dock button {
+  width: 47px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  transform: none;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.dock button:hover,
+.dock button:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  transform: none;
+}
+/* 运行中：左侧 3px 品牌色竖条（飞牛选中态） */
+.dock .dock-apps button.running {
+  border-left-color: var(--fn-focus-border);
+  background: rgba(255, 255, 255, 0.1);
+}
+/* 只隐藏文字标签（飞牛应用栏只有图标）；图标容器是 span.app-icon，必须保留 */
+.dock button > span:not(.app-icon) {
+  display: none;
+}
+.dock button i {
+  display: none;
+}
+.dock button .app-icon.small {
+  width: 36px;
+  height: 36px;
+  border-radius: 10%;
+}
+.dock button .app-icon.small svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- 桌面图标：飞牛网格（列优先、单元格 144×120、图标 52、白色标签） ---------- */
+.desktop-icons {
+  top: 0;
+  left: var(--fn-rail-width);
+  right: 0;
+  bottom: 0;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  max-height: none;
+  overflow: hidden;
+}
+.desktop-app {
+  width: var(--fn-desktop-cell-width);
+  height: var(--fn-desktop-cell-height);
+  padding-top: 22px;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: var(--fn-radius-lg);
+  color: #fff;
+  font-size: var(--fn-font-size-base);
+  line-height: 18px;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.desktop-app:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: none;
+}
+.desktop-app .app-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+}
+.desktop-app span {
+  font-size: var(--fn-font-size-base);
+  font-weight: 700;
+  line-height: 18px;
+  color: #fff;
+  text-shadow: var(--fn-shadow-text);
+  opacity: 1;
+  max-width: 128px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+}
+.desktop-app small {
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: -6px;
+}
+.desktop-caption {
+  left: calc(var(--fn-rail-width) + 10px);
+  bottom: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+}
+.desktop-caption .desktop-tip {
+  color: rgba(255, 255, 255, 0.66);
+}
+.desktop-caption .status-dot {
+  background: rgba(255, 255, 255, 0.55);
+}
+.desktop-caption .status-dot.online {
+  background: var(--fn-success);
+}
+.mobile-intro {
+  color: #fff;
+}
+
+/* ---------- 应用窗口外壳：飞牛实测（1100×640、圆角 16、outline 而非 border、透明标题栏） ---------- */
+.window-area {
+  left: var(--fn-rail-width);
+  top: 0;
+}
+.app-window {
+  border-radius: var(--fn-window-radius);
+  border: 0;
+  outline: 1px solid var(--fn-border-modal);
+  outline-offset: -1px;
+  background: var(--fn-window-base);
+  box-shadow: var(--fn-shadow-window-inactive);
+  overflow: hidden;
+  transition: box-shadow var(--fn-duration-base) var(--fn-ease);
+}
+/* 标题栏透明，露出窗口底板；内容区是内嵌的白色圆角窗格（飞牛 --semi-color-app-container） */
+.app-window .window-content {
+  background: var(--fn-window-surface);
+  border-radius: 12px;
+  margin: 0 6px 6px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.app-window.focused {
+  box-shadow: var(--fn-shadow-window);
+}
+.app-window.maximized {
+  border-radius: 0;
+}
+.window-titlebar {
+  height: var(--fn-window-titlebar-height);
+  min-height: var(--fn-window-titlebar-height);
+  padding: 0 0 0 16px;
+  gap: 8px;
+  position: relative;
+  justify-content: flex-start;
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: none;
+  color: var(--fn-text-0);
+}
+.app-window:not(.focused) .window-titlebar {
+  background: transparent;
+}
+/* 飞牛应用窗口自带标题区：外壳不再重复显示应用图标与名称，标题栏只保留
+   连接状态与右上角窗口按钮，避免出现两行重复标题。 */
+/* 应用自带应用栏（应用商店/相册/影视/音乐）时不重复显示；
+   其余应用仍由外壳标题栏提供图标与名称，保证每个窗口都有唯一的应用身份。 */
+.app-window[data-own-title="true"] .window-titlebar > .app-icon,
+.app-window[data-own-title="true"] .window-titlebar > strong {
+  display: none;
+}
+.window-titlebar .titlebar-hint {
+  margin-left: 0;
+}
+.window-titlebar strong {
+  font-size: var(--fn-font-size-base);
+  font-weight: 600;
+  line-height: var(--fn-line-height);
+  color: var(--fn-text-0);
+}
+.window-titlebar .app-icon.small {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.window-titlebar .app-icon.small svg {
+  width: 16px;
+  height: 16px;
+}
+.window-titlebar .titlebar-hint {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.window-titlebar .mobile-back {
+  color: var(--fn-text-1);
+}
+/* 三个窗口按钮各 46×44，紧贴右上角、无间隙；关闭 hover 变红 */
+.window-controls {
+  margin-left: auto;
+  margin-right: 0;
+  gap: 0;
+  align-self: stretch;
+}
+.window-controls button {
+  width: var(--fn-window-control-width);
+  height: var(--fn-window-control-height);
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  color: var(--fn-text-1);
+  transition:
+    background var(--fn-duration-fast) var(--fn-ease),
+    color var(--fn-duration-fast) var(--fn-ease);
+}
+.window-controls button svg {
+  width: 16px;
+  height: 16px;
+  opacity: 1; /* 覆盖 macOS 风格的“hover 才显示” */
+  color: currentColor;
+}
+/* 覆盖基础样式里的红黄绿实心圆点 */
+.window-controls .close,
+.window-controls .minimize,
+.window-controls .maximize {
+  background: transparent;
+}
+.window-controls:hover .close,
+.window-controls:hover .minimize,
+.window-controls:hover .maximize {
+  background: var(--fn-fill-0);
+}
+.window-controls:hover .close:hover {
+  background: var(--fn-danger);
+  color: #fff;
+}
+.window-controls:hover .minimize:hover,
+.window-controls:hover .maximize:hover {
+  background: var(--fn-fill-2);
+  color: var(--fn-text-0);
+}
+.window-controls button:hover {
+  background: var(--fn-fill-0);
+  color: var(--fn-text-0);
+}
+.window-controls button.close:hover {
+  background: var(--fn-danger);
+  color: #fff;
+}
+.window-controls button.minimize:hover {
+  background: var(--fn-fill-1);
+  color: var(--fn-text-0);
+}
+.window-controls button.maximize:hover {
+  background: var(--fn-fill-1);
+  color: var(--fn-text-0);
+}
+.resize-handle {
+  border-color: transparent;
+}
+
+/* ---------- 登录页：飞牛“彩色极光壁纸 + 玻璃卡片” ---------- */
+.login-screen {
+  background:
+    radial-gradient(ellipse 62% 52% at 80% 78%, rgba(56, 214, 190, 0.55) 0%, transparent 62%),
+    radial-gradient(ellipse 58% 48% at 90% 40%, rgba(255, 206, 120, 0.6) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 62% at 10% 22%, rgba(178, 122, 235, 0.85) 0%, transparent 66%),
+    radial-gradient(ellipse 60% 55% at 26% 88%, rgba(255, 122, 138, 0.6) 0%, transparent 64%),
+    radial-gradient(ellipse 66% 58% at 60% 96%, rgba(46, 108, 216, 0.75) 0%, transparent 66%),
+    linear-gradient(140deg, #a06ad0 0%, #c9769f 26%, #e08a6f 48%, #3f7fc4 74%, #22285e 100%);
+  color: #fff;
+}
+/* 覆盖原有的浅色壁纸叠层 */
+.login-screen:before {
+  background: url("/wallpaper-dark.svg") center/cover;
+  opacity: 0.18;
+}
+/* 飞牛登录卡片：玻璃底 + 32px 圆角 + 无实边（用 .login-screen 前缀保证胜过基础样式） */
+.login-screen .login-card {
+  border-radius: var(--fn-radius-login);
+  /*
+   * 深色玻璃，**不是**浅色玻璃：登录页的底色是一整块彩色渐变，
+   * 中间偏右是橙/粉/亮蓝，20% 白的卡片压上去之后白字读不出来
+   * （WebKit 截图实测）。压到 52% 深色之后，渐变最亮处白字仍有 ~4.5:1，
+   * 同时 blur 保住飞牛那种玻璃感。
+   */
+  background: rgba(22, 24, 32, 0.52);
+  backdrop-filter: blur(30px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 18px 50px rgba(8, 10, 24, 0.45);
+  color: #fff;
+}
+.login-screen .login-card h2,
+.login-screen .login-heading h1,
+.login-screen .login-heading .eyebrow {
+  color: #fff;
+}
+.login-screen .login-card .field > span,
+.login-screen .login-card .check-field,
+.login-screen .login-card .hint,
+.login-screen .login-card p,
+.login-screen .login-card small,
+.login-screen .login-status,
+.login-screen .login-footer,
+.login-screen .login-heading p {
+  color: rgba(255, 255, 255, 0.82);
+}
+.login-screen .login-card .check-field input {
+  accent-color: var(--fn-primary);
+}
+.login-card h2 {
+  color: #fff;
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+}
+.login-card .field > span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--fn-font-size-base);
+}
+/* 输入框：白色实底 + 10px 圆角（飞牛登录页覆写值） */
+.login-card input {
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: #0b0b0c;
+  font-size: 15px;
+}
+.login-card input::placeholder {
+  color: rgba(11, 11, 12, 0.4);
+}
+.login-card input:focus {
+  border-color: var(--fn-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.28);
+}
+.login-tabs {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  color: #fff;
+}
+.login-tabs .active {
+  background: var(--fn-primary);
+  color: #fff;
+  border-radius: 8px;
+}
+.login-card .primary {
+  min-height: 54px;
+  border-radius: 10px;
+  background: var(--fn-primary);
+  color: #fff;
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+}
+.login-card .primary:hover:not(:disabled) {
+  background: var(--fn-primary-hover);
+}
+.login-card .connection-test,
+.login-card .preview-button {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--fn-font-size-base);
+}
+.login-card .preview-button:hover {
+  color: #fff;
+}
+.login-card .check-field {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--fn-font-size-base);
+}
+.login-card .login-status,
+.login-card .login-footer,
+.login-card .hint,
+.login-card small {
+  color: rgba(255, 255, 255, 0.75);
+}
+.login-card .inline-error {
+  color: #ffd9d5;
+}
+.login-heading .eyebrow,
+.login-footer {
+  color: rgba(255, 255, 255, 0.8);
+}
+.login-heading h1 {
+  color: #fff;
+}
+.login-heading p {
+  color: rgba(255, 255, 255, 0.82);
+}
+.login-orb {
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.login-orb svg {
+  color: #fff;
+}
+.login-heading {
+  color: var(--fn-text-0);
+}
+.login-heading .eyebrow {
+  color: var(--fn-primary);
+  letter-spacing: 2px;
+}
+.login-heading h1 {
+  color: var(--fn-text-0);
+  font-weight: 600;
+}
+.login-heading p {
+  color: var(--fn-text-2);
+}
+.login-card {
+  border-radius: var(--fn-radius-xl);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--fn-shadow-popover);
+  color: var(--fn-text-1);
+}
+.login-card h2 {
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-lg);
+  font-weight: 600;
+}
+.login-card .field > span {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.login-card input {
+  min-height: var(--fn-control-height-lg);
+  border-radius: var(--fn-radius-md);
+  border: 1px solid var(--fn-border-strong);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-0);
+  font-size: var(--fn-font-size-base);
+}
+.login-card input:focus {
+  border-color: var(--fn-primary);
+  box-shadow: 0 0 0 2px var(--fn-primary-soft);
+  outline: none;
+}
+.login-tabs {
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-bg-2);
+  padding: 3px;
+}
+.login-tabs .active {
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+}
+.login-card .primary {
+  min-height: var(--fn-control-height-lg);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+  font-weight: 500;
+}
+.login-card .primary:hover {
+  background: var(--fn-primary-hover);
+}
+.login-card .connection-test,
+.login-card .preview-button {
+  color: var(--fn-primary);
+  font-size: var(--fn-font-size-sm);
+}
+.login-card .check-field {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.login-status {
+  color: var(--fn-text-3);
+}
+.login-footer {
+  color: var(--fn-text-3);
+}
+
+/* ---------- 应用启动器搜索 ---------- */
+.search-backdrop {
+  background: rgba(15, 20, 28, 0.28);
+  backdrop-filter: blur(3px);
+}
+.launcher-search {
+  border-radius: var(--fn-radius-xl);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--fn-border);
+  box-shadow: var(--fn-shadow-popover);
+}
+.launcher-search input {
+  background: var(--fn-bg-2);
+  border: 0;
+  color: var(--fn-text-0);
+}
+.launcher-search > div button {
+  border-radius: var(--fn-radius-md);
+  color: var(--fn-text-1);
+}
+.launcher-search > div button:hover {
+  background: var(--fn-primary-soft);
+}
+
+/* ---------- 通知 ---------- */
+.toast {
+  border-radius: var(--fn-radius-md);
+  background: rgba(28, 31, 35, 0.9);
+  color: #fff;
+  box-shadow: var(--fn-shadow-popover);
+}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 700px) {
+  .dock {
+    display: none;
+  }
+  .system-bar {
+    right: 8px;
+    left: 8px;
+    min-height: 44px;
+    padding: 6px 10px;
+    gap: 8px;
+    backdrop-filter: blur(14px);
+  }
+  .mobile-bottom > div button {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: var(--fn-radius-sm);
+    background: var(--fn-primary-soft);
+    color: var(--fn-primary);
+    font-weight: 500;
+  }
+  /* 窄屏没有左侧应用栏：图标改成自动列宽的网格，给底部操作条留出空间 */
+  .desktop-icons {
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 92px;
+    padding: 76px 8px 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-auto-rows: 108px;
+    align-content: start;
+    overflow-y: auto;
+  }
+  .desktop-app {
+    width: auto;
+    height: 108px;
+    padding-top: 14px;
+  }
+  .dock {
+    display: none;
+  }
+  .desktop-caption {
+    left: 12px;
+  }
+  .window-area {
+    left: 0;
+    top: 0;
+  }
+  .app-window {
+    border-radius: 0;
+  }
+}
+
+/* ---------- 应用图标：飞牛式高饱和方形图标 ---------- */
+.app-icon {
+  border-radius: 22%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -6px 12px rgba(0, 20, 60, 0.14),
+    0 4px 10px rgba(15, 20, 28, 0.18);
+}
+.app-icon:before {
+  inset: 0;
+  border: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.1) 38%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  border-radius: inherit;
+}
+.app-icon svg {
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 20, 60, 0.28));
+  position: relative;
+  z-index: 1;
+}
+.app-icon.gold {
+  background: linear-gradient(160deg, #ffd472 0%, #fdae2c 100%);
+}
+.app-icon.cyan {
+  background: linear-gradient(160deg, #63c8f5 0%, #2b8ee0 100%);
+}
+.app-icon.purple {
+  background: linear-gradient(160deg, #b48cf0 0%, #7a4fd8 100%);
+}
+.app-icon.pink {
+  background: linear-gradient(160deg, #ff9a8b 0%, #f0506e 100%);
+}
+.app-icon.green {
+  background: linear-gradient(160deg, #6fd99a 0%, #2fb46a 100%);
+}
+.app-icon.blue {
+  background: linear-gradient(160deg, #6aa9f0 0%, #2f6fd0 100%);
+}
+.app-icon.silver {
+  background: linear-gradient(160deg, #ffffff 0%, #cfd8e6 100%);
+}
+.app-icon.silver svg {
+  color: #5b6b82;
+}
+.app-icon.slate {
+  background: linear-gradient(160deg, #8f9fb5 0%, #4a5a75 100%);
+}
+
+/* 应用栏 Tooltip：飞牛用 Tooltip 呈现名称，这里复用 aria-label 作为悬浮提示 */
+.dock button[aria-label]:hover:after {
+  content: attr(aria-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 12px;
+  border-radius: var(--fn-radius-sm);
+  background: rgba(107, 107, 107, 1);
+  color: #fff;
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+  white-space: nowrap;
+  box-shadow: var(--fn-shadow-dropdown);
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ---------- 窄屏外壳：品牌与底部操作条 ---------- */
+@media (max-width: 700px) {
+  /* 窄屏恢复品牌区（桌面端隐藏，因为桌面只保留右上资源挂件） */
+  .system-bar .system-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    color: var(--fn-text-1);
+  }
+  .system-bar .system-brand svg {
+    width: 18px;
+    height: 18px;
+  }
+  .system-bar .system-brand strong {
+    font-size: var(--fn-font-size-sm);
+    font-weight: 600;
+    color: var(--fn-text-1);
+  }
+  .system-bar .bar-divider,
+  .system-bar .system-metric {
+    display: none;
+  }
+  /* 底部操作条沿用飞牛玻璃语言 */
+  .mobile-bottom {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--fn-radius-xl);
+    color: var(--fn-text-1);
+    box-shadow: 0 6px 20px rgba(10, 10, 30, 0.18);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .mobile-bottom strong {
+    color: var(--fn-text-0);
+  }
+  .mobile-bottom button {
+    color: var(--fn-primary);
+    font-size: var(--fn-font-size-sm);
+  }
+}
+
+
+/* 深色下玻璃面板压深 */
+:root[data-theme="dark"] .dock:before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 6px 22px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme="dark"] .dock-separator {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- 真实应用图标（<img>）的尺寸与外观 ---------- */
+.app-icon.with-art {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 22%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-icon.with-art:before {
+  display: none;
+}
+.app-icon.with-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: inherit;
+}
+/* 各场景下的图标盒尺寸 */
+.dock .app-icon.with-art {
+  width: 36px;
+  height: 36px;
+  padding: 15%; /* 飞牛实测：36px 盒 + 15% 内边距 → 实际图形 25.2px */
+  filter: drop-shadow(0 1px 3px rgba(12, 16, 40, 0.22));
+}
+.desktop-app .app-icon.with-art {
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 3px 7px rgba(12, 16, 40, 0.24));
+}
+.window-titlebar .app-icon.with-art {
+  width: 24px;
+  height: 24px;
+}
+.launcher-search .app-icon.with-art {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- 登录卡片：飞牛式极简（品牌 + 账号 + 密码 + 登录） ---------- */
+.login-screen .login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 22px;
+  text-align: center;
+}
+.login-screen .login-mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.login-screen .login-mark svg {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+}
+.login-screen .login-card h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #fff;
+  margin: 0;
+}
+.login-screen .login-sub {
+  font-size: var(--fn-font-size-sm);
+  color: rgba(255, 255, 255, 0.86);
+  margin: 0;
+}
+/* 输入框之间与按钮的节奏 */
+.login-screen .login-card .field {
+  margin-top: 12px;
+}
+.login-screen .login-card .field > .field-label {
+  display: none; /* 飞牛登录页只留 placeholder，不单列字段名 */
+}
+.login-screen .login-card .field > .field-label + input,
+.login-screen .login-card .password-field {
+  margin-top: 0;
+}
+/* 密码框与眼睛按钮：整行白底、圆角 10px */
+.login-screen .login-card .password-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  background: #fff;
+  padding-right: 10px;
+}
+.login-screen .login-card .password-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+.login-screen .login-card .password-field input:focus {
+  box-shadow: none;
+}
+.login-screen .login-card .password-field button {
+  color: var(--fn-text-2);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+.login-screen .login-card .password-field button svg {
+  width: 16px;
+  height: 16px;
+}
+.login-screen .login-card .login-submit {
+  margin-top: 22px;
+}
+.login-screen .login-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+.login-screen .login-links .preview-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fn-font-size-sm);
+  color: rgba(255, 255, 255, 0.78);
+}
+.login-screen .login-links .preview-button:hover {
+  color: #fff;
+}
+.login-screen .login-links svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---------- 启动台：全屏磨砂 + 居中搜索胶囊 + 六列网格（飞牛 §2.7） ---------- */
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 8500; /* 低于左侧应用栏（9000），启动台打开时应用栏仍可见 */
+  background: transparent;
+  backdrop-filter: none;
+  display: block;
+}
+.launchpad {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 60px 40px 40px 106px;
+  background: rgba(12, 14, 22, 0.42);
+  backdrop-filter: blur(42px) saturate(140%) brightness(0.62);
+  -webkit-backdrop-filter: blur(42px) saturate(140%) brightness(0.62);
+  overflow-y: auto;
+}
+.launchpad-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 380px;
+  max-width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--fn-radius-pill);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.82);
+  flex-shrink: 0;
+}
+.launchpad-search:focus-within {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+.launchpad-search svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.launchpad-search input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  font-size: 15px;
+  padding: 0;
+}
+.launchpad-search input::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+.launchpad-search input:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+.launchpad-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 108px);
+  justify-content: center;
+  gap: 30px 12px;
+  width: 100%;
+  max-width: 720px;
+}
+.launchpad-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-radius: var(--fn-radius-lg);
+  background: transparent;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.launchpad-grid button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.launchpad-grid .app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+}
+.launchpad-grid .app-icon.with-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.launchpad-grid button > span {
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  color: #fff;
+  text-shadow: var(--fn-shadow-text);
+  text-align: center;
+  max-width: 104px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 700px) {
+  .launchpad {
+    /* 顶部让开系统栏（44px + 10px 边距），否则搜索胶囊被压在下面 */
+    padding: 66px 16px 100px;
+    gap: 16px;
+  }
+  .launchpad-search {
+    width: 100%;
+  }
+  .launchpad-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 18px 8px;
+    max-width: 100%;
+  }
+  .launchpad-grid .app-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* ---------- 键盘可达性：键盘聚焦时也显示应用栏提示（不能只靠 hover） ---------- */
+.dock button[aria-label]:focus-visible:after {
+  content: attr(aria-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 12px;
+  border-radius: var(--fn-radius-sm);
+  background: rgba(107, 107, 107, 1);
+  color: #fff;
+  font-size: var(--fn-font-size-sm);
+  line-height: 16px;
+  white-space: nowrap;
+  box-shadow: var(--fn-shadow-dropdown);
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* 置灰控件的说明文字：灰着不说话最容易被当成 bug */
+.login-screen .check-hint {
+  margin-left: 6px;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: var(--fn-font-size-xs, 11px);
+}
+
+/* 设置项：中文名后面的原始键名。设备文档对照用，不能抢主标签的注意力 */
+.settings-panel dl dt small {
+  margin-left: 8px;
+  color: var(--fn-text-3, rgba(120, 128, 140, 0.9));
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ---------- 远程访问：快捷方式磁贴（对齐极空间那个界面） ---------- */
+.remote-shortcuts { display: flex; flex-direction: column; gap: 14px; }
+.remote-shortcuts .shortcut-head { display: flex; align-items: center; gap: 12px; }
+.remote-shortcuts .shortcut-head p { flex: 1 1 auto; margin: 0; font-size: 13px; color: var(--fn-text-3); }
+.remote-shortcuts .shortcut-new {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 20px;
+  border: 0; border-radius: 8px; background: #2f6bff; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.remote-shortcuts .shortcut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.remote-shortcuts .shortcut-tile {
+  position: relative; display: flex; align-items: center; gap: 14px;
+  min-height: 78px; padding: 0 16px; border-radius: 6px; cursor: pointer;
+  color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.remote-shortcuts .shortcut-tile:hover { filter: brightness(1.08); }
+.remote-shortcuts .shortcut-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92); color: #2b2b2b; font-size: 20px; font-weight: 700;
+}
+.remote-shortcuts .shortcut-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.remote-shortcuts .shortcut-name strong { font-size: 15px; font-weight: 600; }
+.remote-shortcuts .shortcut-name small { font-size: 12px; opacity: 0.82; }
+.remote-shortcuts .shortcut-more {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: transparent; color: rgba(255, 255, 255, 0.85); cursor: pointer;
+}
+.remote-shortcuts .shortcut-more:hover { background: rgba(0, 0, 0, 0.18); }
+.remote-shortcuts .shortcut-open { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; }
+
+.remote-shortcuts .shortcut-scrim { position: fixed; inset: 0; z-index: 40; }
+.remote-shortcuts .shortcut-menu {
+  position: fixed; z-index: 41; min-width: 132px; padding: 6px;
+  border: 1px solid var(--fn-border); border-radius: 8px; background: var(--fn-pane-bg);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+}
+.remote-shortcuts .shortcut-menu button {
+  display: block; width: 100%; padding: 8px 12px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--fn-text-0); font-size: 13px; text-align: left; cursor: pointer;
+}
+.remote-shortcuts .shortcut-menu button:hover { background: var(--fn-fill-0); }
+
+.remote-shortcuts .shortcut-modal-scrim {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-start; justify-content: center;
+  padding: 48px 16px; background: rgba(8, 9, 12, 0.5); backdrop-filter: blur(2px); overflow-y: auto;
+}
+.remote-shortcuts .shortcut-modal {
+  width: min(430px, 100%); display: flex; flex-direction: column; gap: 14px;
+  padding: 18px 20px 16px; border-radius: 12px; background: var(--fn-pane-bg);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+}
+.remote-shortcuts .shortcut-modal header { display: flex; align-items: center; }
+.remote-shortcuts .shortcut-modal header h2 { flex: 1 1 auto; margin: 0; font-size: 16px; }
+.remote-shortcuts .shortcut-field { display: flex; flex-direction: column; gap: 6px; }
+.remote-shortcuts .shortcut-label { font-size: 13px; font-weight: 600; color: var(--fn-text-1); }
+.remote-shortcuts .shortcut-preview {
+  display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 14px; border-radius: 6px; color: #fff;
+}
+.remote-shortcuts .shortcut-inline { display: flex; align-items: center; gap: 8px; }
+.remote-shortcuts .shortcut-inline input { flex: 1 1 auto; min-width: 0; }
+.remote-shortcuts .shortcut-inline select { flex: 0 0 auto; }
+.remote-shortcuts .shortcut-colors { display: flex; flex-wrap: wrap; gap: 6px; }
+.remote-shortcuts .shortcut-colors button {
+  width: 22px; height: 22px; border: 2px solid transparent; border-radius: 5px; cursor: pointer;
+}
+.remote-shortcuts .shortcut-colors button.active { border-color: #fff; }
+.remote-shortcuts .shortcut-help { width: 16px; height: 16px; color: var(--fn-text-3); }
+.remote-shortcuts .shortcut-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.remote-shortcuts .shortcut-check small { color: var(--fn-text-3); }
+.remote-shortcuts .shortcut-notes { font-size: 12.5px; color: var(--fn-text-3); line-height: 1.7; }
+.remote-shortcuts .shortcut-notes strong { display: block; margin-bottom: 2px; color: var(--fn-text-1); }
+.remote-shortcuts .shortcut-notes p { margin: 0; }
+.remote-shortcuts .shortcut-error { margin: 0; font-size: 12.5px; color: #ff7875; }
+.remote-shortcuts .shortcut-modal footer { display: flex; justify-content: flex-end; gap: 10px; }
+.remote-shortcuts .shortcut-cancel, .remote-shortcuts .shortcut-confirm {
+  height: 38px; padding: 0 24px; border: 0; border-radius: 8px; font-size: 14px; cursor: pointer;
+}
+.remote-shortcuts .shortcut-cancel { background: var(--fn-fill-0); color: var(--fn-text-1); }
+.remote-shortcuts .shortcut-confirm { background: #2f6bff; color: #fff; font-weight: 600; }
+.remote-window .remote-relay { margin-top: 8px; font-size: 13px; }
+.remote-window .remote-relay summary { cursor: pointer; color: var(--fn-text-3); }

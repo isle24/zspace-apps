@@ -1,0 +1,1224 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "store.app.v1"
+    },
+    "minStoreProtocol": {
+      "const": 1
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capability"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "appId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "releaseNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "linux/amd64"
+            ]
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "permissionProfile": {
+          "type": "string",
+          "enum": [
+            "standard-v1",
+            "restricted-v1",
+            "host-monitor-v1"
+          ]
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/service"
+          },
+          "maxItems": 16,
+          "minItems": 1
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/volume"
+          },
+          "maxItems": 32,
+          "minItems": 0
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "serviceId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "portId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^/[^?#\\r\\n]*$"
+            }
+          },
+          "required": [
+            "serviceId",
+            "portId",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        "minimumMemoryBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1099511627776
+        }
+      },
+      "required": [
+        "platforms",
+        "permissionProfile",
+        "services",
+        "volumes",
+        "entry",
+        "minimumMemoryBytes"
+      ],
+      "additionalProperties": false
+    },
+    "parameters": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/parameter"
+      }
+    },
+    "upgrade": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "const": "copy-switch"
+        },
+        "fromReleaseIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "maxItems": 100,
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "strategy",
+        "fromReleaseIds"
+      ],
+      "additionalProperties": false
+    },
+    "backup": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "const": "cold-copy"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "maxItems": 32,
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "strategy",
+        "volumes"
+      ],
+      "additionalProperties": false
+    },
+    "initialization": {
+      "$ref": "#/$defs/initialization"
+    },
+    "nativeLicense": {
+      "type": "object",
+      "properties": {
+        "requirement": {
+          "type": "string",
+          "enum": [
+            "none",
+            "application-managed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "requirement",
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "minStoreProtocol",
+    "requiredCapabilities",
+    "appId",
+    "releaseId",
+    "releaseNumber",
+    "metadata",
+    "runtime",
+    "parameters",
+    "upgrade",
+    "backup",
+    "initialization",
+    "nativeLicense"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Space Store published Docker application manifest v1",
+  "$defs": {
+    "icon": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "monogram"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 3
+            },
+            "background": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 7,
+              "pattern": "^#[a-fA-F0-9]{6}$"
+            }
+          },
+          "required": [
+            "kind",
+            "text",
+            "background"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "asset"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\?#%])[A-Za-z0-9._/-]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sizeBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 524288
+            },
+            "mediaType": {
+              "type": "string",
+              "enum": [
+                "image/png",
+                "image/webp",
+                "image/svg+xml"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "path",
+            "sha256",
+            "sizeBytes",
+            "mediaType"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sourceUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "format": "uri"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "description",
+        "category",
+        "author",
+        "sourceUrl",
+        "license",
+        "icon"
+      ],
+      "additionalProperties": false
+    },
+    "image": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "registry"
+            },
+            "repository": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9./:_-]*$"
+            },
+            "tag": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$"
+            },
+            "manifestDigest": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 71,
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "configId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 71,
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "platform": {
+              "type": "string",
+              "enum": [
+                "linux/amd64"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "repository",
+            "manifestDigest",
+            "platform"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "author-archive"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\?#%])[A-Za-z0-9._/-]+$"
+            },
+            "archiveSha256": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sizeBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 536870912
+            },
+            "configId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 71,
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "diffIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 71,
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "maxItems": 128,
+              "minItems": 1
+            },
+            "platform": {
+              "type": "string",
+              "enum": [
+                "linux/amd64"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "path",
+            "archiveSha256",
+            "sizeBytes",
+            "configId",
+            "diffIds",
+            "platform"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "environmentValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string",
+              "maxLength": 4096
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "parameterRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "required": [
+            "parameterRef"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "secretRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "required": [
+            "secretRef"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "portRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "required": [
+            "portRef"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "serviceRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "required": [
+            "serviceRef"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "runtimeRef": {
+              "type": "string",
+              "enum": [
+                "uid",
+                "gid",
+                "timezone"
+              ]
+            }
+          },
+          "required": [
+            "runtimeRef"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "container",
+            "host"
+          ]
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "containerPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "publish": {
+          "type": "boolean"
+        },
+        "defaultHostPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "bind": {
+          "type": "string",
+          "enum": [
+            "lan",
+            "loopback"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "mode",
+        "protocol",
+        "publish"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "container"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "containerPort"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "host"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "publish": {
+                "const": true
+              }
+            },
+            "required": [
+              "defaultHostPort",
+              "bind"
+            ],
+            "not": {
+              "required": [
+                "containerPort"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "publish": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "defaultHostPort",
+              "bind"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "defaultHostPort"
+                  ]
+                },
+                {
+                  "required": [
+                    "bind"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "health": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "image",
+                "none"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "http"
+            },
+            "portId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^/[^?#\\r\\n]*$"
+            },
+            "expectedStatuses": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 599
+              },
+              "maxItems": 16,
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "intervalSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120
+            },
+            "retries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "startPeriodSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1800
+            }
+          },
+          "required": [
+            "type",
+            "portId",
+            "path",
+            "expectedStatuses",
+            "intervalSeconds",
+            "timeoutSeconds",
+            "retries",
+            "startPeriodSeconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "exec"
+            },
+            "command": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "maxItems": 32,
+              "minItems": 1
+            },
+            "intervalSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120
+            },
+            "retries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "startPeriodSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1800
+            }
+          },
+          "required": [
+            "type",
+            "command",
+            "intervalSeconds",
+            "timeoutSeconds",
+            "retries",
+            "startPeriodSeconds"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "mount": {
+      "type": "object",
+      "properties": {
+        "volumeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^/(?!$)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\r\\n]*$"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "volumeId",
+        "target",
+        "readOnly"
+      ],
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        },
+        "userMode": {
+          "type": "string",
+          "enum": [
+            "image-default",
+            "host",
+            "host-env"
+          ]
+        },
+        "uidEnvironmentKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Z_][A-Z0-9_]*$"
+        },
+        "gidEnvironmentKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Z_][A-Z0-9_]*$"
+        },
+        "environment": {
+          "type": "object",
+          "maxProperties": 128,
+          "propertyNames": {
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/environmentValue"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/port"
+          },
+          "maxItems": 64,
+          "minItems": 0
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mount"
+          },
+          "maxItems": 32,
+          "minItems": 0
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "maxItems": 15,
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "health": {
+          "$ref": "#/$defs/health"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "maxItems": 32,
+          "minItems": 0
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "maxItems": 32,
+          "minItems": 0
+        },
+        "sharedMemoryBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "stopTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "id",
+        "image",
+        "userMode",
+        "environment",
+        "ports",
+        "mounts",
+        "dependsOn",
+        "health",
+        "stopTimeoutSeconds"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "userMode": {
+                "const": "host-env"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "uidEnvironmentKey",
+              "gidEnvironmentKey"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "uidEnvironmentKey"
+                  ]
+                },
+                {
+                  "required": [
+                    "gidEnvironmentKey"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "volume": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "kind": {
+              "const": "managed"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "data",
+                "config",
+                "cache",
+                "sync-data"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "media-readonly",
+                "docker-socket"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "parameter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "integer",
+            "boolean",
+            "enum",
+            "secret"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "type": [
+            "string",
+            "integer",
+            "boolean"
+          ]
+        },
+        "minimum": {
+          "type": "integer"
+        },
+        "maximum": {
+          "type": "integer"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "type",
+        "label",
+        "required"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "secret"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "default"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "enum"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "choices"
+            ]
+          }
+        }
+      ]
+    },
+    "initialization": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "application-web",
+                "not-required"
+              ]
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "const": "http-json"
+            },
+            "serviceId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "portId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^/[^?#\\r\\n]*$"
+            },
+            "pointer": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^(?:/[^\\r\\n]*)?$"
+            },
+            "requiredValue": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "mode",
+            "serviceId",
+            "portId",
+            "path",
+            "pointer",
+            "requiredValue"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "capability": {
+      "type": "string",
+      "enum": [
+        "services.bundle",
+        "ports.tcp",
+        "ports.udp",
+        "image.registry",
+        "image.author-archive",
+        "profile.standard-v1",
+        "profile.restricted-v1",
+        "profile.host-monitor-v1",
+        "volumes.media-readonly",
+        "parameters.secret",
+        "probe.http-json",
+        "health.exec",
+        "command.override"
+      ]
+    }
+  }
+}

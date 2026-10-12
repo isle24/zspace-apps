@@ -1,0 +1,688 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window",
+  "description": "Only the locally bundled UI may use native window functions. No shell or filesystem IPC.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "http://**:*/AppStore/v1/list"
+        },
+        {
+          "url": "http://**:*/api/store/logout"
+        },
+        {
+          "url": "http://**:*/api/store/nas-session"
+        },
+        {
+          "url": "http://**:*/auth/login"
+        },
+        {
+          "url": "http://**:*/downloader/add/link"
+        },
+        {
+          "url": "http://**:*/downloader/downloaddir"
+        },
+        {
+          "url": "http://**:*/downloader/get/protocols"
+        },
+        {
+          "url": "http://**:*/downloader/get/setting"
+        },
+        {
+          "url": "http://**:*/downloader/list"
+        },
+        {
+          "url": "http://**:*/downloader/preprocess/torrent/cancel"
+        },
+        {
+          "url": "http://**:*/downloader/preprocess/torrent/effect"
+        },
+        {
+          "url": "http://**:*/downloader/preprocess/torrent/parse/nas"
+        },
+        {
+          "url": "http://**:*/downloader/start/all"
+        },
+        {
+          "url": "http://**:*/downloader/stop/all"
+        },
+        {
+          "url": "http://**:*/file_search/file_search"
+        },
+        {
+          "url": "http://**:*/key/pub"
+        },
+        {
+          "url": "http://**:*/manager/services"
+        },
+        {
+          "url": "http://**:*/manager/v2/processes"
+        },
+        {
+          "url": "http://**:*/network-settings/v1/interface/list"
+        },
+        {
+          "url": "http://**:*/play/*"
+        },
+        {
+          "url": "http://**:*/setting/load"
+        },
+        {
+          "url": "http://**:*/splay/*"
+        },
+        {
+          "url": "http://**:*/storagepool/info2"
+        },
+        {
+          "url": "http://**:*/system"
+        },
+        {
+          "url": "http://**:*/system/delay"
+        },
+        {
+          "url": "http://**:*/system/home"
+        },
+        {
+          "url": "http://**:*/system/polling2"
+        },
+        {
+          "url": "http://**:*/system/recent"
+        },
+        {
+          "url": "http://**:*/task/list"
+        },
+        {
+          "url": "http://**:*/thumb/*"
+        },
+        {
+          "url": "http://**:*/transcode/audio/play"
+        },
+        {
+          "url": "http://**:*/transcode/audio/stream"
+        },
+        {
+          "url": "http://**:*/transcode/cover"
+        },
+        {
+          "url": "http://**:*/transcode/decrypt/thumb"
+        },
+        {
+          "url": "http://**:*/transcode/play"
+        },
+        {
+          "url": "http://**:*/transcode/thumb"
+        },
+        {
+          "url": "http://**:*/v2/album/album/feeds"
+        },
+        {
+          "url": "http://**:*/v2/album/albums"
+        },
+        {
+          "url": "http://**:*/v2/album/feed/list"
+        },
+        {
+          "url": "http://**:*/v2/album/feed/timeline"
+        },
+        {
+          "url": "http://**:*/v2/album/home"
+        },
+        {
+          "url": "http://**:*/v2/file/download"
+        },
+        {
+          "url": "http://**:*/v2/file/info"
+        },
+        {
+          "url": "http://**:*/v2/file/list"
+        },
+        {
+          "url": "http://**:*/v2/file/newdir"
+        },
+        {
+          "url": "http://**:*/v2/file/sysdir"
+        },
+        {
+          "url": "http://**:*/v2/file/tmpinfo"
+        },
+        {
+          "url": "http://**:*/v2/file/upload"
+        },
+        {
+          "url": "http://**:*/v2/recent/list"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/list"
+        },
+        {
+          "url": "http://**:*/zmusic/api/v2/album/list"
+        },
+        {
+          "url": "http://**:*/zmusic/api/v2/playlist/list"
+        },
+        {
+          "url": "http://**:*/zmusic/api/v2/playlist/record/list"
+        },
+        {
+          "url": "http://**:*/zmusic/api/v2/song/info/lyrics"
+        },
+        {
+          "url": "http://**:*/zmusic/api/v2/song/list"
+        },
+        {
+          "url": "http://**:*/zmusic/cover/*"
+        },
+        {
+          "url": "http://**:*/zmusic/play/*"
+        },
+        {
+          "url": "http://**:*/zmusic_static/*"
+        },
+        {
+          "url": "http://**:*/zrps/api/speed/query"
+        },
+        {
+          "url": "http://**:*/zspool/info"
+        },
+        {
+          "url": "http://**:*/zvideo/classification/list"
+        },
+        {
+          "url": "http://**:*/zvideo/collection/info"
+        },
+        {
+          "url": "http://**:*/zvideo/collection/v2/info"
+        },
+        {
+          "url": "http://**:*/zvideo/collection/video"
+        },
+        {
+          "url": "http://**:*/zvideo/play/*"
+        },
+        {
+          "url": "http://**:*/zvideo/video/media"
+        },
+        {
+          "url": "http://**:*/zvideo/video/v2/list"
+        },
+        {
+          "url": "http://**:*/zvideo_static/*"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/list"
+        },
+        {
+          "url": "https://**:*/api/store/logout"
+        },
+        {
+          "url": "https://**:*/api/store/nas-session"
+        },
+        {
+          "url": "https://**:*/auth/login"
+        },
+        {
+          "url": "https://**:*/downloader/add/link"
+        },
+        {
+          "url": "https://**:*/downloader/downloaddir"
+        },
+        {
+          "url": "https://**:*/downloader/get/protocols"
+        },
+        {
+          "url": "https://**:*/downloader/get/setting"
+        },
+        {
+          "url": "https://**:*/downloader/list"
+        },
+        {
+          "url": "https://**:*/downloader/preprocess/torrent/cancel"
+        },
+        {
+          "url": "https://**:*/downloader/preprocess/torrent/effect"
+        },
+        {
+          "url": "https://**:*/downloader/preprocess/torrent/parse/nas"
+        },
+        {
+          "url": "https://**:*/downloader/start/all"
+        },
+        {
+          "url": "https://**:*/downloader/stop/all"
+        },
+        {
+          "url": "https://**:*/file_search/file_search"
+        },
+        {
+          "url": "https://**:*/key/pub"
+        },
+        {
+          "url": "https://**:*/manager/services"
+        },
+        {
+          "url": "https://**:*/manager/v2/processes"
+        },
+        {
+          "url": "https://**:*/network-settings/v1/interface/list"
+        },
+        {
+          "url": "https://**:*/play/*"
+        },
+        {
+          "url": "https://**:*/setting/load"
+        },
+        {
+          "url": "https://**:*/splay/*"
+        },
+        {
+          "url": "https://**:*/storagepool/info2"
+        },
+        {
+          "url": "https://**:*/system"
+        },
+        {
+          "url": "https://**:*/system/delay"
+        },
+        {
+          "url": "https://**:*/system/home"
+        },
+        {
+          "url": "https://**:*/system/polling2"
+        },
+        {
+          "url": "https://**:*/system/recent"
+        },
+        {
+          "url": "https://**:*/task/list"
+        },
+        {
+          "url": "https://**:*/thumb/*"
+        },
+        {
+          "url": "https://**:*/transcode/audio/play"
+        },
+        {
+          "url": "https://**:*/transcode/audio/stream"
+        },
+        {
+          "url": "https://**:*/transcode/cover"
+        },
+        {
+          "url": "https://**:*/transcode/decrypt/thumb"
+        },
+        {
+          "url": "https://**:*/transcode/play"
+        },
+        {
+          "url": "https://**:*/transcode/thumb"
+        },
+        {
+          "url": "https://**:*/v2/album/album/feeds"
+        },
+        {
+          "url": "https://**:*/v2/album/albums"
+        },
+        {
+          "url": "https://**:*/v2/album/feed/list"
+        },
+        {
+          "url": "https://**:*/v2/album/feed/timeline"
+        },
+        {
+          "url": "https://**:*/v2/album/home"
+        },
+        {
+          "url": "https://**:*/v2/file/download"
+        },
+        {
+          "url": "https://**:*/v2/file/info"
+        },
+        {
+          "url": "https://**:*/v2/file/list"
+        },
+        {
+          "url": "https://**:*/v2/file/newdir"
+        },
+        {
+          "url": "https://**:*/v2/file/sysdir"
+        },
+        {
+          "url": "https://**:*/v2/file/tmpinfo"
+        },
+        {
+          "url": "https://**:*/v2/file/upload"
+        },
+        {
+          "url": "https://**:*/v2/recent/list"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/list"
+        },
+        {
+          "url": "https://**:*/zmusic/api/v2/album/list"
+        },
+        {
+          "url": "https://**:*/zmusic/api/v2/playlist/list"
+        },
+        {
+          "url": "https://**:*/zmusic/api/v2/playlist/record/list"
+        },
+        {
+          "url": "https://**:*/zmusic/api/v2/song/info/lyrics"
+        },
+        {
+          "url": "https://**:*/zmusic/api/v2/song/list"
+        },
+        {
+          "url": "https://**:*/zmusic/cover/*"
+        },
+        {
+          "url": "https://**:*/zmusic/play/*"
+        },
+        {
+          "url": "https://**:*/zmusic_static/*"
+        },
+        {
+          "url": "https://**:*/zrps/api/speed/query"
+        },
+        {
+          "url": "https://**:*/zspool/info"
+        },
+        {
+          "url": "https://**:*/zvideo/classification/list"
+        },
+        {
+          "url": "https://**:*/zvideo/collection/info"
+        },
+        {
+          "url": "https://**:*/zvideo/collection/v2/info"
+        },
+        {
+          "url": "https://**:*/zvideo/collection/video"
+        },
+        {
+          "url": "https://**:*/zvideo/play/*"
+        },
+        {
+          "url": "https://**:*/zvideo/video/media"
+        },
+        {
+          "url": "https://**:*/zvideo/video/v2/list"
+        },
+        {
+          "url": "https://**:*/zvideo_static/*"
+        },
+        {
+          "url": "http://**:*/setting/change"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/disks"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/start"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/stop"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/restart"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/depend/check"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/install"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/start"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/stop"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/restart"
+        },
+        {
+          "url": "http://**:*/api/docker/capabilities"
+        },
+        {
+          "url": "http://**:*/api/docker/containers"
+        },
+        {
+          "url": "http://**:*/api/docker/images"
+        },
+        {
+          "url": "http://**:*/api/docker/compose"
+        },
+        {
+          "url": "http://**:*/api/docker/info"
+        },
+        {
+          "url": "http://**:*/api/docker/control"
+        },
+        {
+          "url": "http://**:*/api/docker/logs/*"
+        },
+        {
+          "url": "http://**:*/api/docker/details/*"
+        },
+        {
+          "url": "https://**:*/setting/change"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/disks"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/start"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/stop"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/restart"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/depend/check"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/install"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/start"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/stop"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/restart"
+        },
+        {
+          "url": "https://**:*/api/docker/capabilities"
+        },
+        {
+          "url": "https://**:*/api/docker/containers"
+        },
+        {
+          "url": "https://**:*/api/docker/images"
+        },
+        {
+          "url": "https://**:*/api/docker/compose"
+        },
+        {
+          "url": "https://**:*/api/docker/info"
+        },
+        {
+          "url": "https://**:*/api/docker/control"
+        },
+        {
+          "url": "https://**:*/api/docker/logs/*"
+        },
+        {
+          "url": "https://**:*/api/docker/details/*"
+        },
+        {
+          "url": "http://**:*/api/docker/create"
+        },
+        {
+          "url": "https://**:*/api/docker/create"
+        },
+        {
+          "url": "http://**:*/api/docker/compose-create"
+        },
+        {
+          "url": "https://**:*/api/docker/compose-create"
+        },
+        {
+          "url": "http://**:*/v2/album/dirs"
+        },
+        {
+          "url": "https://**:*/v2/album/dirs"
+        },
+        {
+          "url": "http://**:*/v2/album/babygrowth/timeline"
+        },
+        {
+          "url": "https://**:*/v2/album/babygrowth/timeline"
+        },
+        {
+          "url": "http://**:*/v2/album/album/create"
+        },
+        {
+          "url": "https://**:*/v2/album/album/create"
+        },
+        {
+          "url": "http://**:*/zhelper/state"
+        },
+        {
+          "url": "https://**:*/zhelper/state"
+        },
+        {
+          "url": "http://**:*/kv/load"
+        },
+        {
+          "url": "https://**:*/kv/load"
+        },
+        {
+          "url": "http://**:*/v2/file/notepad/list"
+        },
+        {
+          "url": "https://**:*/v2/file/notepad/list"
+        },
+        {
+          "url": "http://**:*/v2/file/notepad/info"
+        },
+        {
+          "url": "https://**:*/v2/file/notepad/info"
+        },
+        {
+          "url": "http://**:*/v2/file/notepad/new"
+        },
+        {
+          "url": "https://**:*/v2/file/notepad/new"
+        },
+        {
+          "url": "http://**:*/v2/file/notepad/modify"
+        },
+        {
+          "url": "https://**:*/v2/file/notepad/modify"
+        },
+        {
+          "url": "http://**:*/v2/file/nb/list"
+        },
+        {
+          "url": "https://**:*/v2/file/nb/list"
+        },
+        {
+          "url": "http://**:*/v2/file/mrestore"
+        },
+        {
+          "url": "https://**:*/v2/file/mrestore"
+        },
+        {
+          "url": "http://**:*/v2/public/recycle/restore"
+        },
+        {
+          "url": "https://**:*/v2/public/recycle/restore"
+        },
+        {
+          "url": "http://**:*/v2/file/remove"
+        },
+        {
+          "url": "https://**:*/v2/file/remove"
+        },
+        {
+          "url": "http://**:*/downloader/engin/switch/exec"
+        },
+        {
+          "url": "https://**:*/downloader/engin/switch/exec"
+        },
+        {
+          "url": "http://**:*/downloader/engin/switch/status"
+        },
+        {
+          "url": "https://**:*/downloader/engin/switch/status"
+        },
+        {
+          "url": "http://**:*/downloader/engin/switch/confirm"
+        },
+        {
+          "url": "https://**:*/downloader/engin/switch/confirm"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/depend/by"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/depend/by"
+        },
+        {
+          "url": "http://**:*/AppStore/v1/pkg/remove"
+        },
+        {
+          "url": "https://**:*/AppStore/v1/pkg/remove"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/remove"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/remove"
+        },
+        {
+          "url": "http://**:*/v2/file/decrypt/download"
+        },
+        {
+          "url": "https://**:*/v2/file/decrypt/download"
+        },
+        {
+          "url": "http://**:*/zdocker/app_check_port"
+        },
+        {
+          "url": "https://**:*/zdocker/app_check_port"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/preinstall"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/preinstall"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/install"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/install"
+        },
+        {
+          "url": "http://**:*/zdocker/AppStore/v1/pkg/depend/check"
+        },
+        {
+          "url": "https://**:*/zdocker/AppStore/v1/pkg/depend/check"
+        }
+      ]
+    }
+  ]
+}

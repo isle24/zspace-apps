@@ -1,0 +1,304 @@
+/*
+ * 飞牛 fnOS 共用控件皮肤：按钮、输入框、标签页、工具栏、状态页、分页、对话框、卡片。
+ * 这些类名被多个应用共用，只在这里定义一次；各应用皮肤文件不得重复定义。
+ */
+
+/* ---------- 按钮 ---------- */
+.primary {
+  min-height: var(--fn-control-height);
+  padding: 0 16px;
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-primary);
+  color: var(--fn-on-primary);
+  font-size: var(--fn-font-size-base);
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.primary:hover:not(:disabled) {
+  background: var(--fn-primary-hover);
+}
+.primary:active:not(:disabled) {
+  background: var(--fn-primary-active);
+}
+.secondary {
+  min-height: var(--fn-control-height);
+  padding: 0 16px;
+  border-radius: var(--fn-radius-card);
+  background: var(--fn-window-surface);
+  color: var(--fn-text-1);
+  border: 1px solid var(--fn-border-strong);
+  font-size: var(--fn-font-size-base);
+  transition:
+    background var(--fn-duration-fast) var(--fn-ease),
+    border-color var(--fn-duration-fast) var(--fn-ease),
+    color var(--fn-duration-fast) var(--fn-ease);
+}
+.secondary:hover:not(:disabled) {
+  background: var(--fn-primary-soft);
+  border-color: var(--fn-primary);
+  color: var(--fn-primary);
+}
+.icon-button {
+  width: var(--fn-control-height);
+  height: var(--fn-control-height);
+  min-height: var(--fn-control-height);
+  display: grid;
+  place-items: center;
+  border-radius: var(--fn-radius-sm);
+  color: var(--fn-text-2);
+  transition: background var(--fn-duration-fast) var(--fn-ease);
+}
+.icon-button:hover:not(:disabled) {
+  background: var(--fn-row-hover);
+  color: var(--fn-text-0);
+}
+.icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* ---------- 输入与搜索 ---------- */
+input,
+select,
+textarea {
+  border-radius: var(--fn-radius-sm);
+  border: 1px solid var(--fn-border-strong);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-0);
+  min-height: var(--fn-control-height-lg);
+  padding: 0 12px;
+  font-size: var(--fn-font-size-base);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--fn-text-4);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--fn-primary);
+  box-shadow: 0 0 0 2px var(--fn-primary-soft);
+  outline: none;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--fn-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--fn-border-strong);
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-3);
+}
+.search:focus-within {
+  border-color: var(--fn-primary);
+  box-shadow: 0 0 0 2px var(--fn-primary-soft);
+}
+.search svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.search input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  min-height: 30px;
+  padding: 0;
+  font-size: var(--fn-font-size-base);
+}
+.search input:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+/* ---------- 标签页 ---------- */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.tabs button {
+  height: var(--fn-control-height);
+  padding: 0 12px;
+  border-radius: var(--fn-radius-sm);
+  font-size: var(--fn-font-size-base);
+  color: var(--fn-text-2);
+  border: 0;
+  background: transparent;
+  transition:
+    background var(--fn-duration-fast) var(--fn-ease),
+    color var(--fn-duration-fast) var(--fn-ease);
+}
+.tabs button:hover {
+  background: var(--fn-bg-3);
+  color: var(--fn-text-0);
+}
+.tabs button.active {
+  background: var(--fn-primary-soft);
+  color: var(--fn-primary);
+  font-weight: 500;
+}
+
+/* ---------- 工具栏 ---------- */
+.toolbar {
+  min-height: 49px;
+  padding: 8px 16px;
+  gap: 10px;
+  display: flex;
+  align-items: center;
+  background: var(--fn-bg-0);
+  border-bottom: 1px solid var(--fn-divider);
+}
+.content-heading {
+  padding: 16px 20px 12px;
+  gap: 4px;
+}
+.content-heading h1 {
+  font-size: var(--fn-font-size-title);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--fn-text-0);
+}
+.content-heading p {
+  color: var(--fn-text-3);
+  font-size: var(--fn-font-size-sm);
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  color: var(--fn-primary);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.muted {
+  color: var(--fn-text-3);
+}
+
+/* ---------- 状态页与字段 ---------- */
+.state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--fn-text-3);
+}
+.state-panel svg {
+  width: 56px;
+  height: 56px;
+  color: var(--fn-text-4);
+}
+.state-panel strong,
+.state-panel h3 {
+  font-size: var(--fn-font-size-md);
+  font-weight: 500;
+  color: var(--fn-text-1);
+}
+.state-panel p {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-3);
+  max-width: 420px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field > span {
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+.hint,
+small.hint {
+  font-size: var(--fn-font-size-xs);
+  color: var(--fn-text-3);
+}
+.error-text,
+.inline-error {
+  color: var(--fn-danger);
+  font-size: var(--fn-font-size-sm);
+}
+.data-values > div {
+  border-bottom: 1px solid var(--fn-divider);
+  padding: 9px 0;
+}
+.data-values dt {
+  color: var(--fn-text-3);
+  font-size: var(--fn-font-size-sm);
+}
+.data-values dd {
+  color: var(--fn-text-1);
+  font-size: var(--fn-font-size-base);
+}
+
+/* ---------- 分页 ---------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  color: var(--fn-text-3);
+  font-size: var(--fn-font-size-sm);
+}
+
+/* ---------- 对话框 ---------- */
+.directory-create-dialog,
+.modal-surface {
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-0);
+  border: 1px solid var(--fn-border);
+  box-shadow: var(--fn-shadow-popover);
+  color: var(--fn-text-1);
+}
+.modal-backdrop,
+.dialog-backdrop {
+  background: var(--fn-overlay);
+}
+
+/* ---------- 复选与开关 ---------- */
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fn-font-size-sm);
+  color: var(--fn-text-2);
+}
+
+/* ---------- 通用卡片 ---------- */
+.card {
+  border-radius: var(--fn-radius-md);
+  border: 1px solid var(--fn-border);
+  background: var(--fn-bg-0);
+  box-shadow: var(--fn-shadow-card);
+}
+
+/* ---------- 状态插画：飞牛真实素材，深浅色各一套 ---------- */
+.state-art {
+  display: block;
+  width: 150px;
+  height: 150px;
+}
+/* 注意特异性：`.state-art img` 是 (0,1,1)，必须用同样或更高的选择器才能覆盖显示状态 */
+.state-art img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  display: block;
+}
+.state-art img.state-art-dark {
+  display: none;
+}
+:root[data-theme="dark"] .state-art img.state-art-light {
+  display: none;
+}
+:root[data-theme="dark"] .state-art img.state-art-dark {
+  display: block;
+}
+.state-panel .state-art {
+  margin-bottom: 4px;
+}

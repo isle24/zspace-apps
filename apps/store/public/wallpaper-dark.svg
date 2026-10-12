@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1600" viewBox="0 0 2400 1600">
+  <defs>
+    <radialGradient id="sky" cx="70%" cy="10%" r="95%"><stop stop-color="#182e53"/><stop offset=".5" stop-color="#101d35"/><stop offset="1" stop-color="#080f20"/></radialGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#639aa3"/><stop offset=".23" stop-color="#3b737f"/><stop offset=".5" stop-color="#223e60"/><stop offset=".83" stop-color="#172641"/><stop offset="1" stop-color="#0d182c"/></linearGradient>
+    <linearGradient id="edge" x1="0" x2="1"><stop stop-color="#89b9ba" stop-opacity=".15"/><stop offset=".6" stop-color="#aacdc7" stop-opacity=".8"/><stop offset="1" stop-color="#56788a" stop-opacity=".1"/></linearGradient>
+    <linearGradient id="deep" x1=".25" y1="0" x2=".7" y2="1"><stop stop-color="#497489"/><stop offset=".4" stop-color="#203c56"/><stop offset="1" stop-color="#0b1426"/></linearGradient>
+    <filter id="shadow"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h2400v1600H0z"/>
+  <ellipse cx="2020" cy="1220" rx="1050" ry="340" fill="#050b1b" opacity=".55" filter="url(#shadow)"/>
+  <path d="M475 1700C580 1200 1120 912 1370 714c272-215 276-432 635-494 223-39 441 28 620 170v1350Z" fill="url(#fold)"/>
+  <path d="M475 1700C580 1200 1120 912 1370 714c272-215 276-432 635-494 223-39 441 28 620 170" fill="none" stroke="url(#edge)" stroke-width="3"/>
+  <path d="M780 1700c140-403 460-565 810-697 418-158 600-392 1010-207v904Z" fill="url(#deep)"/>
+  <path d="M780 1700c140-403 460-565 810-697 418-158 600-392 1010-207" fill="none" stroke="#7ba0ac" stroke-opacity=".28" stroke-width="2"/>
+  <path d="M1300 1700c180-250 486-226 658-413 146-159 261-251 534-186v599Z" fill="#101d34" opacity=".85"/>
+</svg>

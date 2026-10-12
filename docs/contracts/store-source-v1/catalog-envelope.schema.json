@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "store.catalog-envelope.v1"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\?#%])[A-Za-z0-9._/-]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "sizeBytes"
+      ],
+      "additionalProperties": false
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "algorithm": {
+            "const": "Ed25519"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 88,
+            "pattern": "^[A-Za-z0-9+/]{86}==$"
+          }
+        },
+        "required": [
+          "keyId",
+          "algorithm",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 8,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "payload",
+    "signatures"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Space Store catalogue signature envelope v1"
+}

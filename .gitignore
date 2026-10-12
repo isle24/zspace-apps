@@ -1,0 +1,23 @@
+node_modules/
+*.tsbuildinfo
+dist/
+# NAS 部署产物（含 15MB+ 网关二进制）：是构建输出，不入库；
+# 只有 build.sh/push.sh 两个脚本应该被跟踪
+deploy/nas-appstore/dist-deploy/
+target/
+.worktrees/
+.superpowers/
+.runtime/
+output/
+server/bin/
+apps/client/src-tauri/binaries/space-gateway-*
+apps/client/src-tauri/gen/
+.env
+.env.*
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.DS_Store
+
+.playwright-cli/
+__pycache__/

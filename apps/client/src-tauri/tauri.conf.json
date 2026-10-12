@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Space Desktop",
+  "version": "0.1.0",
+  "identifier": "com.isle.space-desktop",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "./node_modules/.bin/tsc -b && ./node_modules/.bin/vite build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{"label":"main","title":"Space Desktop · 极空间","width":1440,"height":920,"minWidth":880,"minHeight":620,"resizable":true,"decorations":true}],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http: https:; img-src 'self' data: blob: nas-media: http: https:; media-src 'self' blob: nas-media: http: https:; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-src http: https:; base-uri 'self'; form-action 'self'"
+    }
+  },
+  "bundle": {"active":true,"targets":["app"],"externalBin":["binaries/space-gateway"],"icon":["icons/32x32.png","icons/128x128.png","icons/128x128@2x.png","icons/icon.icns","icons/icon.ico"]}
+}

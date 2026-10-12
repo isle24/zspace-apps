@@ -14,21 +14,21 @@
 - 镜像缓存限制总大小，淘汰只操作本服务缓存，原始镜像兜底。
 
 ### Task 1: AI 与 Compose
-- [ ] 创建 cloud_ai.go、cloud_compose.go 及回归，提供 ai-settings、ai-assist、import-compose 管理 API；密钥加密与脱敏。
-- [ ] 依据镜像公开元信息提示模型；完整字段严格校验；Compose 转清单/草稿，禁止静默丢弃服务。
-- [ ] `cd server && go test ./internal/store -run 'TestCloud(AI|Compose)' -count=1`。
+- [x] 创建 cloud_ai.go、cloud_compose.go 及回归，提供 ai-settings、ai-assist、import-compose 管理 API；密钥加密与脱敏。
+- [x] 依据镜像公开元信息提示模型；完整字段严格校验；Compose 转清单/草稿，禁止静默丢弃服务。
+- [x] `cd server && go test ./internal/store -run 'TestCloud(AI|Compose)' -count=1`。
 
 ### Task 2: 2FA
-- [ ] 创建 cloud_totp.go、测试与独立 SecurityPanel，loginAccount 检查 TOTP，认证中加生产绑定引导限制。
-- [ ] `cd server && go test ./internal/store -run 'TestCloud(TOTP|TwoFactor)' -count=1`，验证未校验不绑定、重放拒绝、普通用户隔离。
+- [x] 创建 cloud_totp.go、测试与独立 SecurityPanel，loginAccount 检查 TOTP，认证中加生产绑定引导限制。
+- [x] `cd server && go test ./internal/store -run 'TestCloud(TOTP|TwoFactor)' -count=1`，验证未校验不绑定、重放拒绝、普通用户隔离。
 
 ### Task 3: 镜像与图标缓存
-- [ ] cloud_cache.go 用受限 registry SDK 下载完整镜像为缓存包，统计请求热度、按预算淘汰。
-- [ ] 客户端/controller 对缓存校验与原始引用回退；图标使用后端缓存 URL 与 GitHub 兜底。
-- [ ] Go 缓存回归及前端图标回归。
+- [x] cloud_cache.go 用受限 registry SDK 下载完整镜像为缓存包，统计请求热度、按预算淘汰。
+- [x] 客户端/controller 对缓存校验与原始引用回退；图标使用后端缓存 URL 与 GitHub 兜底。
+- [x] Go 缓存回归及前端图标回归。
 
 ### Task 4: 页面、构建、部署
-- [ ] 管理编辑器增加 AI、Compose 导入与图标预览，设置接入 AI、缓存、安全独立面板。
-- [ ] 两个 Compose 部署方案、Dockerfile、配置样例、客户端 Actions 并提供部署说明。
-- [ ] 前端 `pnpm --filter @space/client test`、`@space/store test`、`@space/catalog-admin test`，三个 typecheck/build。
-- [ ] Go 全套测试；准备版本备份、更新 nj-game、健康与页面验收；Actions 推送并检查构建。
+- [x] 管理编辑器增加 AI、Compose 导入与图标预览，设置接入 AI、缓存、安全独立面板。
+- [x] 两个 Compose 部署方案、Dockerfile、配置样例、客户端 Actions 并提供部署说明。
+- [x] 前端 `pnpm --filter @space/client test`、`@space/store test`、`@space/catalog-admin test`，三个 typecheck/build。
+- [x] Go 全套测试；准备版本备份、更新 nj-game、健康与页面验收；Actions 推送并检查构建。

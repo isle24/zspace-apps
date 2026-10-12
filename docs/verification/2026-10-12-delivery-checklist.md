@@ -110,3 +110,9 @@
 
 
 NAS执行器最终更新：2026-10-13，受管控制器版本controller-cache-20261012T161025Z-5acbd2，镜像aebd2f915f2f…，状态ready，原StoreID ae1d0481456dc535d9caf213395a65781015a8dcffe4a11f及原数据库inode、路径、存储映射均保留。旧容器133253d7f412…保持停止，候选aacd82cb824c…健康。升级仅接受来自当前源码的runtime_cloud_recipes、runtime_secret_sets两张空表及其主键索引；其他schema变化拒绝。备份位置为原服务releases/controller-cache-20261012T161025Z-5acbd2/backup，实际完成后恢复ready，幂等复核通过。升级器10用例通过，原部署助手64用例通过（1环境skip）。
+
+
+镜像缓存真机证据：Syncthing压缩缓存18,672,975 bytes已完成，NAS执行docker pull zstore.2iwm.com/cache/bc9bc1fd095eb84aadde96dcf7ee4f2734b79da4b6fd246399489806f75511be@sha256:92e9a8bf559062b955ab45c7a60bc33d0b97ebdb1e5e86959b40714b482f740a成功，Docker inspect中原始GHCR与缓存RepoDigest相同。此项只验证缓存分发和镜像身份，没有启动或替换用户Syncthing容器。容量缩小、热度淘汰、未命中回原源等行为由Go/Python回归验证；不声称所有镜像已完成预热。
+
+
+GitHub数据兜底已补齐：公共目录仓库提交13b4c55发布当前7个应用公开资料、签名目录sequence=2、公开签名钥匙和已发布清单。仅从published_json、cloud_publications、cloud_releases与被公开应用引用的图标导出，没有账户、心愿、用户历史、AI密钥、TOTP密钥或签名私钥。Ed25519与payload SHA256核验通过。

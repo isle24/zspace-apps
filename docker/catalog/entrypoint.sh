@@ -4,7 +4,10 @@ umask 077
 if [ -z "${SPACE_CLOUD_DATABASE_URL:-}" ]; then
   task_secret="${SPACE_DB_PASSWORD_FILE:-/run/secrets/postgres_password}"
   [ -r "$task_secret" ] || { echo 'PostgreSQL password secret is unavailable' >&2; exit 1; }
-  task_password="$(cat "$task_secret")"
+  # File-backed Compose secrets keep their host UID/GID. With cap_drop=ALL,
+  # container root cannot read an ordinary host user's 0600 file directly.
+  task_secret_owner="$(stat -c '%u:%g' "$task_secret")"
+  task_password="$(su-exec "$task_secret_owner" cat "$task_secret")"
   # Keyword DSNs need single quotes and backslashes escaped, never logged.
   task_password="$(printf '%s' "$task_password" | sed "s/\\\\/\\\\\\\\/g; s/'/\\\\'/g")"
   export SPACE_CLOUD_DATABASE_URL="host=${SPACE_DB_HOST:-postgres} port=5432 user=${SPACE_DB_USER:-zstore} dbname=${SPACE_DB_NAME:-zstore} sslmode=disable password='$task_password'"

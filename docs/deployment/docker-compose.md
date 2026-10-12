@@ -17,7 +17,7 @@
 cp deploy/compose/ui/config.example.env deploy/compose/ui/.env
 ```
 
-编辑 `.env`：`NAS_ORIGIN` 必须是固定、无用户名密码、无路径的 NAS 官方 HTTP(S) 地址，例如 `http://192.168.3.56:5055`；不能填成 UI 自己的端口。局域网直接访问时，将 `UI_BIND_IP` 改成 NAS 的实际 LAN IP。默认 `127.0.0.1` 适用于同主机 HTTPS 反代。
+编辑 `.env`：`NAS_ORIGIN` 必须是固定、无用户名密码、无路径的 NAS 官方 HTTP(S) 地址，例如 `http://192.168.3.56:5055`；不能填成 UI 自己的端口。`UI_PUBLIC_ORIGIN` 填浏览器实际打开的 UI 来源，例如 `http://192.168.3.56:18436` 或反代的 HTTPS 来源。局域网直接访问时，将 `UI_BIND_IP` 改成 NAS 的实际 LAN IP。默认 `127.0.0.1` 适用于同主机 HTTPS 反代。
 
 ```bash
 docker compose --env-file deploy/compose/ui/.env -f deploy/compose/ui/compose.yaml config --quiet
@@ -26,7 +26,7 @@ docker compose --env-file deploy/compose/ui/.env -f deploy/compose/ui/compose.ya
 curl -fsS http://127.0.0.1:18436/healthz
 ```
 
-页面和 `/auth`、`/v2/` 等官方接口全部通过同源 `space-proxy`，运行期 `nasOrigin` 留空。访问桌面根路径或 `/shop.html`。代理只转发源码列出的 NAS 路径，目标固定为 `NAS_ORIGIN`。
+页面和 `/auth`、`/v2/` 等官方接口全部通过同源 `space-proxy`，运行期 `nasOrigin` 留空。访问桌面根路径或 `/shop.html`。代理只转发源码列出的 NAS 路径，目标固定为 `NAS_ORIGIN`。基础网关的 NAS 身份来源使用 `UI_PUBLIC_ORIGIN`，与浏览器会话中的同源地址一致；认证请求再由 UI 代理转到官方上游。
 
 `SPACE_STORE_ENDPOINT` 留空时，UI 启动 `--engine=disabled --nas-admin-only` 的基础网关：可验证 NAS 管理员会话，但没有 Docker 安装引擎。要安装、维护应用，使用 `deploy/docker-installer/build-package.py` 生成的已校验发布安装器，按 `deploy/docker-installer/install-docker.sh` 的现有受管方案部署 NAS 本地控制器，再将 `SPACE_STORE_ENDPOINT` 设为它在容器内可达的 HTTP(S) 地址。源码安装器中的 `BUILD_*` 是构建占位，不能直接作为发布安装器运行。这个值必须指向 NAS 控制器，不能指向云目录后台。控制器要求固定 NAS 身份、专用存储目录和宿主挂载证明；不要通过给 UI 加 `privileged` 或简单挂 Docker socket 绕过这些要求。
 
@@ -39,6 +39,8 @@ python3 deploy/nas-appstore/push-client.py
 ```
 
 该脚本使用已配置且可用的 `sshbind` 别名，先备份旧静态页面和代理，再更新。新的 Compose 是独立部署示例，不能直接复用旧项目的数据卷或替换现有容器。
+
+已有受管 NAS 本地控制器需要更新网关版本时，使用[控制器更新说明](./controller-update.md)中的独立审核与切换流程，保留原 SQLite、StoreID 和应用数据目录。
 
 ## 云商店后端
 

@@ -4,7 +4,15 @@
 
 界面采用**飞牛 fnOS 视觉语言**（用户选定）：桌面外壳、左侧应用栏、应用窗口、登录页、右上角资源挂件与全部应用窗口都按 fnOS 的真实界面复刻，数值来自对 fnOS Web 端的实测，素材来自用户本机 fnOS。详见[飞牛 UI 实施计划](docs/superpowers/plans/2026-10-11-fnos-full-ui.md)。
 
-项目处于本地构建与逐项验收阶段，不宣称厂商官方发布身份。原生 iOS/Android/HarmonyOS、GitHub 仓库、Actions 和公开发布均后置。
+项目提供 NAS H5 与独立商店部署，GitHub Actions 构建 macOS、Windows 与 Linux 桌面客户端；安装包当前未签名。原生 iOS/Android/HarmonyOS 尚未交付。源码仓库为私有的 isle24/zspace-apps，公共应用素材仍在 isle24/nas-app-store-catalog。
+
+## 本轮部署与管理员能力
+
+- [两个 Docker Compose 部署入口](docs/deployment/docker-compose.md)：NAS 三方 UI、云商店与 PostgreSQL 后台；另说明 NAS 本地应用安装执行器的受管部署。
+- [逐项反馈与交付核对清单](docs/verification/2026-10-12-delivery-checklist.md)。
+- [客户端 Actions](https://github.com/isle24/zspace-apps/actions/workflows/client-build.yml)。
+- 云后台支持 AI 服务配置、镜像资料辅助、单服务 Compose 草稿导入、图标预览、后端图标分发、容量与热度控制的镜像缓存池及 TOTP 双重验证。
+- 生产管理员首次登录需扫码并提交正确动态码才完成绑定；本地可取消强制绑定要求。AI 密钥由管理员在后台配置，数据库加密保存。
 
 ## 两个独立入口
 

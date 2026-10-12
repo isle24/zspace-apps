@@ -10,9 +10,11 @@ if [ -z "$task_endpoint" ] && [ -f /data/client-store-endpoint ]; then
   task_endpoint="$(cat /data/client-store-endpoint)"
 fi
 if [ -z "$task_endpoint" ]; then
+  : "${UI_PUBLIC_ORIGIN:?Set the browser-visible UI HTTP(S) origin for same-origin NAS identity}"
   # The UI's fallback has no installation engine or host filesystem access.
   space-gateway --listen=127.0.0.1:18435 --data-dir=/data --web-root=/web \
-    --engine=disabled --nas-origin="$NAS_ORIGIN" --nas-admin-only &
+    --engine=disabled --nas-origin="$UI_PUBLIC_ORIGIN" --nas-admin-only \
+    --public-origin="$UI_PUBLIC_ORIGIN" &
   task_gateway_pid=$!
   task_endpoint=http://127.0.0.1:18435
 fi

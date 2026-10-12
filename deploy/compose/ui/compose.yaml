@@ -14,6 +14,7 @@ services:
       - "${UI_BIND_IP:-127.0.0.1}:${UI_PORT:-18436}:18436"
     environment:
       NAS_ORIGIN: ${NAS_ORIGIN:?Set the fixed canonical NAS_ORIGIN}
+      UI_PUBLIC_ORIGIN: ${UI_PUBLIC_ORIGIN:?Set the browser-visible UI HTTP(S) origin}
       SPACE_STORE_ENDPOINT: ${SPACE_STORE_ENDPOINT:-}
     volumes:
       - ui-data:/data

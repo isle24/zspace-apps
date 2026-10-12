@@ -168,6 +168,7 @@ func (c *cloudService) register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/cloud/catalog-key", c.catalogKey)
 	mux.HandleFunc("GET /api/cloud/icons/{hash}", c.icon)
 	mux.HandleFunc("GET /api/cloud/artwork", c.artwork)
+	mux.HandleFunc("GET /api/cloud/artwork/{hash}", c.artwork)
 	c.registerAdminAssist(mux)
 	mux.HandleFunc("GET /api/cloud/manifests/{id}/{release}", c.auth(false, c.releaseManifest))
 	mux.HandleFunc("GET /api/cloud/catalogs/{sequence}", c.auth(false, c.versionCatalog))

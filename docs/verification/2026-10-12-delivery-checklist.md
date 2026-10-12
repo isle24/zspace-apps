@@ -116,3 +116,6 @@ NAS执行器最终更新：2026-10-13，受管控制器版本controller-cache-20
 
 
 GitHub数据兜底已补齐：公共目录仓库提交13b4c55发布当前7个应用公开资料、签名目录sequence=2、公开签名钥匙和已发布清单。仅从published_json、cloud_publications、cloud_releases与被公开应用引用的图标导出，没有账户、心愿、用户历史、AI密钥、TOTP密钥或签名私钥。Ed25519与payload SHA256核验通过。
+
+
+最终构建：GitHub Actions运行38277040444（attempt=2）的NAS H5、macOS ARM64、macOS Intel、Linux AMD64、Windows AMD64五个任务全部success，全部产物已上传。Linux首次重跑前的失败为隐私测试误判随机hex ID包含abc；应用源码没有上传数据泄漏，已将标识与实际公开元数据分开校验并加入固定abc标识回归，204项SDK测试及类型检查通过。完整Go测试、对应race、302项独立商店测试、15项管理后台测试、两个源码Docker构建、本地PostgreSQL持久性与2FA拦截、NAS受管升级和真实缓存镜像拉取结果均已分项记录。

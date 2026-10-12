@@ -134,3 +134,6 @@ chmod 700 backups
 管理员首次登录扫码并输入有效动态码完成绑定，随后在发布设置填写AI服务接口、模型和密钥。镜像缓存池已设置5 GiB，后台预热；可在后台调整容量、查看已完成缓存。预热和镜像下载依赖服务器到公开仓库的网络，缓存未命中时客户端使用原始digest地址。
 
 四个平台桌面包和NAS H5包由[客户端Actions](https://github.com/isle24/zspace-apps/actions/workflows/client-build.yml)生成，当前包未签名。源代码在私有仓库isle24/zspace-apps，公共应用素材与目录兜底在isle24/nas-app-store-catalog。
+
+
+GitHub素材自动同步：本轮已把当前公开应用资料、签名目录、部署清单与图标导出到公共目录仓库。后续后台新增/修改应用的自动同步需要在“GitHub素材同步”设置仅授权目录仓库Contents写入的凭据；留空不会自动生成发布凭据，也不会复用管理员密码或本机GitHub登录令牌。

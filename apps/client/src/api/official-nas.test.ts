@@ -1897,7 +1897,11 @@ describe('session-owned upload source registry', () => {
     await expect(nas.selectBrowserUploadSource(file)).rejects.toMatchObject({code:'NO_SESSION'});
     await login(nas); const source=await nas.selectBrowserUploadSource(file);
     expect(source).toEqual({sourceId:expect.stringMatching(/^[a-f0-9]{32}$/),name:'选定.txt',size:3,lastModified:7,sessionId:nas.sessionId});
-    expect(JSON.stringify(source)).not.toMatch(/synthetic-nas|abc|File|adapter/);
+    // The random opaque identifier may legitimately contain the hex substring "abc".
+    const {sourceId: opaqueId, sessionId: ownerSessionId, ...publicMetadata} = source;
+    expect(opaqueId).toMatch(/^[a-f0-9]{32}$/);
+    expect(ownerSessionId).toBe(nas.sessionId);
+    expect(JSON.stringify(publicMetadata)).not.toMatch(/synthetic-nas|abc|File|adapter/);
     await nas.releaseUploadSource(source.sourceId); await nas.releaseUploadSource(source.sourceId);
   });
   it('rejects source names containing the captured private token without echoing it',async()=> {

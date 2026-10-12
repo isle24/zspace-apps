@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Reviewed in-place managed-controller image switch; keeps SQLite and app roots.
 
-Default is read-only review. An authenticated administrator must first quiesce
-the store. Apply/rollback retain every container, image, backup and user file.
+Default is read-only review. Use an authenticated maintenance pause or the
+explicit audited SSH-administrator offline path. Apply/rollback retain every
+container, image, backup and user file.
 """
 import argparse
 import base64
@@ -49,6 +50,51 @@ def database_proof(path, stopped=False):
         return {'identity': {'storeId': identity[0][0], 'schema': h._clone_digest(schema), 'rootMapping': roots}, 'tables': digests}
 
 
+EMPTY_SCHEMA_ADDITIONS = {
+    'runtime_secret_sets': 'CREATE TABLE runtime_secret_sets(id TEXT PRIMARY KEY,scope TEXT NOT NULL,ciphertext BLOB NOT NULL)',
+    'runtime_cloud_recipes': 'CREATE TABLE runtime_cloud_recipes(id TEXT PRIMARY KEY,body TEXT NOT NULL)',
+}
+
+
+def compatible_identity(before, after, backup_path, current_path, stopped=False):
+    """Allow only the two reviewed empty additive runtime migrations.
+
+    Existing objects retain their complete sqlite_schema rows. No generic
+    additive-schema allowance, normalization, data removal or migration runs.
+    """
+    for key in ('storeId', 'rootMapping'):
+        if before['identity'][key] != after['identity'][key]:
+            raise ValueError('controller store identity or root mapping changed')
+    if before['identity']['schema'] == after['identity']['schema']: return []
+    def schema_rows(path, immutable):
+        with h.readonly_evidence(path, immutable) as db:
+            return db.execute('SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name').fetchall()
+    original = schema_rows(backup_path, True)
+    current = schema_rows(current_path, stopped)
+    if h._clone_digest(original) != before['identity']['schema'] or h._clone_digest(current) != after['identity']['schema']:
+        raise ValueError('controller schema proof changed')
+    old_objects = {(row[0], row[1]): row for row in original}
+    new_objects = {(row[0], row[1]): row for row in current}
+    if any(new_objects.get(key) != value for key, value in old_objects.items()):
+        raise ValueError('existing controller schema object changed')
+    extras = {key: value for key, value in new_objects.items() if key not in old_objects}
+    accepted = {}
+    tables = []
+    for table, ddl in EMPTY_SCHEMA_ADDITIONS.items():
+        table_key = ('table', table)
+        if table_key not in extras: continue
+        index = 'sqlite_autoindex_' + table + '_1'
+        expected = {table_key: ('table', table, table, ddl), ('index', index): ('index', index, table, None)}
+        if any(extras.get(key) != row for key, row in expected.items()):
+            raise ValueError('runtime additive table definition differs')
+        if after['tables'].get(table, {}).get('rows') != 0:
+            raise ValueError('runtime additive table must remain empty')
+        accepted.update(expected); tables.append(table)
+    if extras != accepted or not tables:
+        raise ValueError('unapproved controller schema addition')
+    return sorted(tables)
+
+
 def target_plan(source, release):
     if not re.fullmatch('[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}', release) or release.lower() == source['release'].lower():
         raise ValueError('new release must be explicit and different')
@@ -90,6 +136,11 @@ def copy_private(source, target):
     if h._private_file_proof(str(source)) != before or h._private_file_proof(str(target))['sha256'] != before['sha256']:
         raise ValueError('private backup source changed')
     return before
+
+
+def persist_directory(path):
+    with h.directory_handle(str(path), secure_ancestors=True) as directory:
+        os.fsync(directory)
 
 
 def replace_self(path, expected, replacement, temporary):
@@ -183,6 +234,7 @@ def apply_update(receipt, image, release, offline=False, resume=False):
                     'offlineMaintenance': offline, 'resumeReady': resume, 'maintenanceId': pause['id'],
                     'operatorUid': os.getuid(), 'operatorGid': os.getgid()}
         h.new_json(version/'update.json', prepared)
+        persist_directory(version); persist_directory(version.parent)
         h.command(['docker', 'stop', '--time', '15', source['containerId']])
         refreshed, actual = h.validate_receipt(receipt)
         if refreshed != source or actual.get('State', {}).get('Running') is not False:
@@ -195,6 +247,7 @@ def apply_update(receipt, image, release, offline=False, resume=False):
             copy_private(self_path, backup/'self.json')
             copy_private(receipt, backup/'source-receipt.json')
             h.new_json(backup/'database-proof.json', frozen)
+            persist_directory(backup); persist_directory(version)
             # The SQLite file remains at its original path and is never replaced.
             controller(); update(); h.assert_idle(db, stopped=True)
             cid = h.command(h.create_arguments(target, image))
@@ -206,19 +259,71 @@ def apply_update(receipt, image, release, offline=False, resume=False):
             h.verify_owned(actual, target, cid, image)
             if actual.get('State', {}).get('Running') is not False: raise ValueError('candidate must be stopped')
             h.new_json(version/'receipt.json', new_record)
+            persist_directory(version)
             replace_self(self_path, old_self, h.self_record(target, cid, image), version/'self.next.json')
             h.validate_receipt(str(version/'receipt.json')); controller(); update()
         h.command(['docker', 'start', cid])
         h.health_check(target, cid, image, version/'receipt.json')
         h.assert_quiesced(db, pause); h.assert_idle(db)
-        if database_proof(db)['identity'] != frozen['identity']:
-            raise ValueError('candidate changed schema or root mapping; retained for review')
+        additions = compatible_identity(frozen, database_proof(db), backup/'store.sqlite', db)
         update()
         if resume: offline_maintenance(new_record, update, pause, resume=True)
         result = {'ok': True, 'state': 'ready' if resume else 'quiesced', 'containerId': cid, 'imageId': image,
                   'storeId': frozen['identity']['storeId'], 'receipt': str(version/'receipt.json'),
-                  'backup': str(backup), 'previousContainerId': source['containerId']}
+                  'backup': str(backup), 'previousContainerId': source['containerId'], 'schemaAdditions': additions}
         h.new_json(version/'switch-result.json', result)
+        persist_directory(version)
+        return result
+
+
+def complete_update(update_path, offline=False, resume=False):
+    """Complete an already-created healthy candidate; never replay deployment."""
+    if resume and not offline: raise ValueError('offline resume needs explicit offline maintenance')
+    prepared = h.read_json(update_path)
+    if prepared.get('schema') != 1 or prepared.get('kind') != 'in-place-controller-update':
+        raise ValueError('unknown retained update')
+    version = pathlib.Path(update_path).parent
+    record, actual = h.validate_receipt(str(version/'receipt.json'))
+    source = prepared['source']; p = record['plan']; root = pathlib.Path(p['root'])
+    if (prepared['targetPlan'] != p or prepared['targetImageId'] != record['imageId']
+            or str(version) != str(root/'releases'/p['release'])
+            or actual.get('State', {}).get('Running') is not True
+            or h._private_file_proof(prepared['sourceReceipt']) != prepared['sourceReceiptProof']):
+        raise ValueError('retained running candidate identity changed')
+    original = json.loads(h.command(['docker', 'inspect', source['containerId']]))[0]
+    h.verify_owned(original, source['plan'], source['containerId'], source['imageId'])
+    if original.get('State', {}).get('Running') is not False: raise ValueError('previous controller must be stopped')
+    h.controller_health(p, record['containerId'], record['imageId'])
+    result_path = version/'switch-result.json'
+    if result_path.exists():
+        result = h.read_json(result_path)
+        if (result.get('ok') is not True or result.get('containerId') != record['containerId']
+                or result.get('imageId') != record['imageId'] or result.get('previousContainerId') != source['containerId']
+                or result.get('state') not in ('ready', 'quiesced')):
+            raise ValueError('retained switch result differs')
+        return result
+    backup = pathlib.Path(prepared['backup'])
+    if backup != version/'backup' or h.read_json(backup/'source-receipt.json') != source:
+        raise ValueError('retained source backup differs')
+    frozen = h.read_json(backup/'database-proof.json')
+    if database_proof(backup/'store.sqlite', stopped=True) != frozen: raise ValueError('database backup differs')
+    db = root/'metadata/store/store.sqlite'
+    with h.exclusive_update(record) as update:
+        refreshed, observed = h.validate_receipt(str(version/'receipt.json'))
+        if refreshed != record or observed.get('State', {}).get('Running') is not True:
+            raise ValueError('running candidate changed during completion')
+        h.controller_health(p, record['containerId'], record['imageId'])
+        pause = h.assert_quiesced(db)
+        if pause['id'] != prepared.get('maintenanceId'): raise ValueError('original update pause changed')
+        h.assert_idle(db)
+        additions = compatible_identity(frozen, database_proof(db), backup/'store.sqlite', db)
+        update()
+        if resume: offline_maintenance(record, update, pause, resume=True)
+        result = {'ok': True, 'state': 'ready' if resume else 'quiesced', 'containerId': record['containerId'],
+                  'imageId': record['imageId'], 'storeId': frozen['identity']['storeId'],
+                  'receipt': str(version/'receipt.json'), 'backup': str(backup),
+                  'previousContainerId': source['containerId'], 'schemaAdditions': additions}
+        h.new_json(result_path, result); persist_directory(version)
         return result
 
 
@@ -248,7 +353,7 @@ def rollback_update(update_path, offline=False, resume=False):
         if not offline or str(error) != 'current quiesced maintenance required': raise
         pause = None
     h.assert_idle(db)
-    if database_proof(db)['identity'] != frozen['identity']: raise ValueError('rollback schema or root mapping changed')
+    compatible_identity(frozen, database_proof(db), backup/'store.sqlite', db)
     with h.exclusive_update(record) as update:
         h.validate_receipt(str(version/'receipt.json'))
         if offline: pause = offline_maintenance(record, update)
@@ -260,8 +365,9 @@ def rollback_update(update_path, offline=False, resume=False):
         if current.get('State', {}).get('Running') is not False: raise ValueError('candidate stop unconfirmed')
         with h.stopped_controller(record) as controller:
             h.assert_quiesced(db, pause, stopped=True); h.assert_idle(db, stopped=True)
-            if database_proof(db, stopped=True)['identity'] != frozen['identity']: raise ValueError('rollback root mapping changed')
+            compatible_identity(frozen, database_proof(db, stopped=True), backup/'store.sqlite', db, stopped=True)
             copy_private(db, version/'rollback-current.sqlite')
+            persist_directory(version)
             expected = h.self_record(p, record['containerId'], record['imageId'])
             restored = h.self_record(source['plan'], source['containerId'], source['imageId'])
             if h.read_json(backup/'self.json') != restored: raise ValueError('previous self record backup differs')
@@ -274,6 +380,7 @@ def rollback_update(update_path, offline=False, resume=False):
         result = {'ok': True, 'state': 'ready' if resume else 'quiesced', 'containerId': source['containerId'],
                   'imageId': source['imageId'], 'storeId': frozen['identity']['storeId']}
         h.new_json(version/'rollback-result.json', result)
+        persist_directory(version)
         return result
 
 
@@ -288,17 +395,20 @@ def main():
     parser.add_argument('--offline-maintenance', action='store_true', help='Authorized SSH administrator writes audited pause under native lease; no NAS session')
     parser.add_argument('--resume-offline', action='store_true', help='Explicitly restore ready after successful verification')
     parser.add_argument('--rollback-update')
+    parser.add_argument('--complete-update', help='Finish verification of an existing running candidate; never reapply or replace backups')
     args = parser.parse_args()
     if args.resume_offline and not args.offline_maintenance: parser.error('resume-offline requires offline-maintenance')
-    if args.rollback_update:
-        h.canonical(args.rollback_update)
+    if args.rollback_update or args.complete_update:
+        if args.rollback_update and args.complete_update: parser.error('complete and rollback are separate operations')
+        h.canonical(args.rollback_update or args.complete_update)
         if args.receipt or args.image_id or args.release or args.apply: parser.error('rollback cannot combine update arguments')
     else:
         if not all((args.receipt, args.image_id, args.release)): parser.error('receipt, image-id and release are required')
         h.canonical(args.receipt)
         if not re.fullmatch('sha256:[0-9a-f]{64}', args.image_id) or not re.fullmatch('[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}', args.release): parser.error('invalid image/release')
     if args.remote:
-        if args.rollback_update: result = rollback_update(args.rollback_update, args.offline_maintenance, args.resume_offline)
+        if args.complete_update: result = complete_update(args.complete_update, args.offline_maintenance, args.resume_offline)
+        elif args.rollback_update: result = rollback_update(args.rollback_update, args.offline_maintenance, args.resume_offline)
         elif args.apply: result = apply_update(args.receipt, args.image_id, args.release, args.offline_maintenance, args.resume_offline)
         else:
             record, pause, target, proof = review_update(args.receipt, args.image_id, args.release, args.offline_maintenance)
@@ -317,7 +427,8 @@ def main():
     host_source = pack((task_root/'store-container-host.py').read_bytes())
     updater_source = pack(pathlib.Path(__file__).read_bytes())
     argv = ['update-store-controller.py','--remote']
-    if args.rollback_update: argv += ['--rollback-update',args.rollback_update]
+    if args.complete_update: argv += ['--complete-update',args.complete_update]
+    elif args.rollback_update: argv += ['--rollback-update',args.rollback_update]
     else:
         argv += ['--receipt',args.receipt,'--image-id',args.image_id,'--release',args.release]
         if args.apply: argv += ['--apply']

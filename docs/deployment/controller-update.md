@@ -34,6 +34,19 @@ python3 scripts/update-store-controller.py \
 
 `--resume-offline` 明确要求健康验证通过后，通过标准 resumed 维护记录恢复 ready。省略它就保持 paused，等待管理员使用页面恢复。离线操作的 UID/GID、维护 ID 和选项同时保存在 `update.json`。数据库里的账号、会话和应用状态不由更新脚本重新创建或重置。
 
+兼容校验保持原有全部 `sqlite_schema` 对象逐项相同，仅允许当前网关声明的两个新增空表：`runtime_secret_sets(id TEXT PRIMARY KEY,scope TEXT NOT NULL,ciphertext BLOB NOT NULL)` 与 `runtime_cloud_recipes(id TEXT PRIMARY KEY,body TEXT NOT NULL)`，以及各自的 SQLite 主键索引。它不执行这些迁移、不删除数据，也不接受其他表、索引、列或非空新增表。
+
+如果新容器已经健康运行、receipt 和备份已建立，但最终校验尚未完成，不能重复 `--apply` 覆盖版本目录。使用完成入口核验现有运行候选、停止的旧容器、原维护 ID、任务状态、备份和兼容结构，再恢复 ready 并写 `switch-result.json`：
+
+```bash
+python3 scripts/update-store-controller.py \
+  --alias zspace \
+  --complete-update /data_数据盘/服务/releases/新版本/update.json \
+  --offline-maintenance --resume-offline
+```
+
+完成入口不创建、停止或启动容器，不替换备份。已有匹配的成功结果时返回该结果，不重复切换。
+
 ## 回滚
 
 旧容器必须仍然停止，并保留原 receipt 与镜像。回滚先暂停新任务、确认没有活动或不确定任务，验证当前结构和存储映射与版本备份一致，备份失败版本的当前 SQLite，然后停止新容器、恢复原 self record 并启动旧 container ID：
@@ -45,4 +58,4 @@ python3 scripts/update-store-controller.py \
   --offline-maintenance --resume-offline
 ```
 
-回滚同样不覆盖 SQLite，不删除新容器或任何应用数据。结构或存储映射已变化时会拒绝回滚，保留当前元数据与全部备份供检查。中途失败时，先查看相应版本目录及确切容器状态，不能用清空目录、删除卷或重装来处理。新 receipt 已建立后可走上述回滚；候选尚未建立时，核对原 receipt/self record 和数据库仍匹配，再恢复原容器。
+回滚同样不覆盖 SQLite，不删除新容器或任何应用数据。除上述两条经过核验的空表新增外，结构或存储映射已变化时会拒绝回滚，保留当前元数据与全部备份供检查。中途失败时，先查看相应版本目录及确切容器状态，不能用清空目录、删除卷或重装来处理。新 receipt 已建立后可走上述回滚；候选尚未建立时，核对原 receipt/self record 和数据库仍匹配，再恢复原容器。

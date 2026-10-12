@@ -173,6 +173,47 @@ class ControllerUpdate(unittest.TestCase):
                 with self.assertRaises(ValueError): updater.apply_update(str(receipt), self.new_image, 'next-release')
             self.assertFalse(any(call[:2] == ['docker', 'stop'] for call in self.calls))
 
+    def test_complete_accepts_exact_empty_runtime_tables_without_reapplying(self):
+        self.assertTrue(callable(getattr(updater, 'complete_update', None)), 'Missing safe completion of retained candidate')
+        with tempfile.TemporaryDirectory() as base:
+            plan, record, actual, receipt, db, command = self.fixture(base)
+            with patch.object(host, 'command', side_effect=command), patch.object(host, 'controller_health', return_value='1'*32), patch.object(host, 'health_check'):
+                result = updater.apply_update(str(receipt), self.new_image, 'next-release')
+                version = pathlib.Path(result['receipt']).parent
+                (version/'switch-result.json').unlink()  # Reproduce the interrupted post-start validation.
+                with sqlite3.connect(db) as connection:
+                    connection.execute('CREATE TABLE runtime_secret_sets(id TEXT PRIMARY KEY,scope TEXT NOT NULL,ciphertext BLOB NOT NULL)')
+                    connection.execute('CREATE TABLE runtime_cloud_recipes(id TEXT PRIMARY KEY,body TEXT NOT NULL)')
+                calls_before = len(self.calls)
+                completed = updater.complete_update(str(version/'update.json'), offline=True, resume=True)
+                self.assertEqual(completed['state'], 'ready')
+                self.assertEqual(set(completed['schemaAdditions']), {'runtime_secret_sets', 'runtime_cloud_recipes'})
+                self.assertFalse(any(call[:2] in (['docker','stop'],['docker','start'],['docker','create']) for call in self.calls[calls_before:]))
+                self.assertTrue((version/'backup/store.sqlite').is_file())
+                self.assertEqual(updater.complete_update(str(version/'update.json'), offline=True, resume=True), completed)
+
+    def test_complete_refuses_extra_changed_or_nonempty_migrations(self):
+        self.assertTrue(callable(getattr(updater, 'complete_update', None)), 'Missing safe completion of retained candidate')
+        for kind in ('wrong-columns', 'nonempty', 'extra-table', 'extra-index', 'modified-old'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as base:
+                plan, record, actual, receipt, db, command = self.fixture(base)
+                with patch.object(host, 'command', side_effect=command), patch.object(host, 'controller_health', return_value='1'*32), patch.object(host, 'health_check'):
+                    result = updater.apply_update(str(receipt), self.new_image, 'next-release')
+                    version = pathlib.Path(result['receipt']).parent
+                    (version/'switch-result.json').unlink()
+                    with sqlite3.connect(db) as connection:
+                        if kind == 'wrong-columns': connection.execute('CREATE TABLE runtime_secret_sets(id TEXT PRIMARY KEY,scope TEXT,ciphertext TEXT)')
+                        else:
+                            connection.execute('CREATE TABLE runtime_secret_sets(id TEXT PRIMARY KEY,scope TEXT NOT NULL,ciphertext BLOB NOT NULL)')
+                            connection.execute('CREATE TABLE runtime_cloud_recipes(id TEXT PRIMARY KEY,body TEXT NOT NULL)')
+                            if kind == 'nonempty': connection.execute("INSERT INTO runtime_cloud_recipes VALUES('synthetic','{}')")
+                            elif kind == 'extra-table': connection.execute('CREATE TABLE extra_runtime(id TEXT)')
+                            elif kind == 'extra-index': connection.execute('CREATE INDEX extra_runtime_index ON runtime_cloud_recipes(body)')
+                            elif kind == 'modified-old': connection.execute('ALTER TABLE plans ADD COLUMN incompatible TEXT')
+                    with self.assertRaises(ValueError): updater.complete_update(str(version/'update.json'), offline=True, resume=True)
+                    self.assertEqual(host.assert_quiesced(db)['status'], 'quiesced')
+                    self.assertFalse((version/'switch-result.json').exists())
+
     def test_rollback_refuses_changed_root_mapping_and_preserves_sqlite(self):
         with tempfile.TemporaryDirectory() as base:
             plan, record, actual, receipt, db, command = self.fixture(base)

@@ -125,3 +125,12 @@ chmod 700 backups
 `scripts/ci-build-sidecar.mjs` 根据 Rust target 生成对应的 Go 网关，关闭 CGO，并按 `space-gateway-<target-triple>[.exe]` 命名，以匹配 Tauri 的 `externalBin` 约定。[Tauri sidecar 文档](https://v2.tauri.app/develop/sidecar/)
 
 全部桌面产物明确标为 `unsigned`，工作流使用 `--no-sign`，没有代码签名、公证或自动更新签名凭据。macOS/Windows 首次启动可能需要系统确认；从 artifact 下载的 AppImage 先执行 `chmod +x 文件名.AppImage`。Actions 另上传 `nas-client-linux-amd64`，包含已合并的桌面/独立商店静态页面与 NAS 代理。工作流只构建和上传客户端；服务器更新继续使用本机 `sshbind` 的受管部署流程，没有将服务器密钥复制到 GitHub。构建任务通过不代表已完成 NAS 登录、应用安装或线上验收，部署后仍需验证服务健康、页面版本和实际登录流程。
+
+
+## 现有服务器交付（2026-10-13）
+
+当前极空间UI地址为 http://192.168.3.56:18436/，独立商店为 /shop.html，受管NAS执行器为18441端口；云商店管理员后台为 https://zstore.2iwm.com/admin/。本轮均已更新并核验健康，原数据和备份保留。NAS执行器受管升级与回滚步骤见[控制器更新说明](controller-update.md)。
+
+管理员首次登录扫码并输入有效动态码完成绑定，随后在发布设置填写AI服务接口、模型和密钥。镜像缓存池已设置5 GiB，后台预热；可在后台调整容量、查看已完成缓存。预热和镜像下载依赖服务器到公开仓库的网络，缓存未命中时客户端使用原始digest地址。
+
+四个平台桌面包和NAS H5包由[客户端Actions](https://github.com/isle24/zspace-apps/actions/workflows/client-build.yml)生成，当前包未签名。源代码在私有仓库isle24/zspace-apps，公共应用素材与目录兜底在isle24/nas-app-store-catalog。

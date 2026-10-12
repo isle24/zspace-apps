@@ -1895,7 +1895,10 @@ describe('session-owned upload source registry', () => {
   it('requires current login and returns only safe opaque browser metadata', async () => {
     const {nas}=fixture(); const file=new File(['abc'],'选定.txt',{lastModified:7});
     await expect(nas.selectBrowserUploadSource(file)).rejects.toMatchObject({code:'NO_SESSION'});
-    await login(nas); const source=await nas.selectBrowserUploadSource(file);
+    await login(nas);
+    vi.spyOn(crypto,'getRandomValues').mockImplementation((array:any)=>{const bytes=new Uint8Array(array.buffer,array.byteOffset,array.byteLength);bytes.fill(0);bytes[0]=0xab;bytes[1]=0xc0;return array;});
+    const source=await nas.selectBrowserUploadSource(file);
+    expect(source.sourceId).toContain('abc');
     expect(source).toEqual({sourceId:expect.stringMatching(/^[a-f0-9]{32}$/),name:'选定.txt',size:3,lastModified:7,sessionId:nas.sessionId});
     // The random opaque identifier may legitimately contain the hex substring "abc".
     const {sourceId: opaqueId, sessionId: ownerSessionId, ...publicMetadata} = source;

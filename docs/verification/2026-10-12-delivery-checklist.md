@@ -75,15 +75,14 @@
 | Linux amd64 普通用户安装器 | `deploy/docker-installer/build-package.py`、`install-docker.sh`、安装器回归 | NAS 端依赖 Docker 27.3+ 和常见 shell 工具，不依赖 sshbind/主机 Go/Node/Python；有校验和、专用目录与身份保护。源码 `BUILD_*` 是构建占位，必须使用实际生成并校验的发布安装器，不能直接将模板当成可下载发布产物 |
 | 备份迁移、服务更新 | `docs/deployment/store-backup-migration.md`、`deploy/zstore` | 备份恢复演练文档已有历史证据；本轮更新仍需版本快照、服务健康及数据保留检查。新源码、构建成功不能单独证明 nj-game/NAS 已更新 |
 
-## 本轮只读审查发现与跟进
+## 本轮复审修复
 
-以下问题已报告主任务。核对期间主任务已经修复了目录隔离和字段校验的源码，新增测试结果应由主任务最终运行记录补充。
-
-| 问题 | 跟进状态 | 仍需确认 |
-| --- | --- | --- |
-| catalog/wishlist/history 使用 Promise.all，私人记录 503 会挡住已成功回退的目录 | 当前已经改为 Promise.allSettled，目录可单独显示；`CloudAccountPanel.test.tsx` 已新增备用目录/私人记录不可用回归 | 新增回归运行结果，以及账号在后台中断时仍保持 |
-| 备用目录只检查 id/name/icon，environment 非数组可让安装组件异常 | 当前已经增加 environment 数组及条目字段检查 | 非数组及错误条目的拒绝回归 |
-| NAS succeeded 后先等待云端 history，导致本机成功无法显示 | 当前成功分支已先标记本机完成；`trackCloudInstallHistory` 仍负责后台恢复后重试 | 历史请求失败的延迟回归；成功状态变化会触发 effect cleanup，失败提示须以当前账号/NAS scope 为准，不能被 cleanup 的 cancelled 标记吞掉。父面板也不能在历史 503 时显示“历史已同步” |
+| 发现 | 修复与验证 |
+| --- | --- |
+| 心愿/历史请求失败挡住备用目录 | 各请求独立处理，保留可读目录与账号，新增面板回归通过 |
+| 备用数据类型可能导致安装界面崩溃 | 校验environment数组及元素类型 |
+| 云历史写入失败掩盖NAS实际安装成功 | 先显示NAS成功，历史单独提示、继续重试；文案不再声称未确认的同步成功 |
+| 随机上传ID包含abc时隐私测试误判 | 随机标识与实际公开元数据分别检查，204项NAS SDK测试通过 |
 
 按本轮实际需求和当前 CloudApp 模板，云后台 `import-compose` 采用单服务草稿导入，对多服务明确报错、不丢弃服务；设计文档已经同步这个范围。NAS Compose 的最多 8 服务部署是另一入口。没有把云后台多服务上架列为本轮已完成能力，也没有据此扩大用户未特别要求的云端发布范围。
 
@@ -108,3 +107,6 @@
 2026-10-13 增量验收：后端图标改哈希路径，避免线上网关拦截外部URL参数；已打包七款内置图标作后端首选，GitHub地址在客户端兜底。云目录回退不会被心愿/历史请求失败丢弃，NAS安装成功先显示成功，云历史故障独立提示并保留后台重试。独立商店最终302用例、管理后台15用例通过；Go全套77.379秒通过，交付相关race81.042秒通过。NAS代理Go测试通过。
 
 线上图标补充：2026-10-13，后端已实测返回 HTTP 200、image/png、13071 bytes（Navidrome内置图标），前端优先哈希路径，不将外部URL作为查询参数。GitHub Actions运行38273294058的H5、macOS ARM64、macOS Intel、Linux AMD64、Windows AMD64五个任务全部success。
+
+
+NAS执行器最终更新：2026-10-13，受管控制器版本controller-cache-20261012T161025Z-5acbd2，镜像aebd2f915f2f…，状态ready，原StoreID ae1d0481456dc535d9caf213395a65781015a8dcffe4a11f及原数据库inode、路径、存储映射均保留。旧容器133253d7f412…保持停止，候选aacd82cb824c…健康。升级仅接受来自当前源码的runtime_cloud_recipes、runtime_secret_sets两张空表及其主键索引；其他schema变化拒绝。备份位置为原服务releases/controller-cache-20261012T161025Z-5acbd2/backup，实际完成后恢复ready，幂等复核通过。升级器10用例通过，原部署助手64用例通过（1环境skip）。

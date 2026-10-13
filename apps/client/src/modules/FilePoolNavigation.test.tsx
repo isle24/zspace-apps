@@ -23,6 +23,7 @@ function reads() {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
+// This multi-step UI flow exceeded 5s on the loaded Intel macOS CI runner.
 it("keeps three returned pools visible through nested folders, indexed search and recent access, reusing the overview read", async () => {
   const read = reads(); render(<Files connected />);
   await screen.findByRole("button", { name: "打开存储池：家庭存储" });
@@ -42,7 +43,7 @@ it("keeps three returned pools visible through nested folders, indexed search an
   fireEvent.click(sidebar().getByRole("button", { name: "我的文件" }));
   await screen.findByRole("button", { name: /家庭存储文件夹/ });
   expect(read.mock.calls.filter(([op]) => op === "files.roots")).toHaveLength(1);
-});
+}, 15_000);
 
 it("switches to the exact returned same-prefix pool path and resets search, page, selection and breadcrumbs", async () => {
   const read = reads(); const view = render(<Files connected />);

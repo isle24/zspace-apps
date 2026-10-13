@@ -1,6 +1,6 @@
 # fnOS 目录导入
 
-导入来源为 [conversun/fnos-apps](https://github.com/conversun/fnos-apps)，固定提交 `d297f9ac155b15a26b92632ee045ff4d530e2571`。本次目录包含 175 个应用：107 个 Docker 应用、68 个原生 FPK。全部导入为后台草稿，客户端公开目录只读取已发布记录。
+导入来源为 [conversun/fnos-apps](https://github.com/conversun/fnos-apps)，固定提交 `d297f9ac155b15a26b92632ee045ff4d530e2571`。本次目录包含 175 个应用：107 个 Docker 应用、68 个原生 FPK。新增条目导入为后台草稿，已有条目保留原状态；客户端公开目录只读取已发布记录。
 
 | 来源分类 | 数量 | 草稿状态 |
 | --- | ---: | --- |

@@ -169,6 +169,7 @@ it("opens the same local task view from status and desktop without store authori
   expect(screen.getByText("还没有本机下载任务")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "商店安装" })).toBeInTheDocument();
 });
+// This multi-step UI flow exceeded 5s on the loaded Intel macOS CI runner.
 it("revokes NAS downloads while preserving an independently logged-in shop", async () => {
   const file = { id: "file", name: "实际文件.txt", path: "/file.txt", kind: "file" };
   vi.spyOn(api, "read").mockResolvedValue({ items: [file], total: 1 });
@@ -192,7 +193,7 @@ it("revokes NAS downloads while preserving an independently logged-in shop", asy
   expect(api.storeSession).toBe("independent-password-session");
   await act(async () => { finish({ received: 8, method: "blob", outcome: "handed-to-browser", diskCompletion: "unknown" }); });
   expect(await screen.findByRole("button", { name: "登录" })).toBeInTheDocument();
-});
+}, 15_000);
 
 it("returns focus to the desktop entry after its running Dock entry is removed", async () => {
   const fetcher = vi.fn();

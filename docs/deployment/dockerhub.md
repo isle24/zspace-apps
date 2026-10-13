@@ -122,4 +122,4 @@ docker compose --env-file catalog/.env -f catalog/compose.yaml ps
 docker compose --env-file catalog/.env -f catalog/compose.yaml logs --tail 100 catalog
 ```
 
-使用自定义 secret 路径时，将 `POSTGRES_PASSWORD_FILE` 设置为直接文件路径，不使用变量表达式；脚本会按配置文件所在目录解析相对路径。整个部署过程不读取或重写 `sshbind` 配置，也不复制服务器 SSH 凭据。
+使用自定义 secret 路径时，将 `POSTGRES_PASSWORD_FILE` 设置为直接文件路径，不使用变量表达式；一键脚本会按配置文件所在目录解析相对路径。手工运行 Compose（含备份命令）时，请先把 `POSTGRES_PASSWORD_FILE` 导出为同一文件的绝对路径，避免 Compose 按自身 YAML 所在目录解析到其他位置。整个部署过程不读取或重写 `sshbind` 配置，也不复制服务器 SSH 凭据。

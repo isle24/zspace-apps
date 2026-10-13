@@ -1,6 +1,6 @@
 # Space Desktop · 空间桌面
 
-面向极空间现有 5055 服务的第三方客户端，以及可独立使用的第三方应用商店。PC 使用 Tauri 2 + React/TypeScript；手机当前使用响应式 H5。NAS 客户端直接调用官方 API，Go 只负责独立商店，不承担 NAS 登录、业务读取或媒体转发。
+面向极空间现有 5055 服务的第三方客户端，以及可独立使用的第三方应用商店。PC 使用 Tauri 2 + React/TypeScript；手机当前使用响应式 H5。NAS 客户端使用官方 API；H5 通过 Go 同源代理转发请求，独立商店由 Go 服务维护目录与部署任务。
 
 界面采用**飞牛 fnOS 视觉语言**（用户选定）：桌面外壳、左侧应用栏、应用窗口、登录页、右上角资源挂件与全部应用窗口都按 fnOS 的真实界面复刻，数值来自对 fnOS Web 端的实测，素材来自用户本机 fnOS。详见[飞牛 UI 实施计划](docs/superpowers/plans/2026-10-11-fnos-full-ui.md)。
 
@@ -8,6 +8,9 @@
 
 ## 本轮部署与管理员能力
 
+- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui` 与 `isle204/zspace-store`，已发布 `2026.10.13-r2` / `latest`（Linux AMD64），无需源码编译。
+- [2026-10-13 UI、镜像与目录验收](docs/verification/2026-10-13-ui-docker-catalog-delivery.md)：统一商店、全局影视背景、深色主题、启动器与缓存修复；NAS 已更新。
+- [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：175 个来源全部收录后台，新增 169 草稿，原有 7 条记录保留；原生或复杂定义继续适配后发布。
 - [两个 Docker Compose 部署入口](docs/deployment/docker-compose.md)：NAS 三方 UI、云商店与 PostgreSQL 后台；另说明 NAS 本地应用安装执行器的受管部署。
 - [逐项反馈与交付核对清单](docs/verification/2026-10-12-delivery-checklist.md)。
 - [客户端 Actions](https://github.com/isle24/zspace-apps/actions/workflows/client-build.yml)。

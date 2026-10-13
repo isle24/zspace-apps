@@ -17,6 +17,7 @@
 - 新媒体相关 37 项通过；代理 Go 全套通过，包含 6 个 HTML/gzip 缓存场景。
 - DockerHub 一键脚本 8 项，UI entrypoint 5 项通过；后者另在实际 Alpine `/bin/sh` 验证失败退出与 TERM 清理。
 - 类型检查、客户端和商店生产构建、Git diff 检查通过。
+- Compose 文档的备份流程在独立本地项目实跑：PostgreSQL 自定义格式转储能被 `pg_restore --list` 读取，元数据只读归档能被 `tar` 校验；测试服务已停止，数据保留。
 - Compose 后台使用独立测试卷验证首次 bootstrap、私有 secret、2FA 默认要求、5 GiB 缓存设置和重复部署保留数据。工作站 PostgreSQL 为 ARM64，应用镜像为 AMD64；生产 Compose 默认二者均 AMD64。
 
 ## 部署与镜像
@@ -46,4 +47,6 @@ DockerHub 的固定 tag `2026.10.13-r2` 和 `latest` 已推送且远端摘要一
 
 ## 客户端自动构建
 
-最终界面和代理来源提交 `392a58940fea753368d3d840100c1e824eab5f3f` 已触发 [GitHub Actions](https://github.com/isle24/zspace-apps/actions/runs/38332799345)，产物为 macOS ARM/Intel、Windows AMD64、Linux AMD64 与 NAS H5。具体完成结论见本文件后续记录；桌面安装包未进行平台代码签名。
+最终界面和代理来源提交 `392a58940fea753368d3d840100c1e824eab5f3f` 已触发 [GitHub Actions](https://github.com/isle24/zspace-apps/actions/runs/38332799345)，产物为 macOS ARM/Intel、Windows AMD64、Linux AMD64 与 NAS H5。最终 attempt 2 的五个 job 全部成功，5 个构建产物均已上传且未过期；桌面安装包未进行平台代码签名。
+
+首次 Intel Mac 任务有两个完整 UI 流程触发 5 秒测试时限；相同生产来源重跑已通过，其他四项构建也全部成功。后续测试维护提交 `d4725ba` 仅将这两项整体时限设为 15 秒，未改变断言或产品代码，两个测试文件 29 项及类型检查通过。

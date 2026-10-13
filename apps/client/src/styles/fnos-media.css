@@ -1059,7 +1059,7 @@
 }
 
 /* 深色主题下左栏与圆形按钮的底色 */
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail {
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail {
   background: rgba(255, 255, 255, 0.03);
   border-right-color: rgba(255, 255, 255, 0.08);
 }
@@ -2653,6 +2653,9 @@ body:has(.global-player.music) .media-module.music > .app-content {
   height: max(72%, 380px);
   object-fit: cover;
   object-position: center 32%;
+  /* Fade before the image box ends; the window shade then continues smoothly. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 58%, transparent 100%);
 }
 .video-window-backdrop .video-window-shade {
   position: absolute;

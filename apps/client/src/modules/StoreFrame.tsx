@@ -12,7 +12,11 @@ export function StoreFrame() {
   void api.init().then(()=>{
    if (!active) return;
    const base=new URL(api.base || location.origin);expected=base.origin;
-   setURL(new URL('/space-store/?embedded=1',base).href);
+   const entry=new URL('/space-store/?embedded=1',base);
+   // Older releases allowed browsers to cache this entry document. A fresh
+   // mount also bypasses those existing entries; hashed assets remain reusable.
+   entry.searchParams.set('v',String(Date.now()));
+   setURL(entry.href);
   }).catch(e=>{if(active)setError(message(e))});
   const receive=async(event:MessageEvent)=>{
    if (!active || event.source!==frame.current?.contentWindow || event.origin!==expected)return;

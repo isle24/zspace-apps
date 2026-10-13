@@ -337,8 +337,9 @@
 }
 
 /* ---------- 应用窗口外壳：飞牛实测（1100×640、圆角 16、outline 而非 border、透明标题栏） ---------- */
+/* State rects already include the desktop rail inset; keep the viewport origin. */
 .window-area {
-  left: var(--fn-rail-width);
+  left: 0;
   top: 0;
 }
 .app-window {

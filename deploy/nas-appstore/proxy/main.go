@@ -34,7 +34,9 @@ var nasPrefixes = []string{
 }
 
 func isNasPath(p string) bool {
-  if p == "/kv/load" { return true }
+	if p == "/kv/load" {
+		return true
+	}
 	for _, prefix := range nasPrefixes {
 		if p == prefix || strings.HasPrefix(p, prefix+"/") || strings.HasPrefix(p, prefix) && strings.HasSuffix(prefix, "/") {
 			return true
@@ -169,6 +171,11 @@ func acceptsGzip(r *http.Request) bool {
 }
 
 func (h precompressedFiles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Entry documents must be fetched after an upgrade, even when their last
+	// modification time would otherwise permit a browser's heuristic cache.
+	if r.URL.Path == "/" || strings.HasSuffix(strings.ToLower(r.URL.Path), ".html") || r.URL.Path == "/runtime-config.json" {
+		w.Header().Set("Cache-Control", "no-store")
+	}
 	if r.Method == http.MethodGet && acceptsGzip(r) && compressible[strings.ToLower(filepath.Ext(r.URL.Path))] {
 		clean := filepath.Clean(r.URL.Path)
 		if f, err := h.root.Open(clean + ".gz"); err == nil {

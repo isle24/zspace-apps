@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { windowReducer, visibleWindows, type DesktopWindow } from "./state";
 const viewport = { width: 900, height: 650 };
 const opened = (): DesktopWindow[] =>
@@ -107,5 +108,31 @@ describe("窗口拖动的边界（用户反馈：不能往下拖）", () => {
       viewport,
     });
     expect(up[0].rect.y).toBe(0);
+  });
+});
+
+
+describe("window geometry and shell positioning use the same viewport origin", () => {
+  const shell = readFileSync(`${process.cwd()}/src/styles/fnos-shell.css`, "utf8");
+  const theme = readFileSync(`${process.cwd()}/src/styles/fnos-theme.css`, "utf8");
+  const areas = [...shell.matchAll(/\.window-area\s*\{([^}]+)\}/g)].map(match => match[1]);
+  function containerOffset(width: number) {
+    const rule = width <= 700 ? areas[1] : areas[0];
+    const left = rule.match(/\bleft:\s*([^;]+)/)![1].trim();
+    return left === "var(--fn-rail-width)"
+      ? Number(theme.match(/--fn-rail-width:\s*(\d+)px/)![1])
+      : Number.parseFloat(left);
+  }
+  it.each([390, 900, 1280, 1920])("keeps maximized titlebar controls inside a %ipx viewport", width => {
+    const viewport = { width, height: 800 };
+    const opened = windowReducer([], { type: "open", appId: "files", scope: "geometry", viewport });
+    const maximized = windowReducer(opened, { type: "maximize", id: opened[0].id, viewport })[0];
+    const origin = containerOffset(width);
+    expect(Number.isFinite(origin)).toBe(true);
+    // WindowFrame uses this rect as an absolute left/width inside .window-area.
+    const rightEdge = origin + maximized.rect.x + maximized.rect.width;
+    expect(rightEdge).toBeLessThanOrEqual(viewport.width);
+    expect(rightEdge).toBe(viewport.width);
+    expect(origin + maximized.rect.x).toBe(width > 700 ? 66 : 0);
   });
 });

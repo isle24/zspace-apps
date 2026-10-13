@@ -28,7 +28,7 @@
   --files-text: var(--fn-text-0);
   --files-muted: var(--fn-text-2);
   --files-selected: var(--fn-primary-soft);
-  --files-accent: var(--fn-primary);
+  --files-accent: var(--fn-link);
   --files-row-height: calc(var(--fn-row-height) + 4px);
   background: var(--fn-window-base);
   color: var(--fn-text-0);
@@ -44,7 +44,7 @@
   --files-text: var(--fn-text-0);
   --files-muted: var(--fn-text-2);
   --files-selected: var(--fn-primary-soft);
-  --files-accent: var(--fn-primary);
+  --files-accent: var(--fn-link);
 }
 
 /* ---------- 左侧栏：220px 透明底（露出 #F3F3F3 窗口底板） ---------- */
@@ -91,7 +91,7 @@
 .files-module .module-sidebar > button.selected,
 .files-module .file-pool-button.selected {
   background: var(--fn-primary-soft);
-  color: var(--fn-primary);
+  color: var(--fn-link);
 }
 .files-module .module-sidebar > button svg,
 .files-module .file-pool-button svg {
@@ -238,7 +238,7 @@
 }
 .files-module .breadcrumb:hover,
 .files-module .crumb button:hover {
-  color: var(--fn-primary);
+  color: var(--fn-link);
 }
 .files-module .crumb {
   gap: 4px;
@@ -381,7 +381,7 @@
   background: var(--fn-primary-soft);
 }
 .files-module .file-row.selected .file-name {
-  color: var(--fn-primary);
+  color: var(--fn-link);
 }
 .files-module .file-row > span:not(:first-child) {
   color: var(--fn-text-2);
@@ -395,7 +395,7 @@
   height: 20px;
 }
 .files-module .folder {
-  color: var(--fn-primary);
+  color: var(--fn-link);
 }
 .files-module .document {
   color: var(--fn-brand-3);
@@ -419,7 +419,7 @@
   box-shadow: var(--fn-shadow-card);
 }
 .files-module .file-grid .file-row.selected {
-  border-color: var(--fn-primary);
+  border-color: var(--fn-link);
 }
 .files-module .file-grid .file-name svg {
   width: 38px;

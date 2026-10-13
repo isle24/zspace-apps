@@ -38,3 +38,18 @@ it("adds applications outside the old fixed Dock list and removes only the close
   expect(dock.queryByRole("button", { name: "打开文件管理" })).not.toBeInTheDocument();
   expect(dock.getByRole("button", { name: "打开下载中心" })).toHaveClass("running");
 });
+
+it("keeps the launchpad open while searching and provides an explicit close action", async () => {
+ vi.stubGlobal("fetch",vi.fn());render(<App/>);fireEvent.click(await screen.findByRole("button",{name:"先体验桌面"}));
+ const trigger=screen.getByRole("button",{name:"显示全部应用"});trigger.focus();fireEvent.click(trigger);
+ const search=await screen.findByRole("textbox",{name:"搜索应用名称"});fireEvent.click(search);fireEvent.change(search,{target:{value:"Docker"}});
+ const dialog=screen.getByRole("dialog",{name:"全部应用"});expect(within(dialog).getByRole("button",{name:"Docker"})).toBeInTheDocument();
+ fireEvent.click(within(dialog).getByRole("button",{name:"关闭全部应用"}));expect(screen.queryByRole("dialog",{name:"全部应用"})).not.toBeInTheDocument();
+});
+it("keeps keyboard navigation within the launchpad until Escape closes it", async () => {
+ vi.stubGlobal("fetch",vi.fn());render(<App/>);fireEvent.click(await screen.findByRole("button",{name:"先体验桌面"}));fireEvent.click(screen.getByRole("button",{name:"显示全部应用"}));
+ const dialog=await screen.findByRole("dialog",{name:"全部应用"});const search=within(dialog).getByRole("textbox",{name:"搜索应用名称"});const buttons=within(dialog).getAllByRole("button");const last=buttons[buttons.length-1];
+ last.focus();fireEvent.keyDown(last,{key:"Tab"});expect(document.activeElement).toBe(search);
+ search.focus();fireEvent.keyDown(search,{key:"Tab",shiftKey:true});expect(document.activeElement).toBe(last);
+ fireEvent.keyDown(window,{key:"Escape"});expect(screen.queryByRole("dialog",{name:"全部应用"})).not.toBeInTheDocument();
+});

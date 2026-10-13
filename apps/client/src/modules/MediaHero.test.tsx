@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { api, type Item } from "../api/client";
 import { MediaWindow } from "./MediaWindow";
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const library: Item = { id: "library-7", name: "家庭影院", kind: "library", metadata: { collection_count: 1 } };
 const film: Item = {
   id: "collection-9", name: "星际旅途", kind: "video",
@@ -59,7 +59,8 @@ it("uses the returned widescreen backdrop across the home hero without a portrai
   const read = fixture({ ...film, backdrop: panorama });
   const { container } = render(<MediaWindow id="video" connected onPlay={() => {}} />);
   const hero = await screen.findByRole("region", { name: "首页推荐影片" });
-  expect(hero.querySelector(".hero-backdrop")).toHaveAttribute("src", panorama);
+  expect(hero.closest(".media-module")?.querySelector(".video-window-art")).toHaveAttribute("src", panorama);
+  expect(hero.querySelector(".hero-backdrop")).toBeNull();
   expect(hero.querySelector(".hero-poster")).toBeNull();
   expect(hero).toHaveTextContent("星际旅途");
   expect(hero).not.toHaveStyle({ backgroundImage: `url(${film.thumbnail})` });
@@ -71,7 +72,7 @@ it("reads the actual film detail backdrop when its list entry has no backdrop", 
   const read = fixture(film, panorama);
   render(<MediaWindow id="video" connected onPlay={() => {}} />);
   const hero = await screen.findByRole("region", { name: "首页推荐影片" });
-  await waitFor(() => expect(hero.querySelector(".hero-backdrop")).toHaveAttribute("src", panorama));
+  await waitFor(() => expect(hero.closest(".media-module")?.querySelector(".video-window-art")).toHaveAttribute("src", panorama));
   expect(read).toHaveBeenCalledWith("video.info", { collection_id: film.id, classification_id: library.id });
 });
 
@@ -90,9 +91,40 @@ it("does not stretch a failed or portrait-shaped backdrop into a panorama", asyn
   fixture({ ...film, backdrop: panorama });
   render(<MediaWindow id="video" connected onPlay={() => {}} />);
   const hero = await screen.findByRole("region", { name: "首页推荐影片" });
-  const image = hero.querySelector(".hero-backdrop")!;
+  const image = hero.closest(".media-module")!.querySelector(".video-window-art")!;
   Object.defineProperties(image, { naturalWidth: { value: 500 }, naturalHeight: { value: 750 } });
   fireEvent.load(image);
-  expect(hero.querySelector("img")).toBeNull();
+  expect(hero.closest(".media-module")?.querySelector(".video-window-art")).toBeNull();
   expect(hero).toHaveTextContent("横版背景图暂不可用");
+});
+
+
+it("shares a decorative full-window backdrop between the rail and content and removes it inside a library", async () => {
+  fixture({ ...film, backdrop: panorama });
+  const { container } = render(<MediaWindow id="video" connected onPlay={() => {}} />);
+  await screen.findByRole("region", { name: "首页推荐影片" });
+  const surface=container.querySelector(".media-module.video")!;
+  const backdrop=surface.querySelector(".video-window-backdrop")!;
+  expect(backdrop?.parentElement).toBe(surface);
+  expect(backdrop).toHaveAttribute("aria-hidden","true");
+  expect(surface).toHaveClass("video-immersive-home");
+  expect(surface.querySelector(".app-rail")?.parentElement).toBe(surface);
+  expect(surface.querySelector(".app-content")?.parentElement).toBe(surface);
+  expect(backdrop.querySelector(".video-window-shade")).not.toBeNull();
+  fireEvent.click(surface.querySelector(".rail-list button")!);
+  await waitFor(()=>expect(surface).not.toHaveClass("video-immersive-home"));
+  expect(surface.querySelector(".video-window-backdrop")).toBeNull();
+});
+
+it("loads credential-bearing artwork through the existing media API and only places its blob reference in the window", async () => {
+  const protectedSource=panorama+"?token=private-backdrop-token";
+  fixture({ ...film, backdrop: protectedSource });
+  const fetch=vi.spyOn(api,"fetchMedia").mockResolvedValue(new Response(new Uint8Array([137,80,78,71]),{headers:{'Content-Type':'image/png'}}));
+  const revoke=vi.fn(),create=vi.fn(()=>"blob:video-backdrop-fixture");
+  vi.stubGlobal("URL",class extends URL {static createObjectURL=create;static revokeObjectURL=revoke});
+  const {container,unmount}=render(<MediaWindow id="video" connected onPlay={()=>{}}/>);
+  await waitFor(()=>expect(container.querySelector(".video-window-art")).toHaveAttribute("src","blob:video-backdrop-fixture"));
+  expect(fetch).toHaveBeenCalledWith(protectedSource,expect.objectContaining({signal:expect.any(AbortSignal)}));
+  expect(container.innerHTML).not.toContain("private-backdrop-token");
+  unmount();expect(revoke).toHaveBeenCalledWith("blob:video-backdrop-fixture");
 });

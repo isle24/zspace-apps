@@ -786,7 +786,7 @@
 
 /* ---------- 使用帮助：飞牛设置卡式说明页 ---------- */
 .help .eyebrow {
-  color: var(--fn-primary);
+  color: var(--fn-link);
   letter-spacing: 1.4px;
 }
 .help h1 {
@@ -2627,4 +2627,74 @@ body:has(.global-player.music) .media-module.music > .app-content {
     max-width: 100%;
     flex: 0 1 auto;
   }
+}
+
+/* 绿联式连续窗口：背景属于影视根窗口，侧栏和首页叠在同一画面上。
+ * 层隔离只在本窗口内生效；详情替换整个窗口，播放器不受背景层影响。
+ */
+.media-module.video.video-immersive-home {
+  isolation: isolate;
+  overflow: hidden;
+  background: #101217;
+  --fn-text-0: #fff;
+}
+.media-module.video.video-immersive-home > .video-window-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #101217;
+}
+.video-window-backdrop .video-window-art {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: max(72%, 380px);
+  object-fit: cover;
+  object-position: center 32%;
+}
+.video-window-backdrop .video-window-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(9, 11, 16, .76) 0%, rgba(9, 11, 16, .56) 20%, rgba(9, 11, 16, .22) 56%, rgba(9, 11, 16, .12) 100%),
+    linear-gradient(180deg, rgba(9, 11, 16, .24) 0%, rgba(9, 11, 16, .18) 32%, rgba(16, 18, 23, .84) 67%, #101217 88%);
+}
+.media-module.video.video-immersive-home > .app-rail,
+.media-module.video.video-immersive-home > .app-content {
+  position: relative;
+  z-index: 1;
+  border: 0;
+}
+.media-module.video.video-immersive-home > .app-rail {
+  background: linear-gradient(90deg, rgba(10, 12, 17, .3), rgba(10, 12, 17, .08));
+}
+.media-module.video.video-immersive-home > .app-rail .media-hero,
+.media-module.video.video-immersive-home > .app-content,
+.media-module.video.video-immersive-home .video-hero {
+  background: transparent;
+}
+.media-module.video.video-immersive-home > .app-rail .toolbar .tabs button,
+.media-module.video.video-immersive-home > .app-rail .rail-list button,
+.media-module.video.video-immersive-home > .app-rail .media-hero {
+  color: #e7e8ee;
+}
+.media-module.video.video-immersive-home > .app-rail .rail-section,
+.media-module.video.video-immersive-home > .app-rail .rail-count {
+  color: #b3b7c4;
+}
+.media-module.video.video-immersive-home > .app-rail .toolbar .tabs button.active,
+.media-module.video.video-immersive-home > .app-rail .rail-list button.active {
+  color: #fff;
+  background: rgba(255, 255, 255, .14);
+}
+.media-module.video.video-immersive-home > .app-rail .toolbar .tabs button:hover,
+.media-module.video.video-immersive-home > .app-rail .rail-list button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .1);
+}
+.media-module.video.video-immersive-home .video-hero .hero-text,
+.media-module.video.video-immersive-home .video-hero .hero-dots {
+  z-index: 1;
 }

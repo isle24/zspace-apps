@@ -30,16 +30,16 @@
   padding: 0 14px 0 18px;
   border: 0;
   border-radius: 22px;
-  background: rgba(255, 252, 245, 0.92);
+  background: transparent;
   backdrop-filter: blur(28px) saturate(150%);
   -webkit-backdrop-filter: blur(28px) saturate(150%);
   box-shadow: 0 2px 10px rgba(40, 32, 22, 0.10);
-  color: #1c1c1e;
+  color: var(--fn-text-0);
   cursor: pointer;
   transition: background var(--fn-duration-fast) var(--fn-ease);
 }
 .widget-pill:hover {
-  background: rgba(255, 253, 248, 0.98);
+  background: var(--fn-fill-1);
 }
 
 .widget-group {
@@ -73,13 +73,13 @@
 }
 /* R 蓝、W 绿、CPU/RAM 灰 —— 与飞牛实拍一致 */
 .widget-label-primary {
-  color: #0a84ff;
+  color: var(--fn-link);
 }
 .widget-label-success {
-  color: #34c759;
+  color: var(--fn-success-text);
 }
 .widget-label-muted {
-  color: #8a8a8e;
+  color: var(--fn-text-2);
 }
 .widget-value {
   font-size: 16px;
@@ -90,7 +90,7 @@
 .widget-unit {
   font-size: 12px;
   font-weight: 500;
-  color: #6b6b70;
+  color: var(--fn-text-2);
   margin-left: 1px;
 }
 .widget-group.sys .widget-value {
@@ -103,7 +103,7 @@
 .widget-chevron {
   display: flex;
   align-items: center;
-  color: #3a3a3c;
+  color: var(--fn-text-1);
 }
 .widget-chevron svg {
   width: 18px;
@@ -119,7 +119,7 @@
   gap: 10px;
   padding: 10px;
   border-radius: var(--fn-radius-xl);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--fn-bg-2);
   backdrop-filter: blur(50px) saturate(160%);
   -webkit-backdrop-filter: blur(50px) saturate(160%);
   box-shadow: var(--fn-shadow-popover);
@@ -273,33 +273,6 @@
   background: var(--fn-primary);
 }
 
-/* ---------- 深色 ---------- */
-/* 深色：飞牛实拍是暖深色半透明胶囊，文字转为浅色 */
-:root[data-theme="dark"] .widget-pill {
-  background: rgba(48, 42, 36, 0.72);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  color: #f2f2f7;
-}
-:root[data-theme="dark"] .widget-pill:hover {
-  background: rgba(58, 51, 43, 0.85);
-}
-:root[data-theme="dark"] .widget-unit {
-  color: #b9b4ad;
-}
-:root[data-theme="dark"] .widget-label-muted {
-  color: #b9b4ad;
-}
-:root[data-theme="dark"] .widget-chevron {
-  color: #f2f2f7;
-}
-:root[data-theme="dark"] .widget-panel {
-  background: rgba(12, 13, 13, 0.72);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
-}
-:root[data-theme="dark"] .widget-card {
-  background: var(--fn-window-surface);
-}
-
 /* ---------- 窄屏：只保留 CPU/RAM ---------- */
 @media (max-width: 700px) {
   .resource-widget {
@@ -308,14 +281,12 @@
 }
 
 /* One floating surface, with a separate grip so moving never toggles details. */
-.resource-widget { z-index: 120; max-width:calc(100vw - 16px); border-radius:24px; background:rgba(255,252,245,.92); box-shadow:0 2px 10px #28201622; }
-.widget-drag { border:0; background:transparent; color:#888; padding:8px 0 8px 7px; cursor:grab; touch-action:none; display:flex; align-items:center; }
+.resource-widget { z-index: 120; max-width:calc(100vw - 16px); border-radius:24px; background:var(--fn-widget-bg); box-shadow:0 2px 10px #28201622; }
+.widget-drag { border:0; background:transparent; color:var(--fn-text-2); padding:8px 0 8px 7px; cursor:grab; touch-action:none; display:flex; align-items:center; }
 .widget-drag:active {cursor:grabbing}
 .widget-drag svg {width:16px;height:24px}
 .resource-widget .widget-pill {background:transparent;box-shadow:none;padding-left:8px}
 .system-bar, :root[data-theme="dark"] .system-bar { background:transparent;box-shadow:none;padding:0;min-height:0;pointer-events:none; }
-:root[data-theme="dark"] .resource-widget {background:rgba(43,39,34,.90)}
-:root[data-theme="dark"] .resource-widget .widget-pill {background:transparent}
 .widget-panel {max-width:calc(100vw - 16px);max-height:calc(100vh - 80px);overflow:auto;left:0;right:auto}
 @media(max-width:450px){.resource-widget .widget-pill {gap:8px}.resource-widget .widget-group.rw{width:70px}.resource-widget .widget-group.net{width:88px}.resource-widget .widget-group.sys{width:70px}}
 

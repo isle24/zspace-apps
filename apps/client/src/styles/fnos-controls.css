@@ -36,8 +36,8 @@
 }
 .secondary:hover:not(:disabled) {
   background: var(--fn-primary-soft);
-  border-color: var(--fn-primary);
-  color: var(--fn-primary);
+  border-color: var(--fn-link);
+  color: var(--fn-link);
 }
 .icon-button {
   width: var(--fn-control-height);
@@ -64,7 +64,7 @@ select,
 textarea {
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-strong);
-  background: var(--fn-bg-0);
+  background: var(--fn-control-bg);
   color: var(--fn-text-0);
   min-height: var(--fn-control-height-lg);
   padding: 0 12px;
@@ -86,6 +86,13 @@ input[type="range"] {
   border-radius: 0;
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--fn-primary);
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--fn-text-4);
@@ -93,7 +100,7 @@ textarea::placeholder {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--fn-primary);
+  border-color: var(--fn-link);
   box-shadow: 0 0 0 2px var(--fn-primary-soft);
   outline: none;
 }
@@ -109,7 +116,7 @@ textarea:focus {
   color: var(--fn-text-3);
 }
 .search:focus-within {
-  border-color: var(--fn-primary);
+  border-color: var(--fn-link);
   box-shadow: 0 0 0 2px var(--fn-primary-soft);
 }
 .search svg {
@@ -154,7 +161,7 @@ textarea:focus {
 }
 .tabs button.active {
   background: var(--fn-primary-soft);
-  color: var(--fn-primary);
+  color: var(--fn-link);
   font-weight: 500;
 }
 
@@ -185,7 +192,7 @@ textarea:focus {
 .eyebrow {
   font-size: 10px;
   letter-spacing: 1.4px;
-  color: var(--fn-primary);
+  color: var(--fn-link);
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -271,7 +278,10 @@ small.hint {
   box-shadow: var(--fn-shadow-popover);
   color: var(--fn-text-1);
 }
-.modal-backdrop,
+.modal-backdrop {
+  background: var(--fn-overlay);
+  backdrop-filter: blur(4px);
+}
 
 /* ---------- 复选与开关 ---------- */
 .check-field {
@@ -398,24 +408,21 @@ small.hint {
   align-items: center;
   gap: 6px;
   margin: 0 0 10px;
-  color: #b25000;
+  color: var(--fn-warning-text);
   font-size: var(--fn-font-size-sm);
 }
 .download-status {
   margin: 0 0 10px;
   font-size: var(--fn-font-size-sm);
 }
-.download-status.ok { color: var(--fn-success, #1a7f37); }
-.download-status.error { color: var(--fn-danger, #d0021b); }
+.download-status.ok { color: var(--fn-success-text); }
+.download-status.error { color: var(--fn-danger-text); }
 .download-dialog footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 6px;
 }
-:root[data-theme="dark"] .download-dialog { background: var(--fn-window-surface); }
-:root[data-theme="dark"] .download-dialog textarea,
-:root[data-theme="dark"] .download-dialog input { background: rgba(255, 255, 255, 0.05); }
 
 /* ---------- 任务中心：设备任务列表 ---------- */
 .device-tasks {
@@ -440,7 +447,7 @@ small.hint {
   height: 36px;
   border-radius: var(--fn-radius-sm);
   background: var(--fn-primary-soft);
-  color: var(--fn-primary);
+  color: var(--fn-link);
   font-size: 20px;
   flex-shrink: 0;
 }

@@ -497,7 +497,7 @@ export function Store({
         <div>
           <ShoppingBag weight="duotone" />
           <span>
-            <strong>应用商店</strong>
+            <strong>空间商店</strong>
             <small>为你的空间，增添更多可能</small>
           </span>
         </div>
@@ -667,8 +667,8 @@ export function Store({
           <>
             <div className="store-banner">
               <span className="eyebrow">A LITTLE MORE POSSIBILITY</span>
-              <h1>让 NAS，成为你的生活中心</h1>
-              <p>影音、阅读与实用工具。独立部署，数据留在自己的空间。</p>
+              <h1>发现适合你的应用</h1>
+              <p>{catalog.data?.items.length || 0} 款应用 · 影音、阅读与实用工具</p>
               <div className="banner-orbit">
                 <Cube weight="duotone" />
               </div>

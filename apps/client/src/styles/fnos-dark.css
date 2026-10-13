@@ -1,263 +1,69 @@
-/*
- * 飞牛 fnOS 深色主题覆盖：仅在 :root[data-theme="dark"] 下生效。
- *
- * 背景：基础 styles.css 与早期皮肤里存在不少硬编码浅色，逐个改成令牌风险太大；
- * 这里只覆盖“结构性表面”（窗口、内容窗格、侧栏、工具栏、行、输入、弹层），
- * 保证深色下没有刺眼白块；局部细节后续随各应用皮肤继续收敛。
+/* Dark appearance is supplied by fnos-theme semantic tokens and each module skin.
+ * Keep only module-specific compatibility rules here; no global input, heading or
+ * role=dialog overrides, which used to repaint players, scrims and launchpad.
  */
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-}
-
-/* 外壳 */
-:root[data-theme="dark"] .desktop {
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="dark"] .media-module .toolbar {
   color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .app-window {
-  background: var(--fn-window-base);
-}
-:root[data-theme="dark"] .app-window .window-content {
-  background: var(--fn-window-surface);
-}
-:root[data-theme="dark"] .window-titlebar {
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .window-titlebar strong {
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .window-controls button {
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .resize-handle {
-  background: transparent;
 }
 
-/* 应用内部通用表面 */
-:root[data-theme="dark"] .module-sidebar,
-:root[data-theme="dark"] .files-module .module-sidebar,
-:root[data-theme="dark"] .module-main,
-:root[data-theme="dark"] .padded-module,
-:root[data-theme="dark"] .media-module,
-:root[data-theme="dark"] .system-module,
-:root[data-theme="dark"] .files-module,
-:root[data-theme="dark"] .video-details {
-  background: var(--fn-window-surface);
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .toolbar,
-:root[data-theme="dark"] .media-module .toolbar,
-:root[data-theme="dark"] .content-heading h1,
-:root[data-theme="dark"] h1,
-:root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3,
-:root[data-theme="dark"] strong {
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] p,
-:root[data-theme="dark"] small,
-:root[data-theme="dark"] span,
-:root[data-theme="dark"] label,
-:root[data-theme="dark"] dd,
-:root[data-theme="dark"] dt,
-:root[data-theme="dark"] time {
-  border-color: var(--fn-border);
-}
-
-/* 控件 */
-:root[data-theme="dark"] input,
-:root[data-theme="dark"] select,
-:root[data-theme="dark"] textarea,
-:root[data-theme="dark"] .search {
-  background: var(--fn-bg-1);
-  border-color: var(--fn-border);
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .secondary {
-  background: var(--fn-bg-1);
-  border-color: var(--fn-border);
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .secondary:hover:not(:disabled) {
-  background: var(--fn-primary-soft);
-  color: var(--fn-primary);
-}
-:root[data-theme="dark"] .icon-button {
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .icon-button:hover:not(:disabled) {
-  background: var(--fn-bg-3);
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .tabs button {
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .toolbar .tabs button,
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .rail-list button {
   color: var(--fn-text-2);
 }
-:root[data-theme="dark"] .tabs button:hover {
-  background: var(--fn-bg-3);
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .tabs button.active {
-  background: var(--fn-primary-soft);
-  /* 深色下 #0066FF 压在深蓝底上只有 ~2.6:1，换成亮一档的品牌色（实测 >5:1） */
-  color: var(--fn-brand-3);
-}
-/* 旧 styles.css 给系统侧栏写死了灰蓝 #6b7c96，深色下只有 ~3.2:1；用令牌接管 */
-:root[data-theme="dark"] .system-module .module-sidebar button,
-:root[data-theme="dark"] .module-sidebar button {
-  color: var(--fn-text-2);
-}
-:root[data-theme="dark"] .system-module .module-sidebar button.selected,
-:root[data-theme="dark"] .system-module .module-sidebar button.active,
-:root[data-theme="dark"] .module-sidebar button.selected,
-:root[data-theme="dark"] .module-sidebar button.active {
-  color: var(--fn-brand-3);
-}
-/* 媒体窗口左栏的分类项同理（此前用 var(--text-2, #4a4a4a) 落到了浅色灰） */
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .toolbar .tabs button,
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .rail-list button {
-  color: var(--fn-text-2);
-}
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .toolbar .tabs button:hover,
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .rail-list button:hover {
+
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .toolbar .tabs button:hover,
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .rail-list button:hover {
   background: var(--fn-fill-1);
 }
-/* 商店来源切换与官方商店卡片 */
+
 :root[data-theme="dark"] .store-sources button {
   color: var(--fn-text-2);
 }
+
 :root[data-theme="dark"] .store-sources button.active {
-  color: var(--fn-brand-3);
-  border-color: var(--fn-brand-3);
+  color: var(--fn-link);
+  border-color: var(--fn-link);
+  background: var(--fn-primary-soft);
 }
+
 :root[data-theme="dark"] .store-sources button.active small,
 :root[data-theme="dark"] .store-sources button small {
   color: var(--fn-text-3);
 }
 
-/* 列表、卡片与表格 */
-:root[data-theme="dark"] .file-list,
-:root[data-theme="dark"] .file-row,
-:root[data-theme="dark"] .file-table-heading,
-:root[data-theme="dark"] .file-grid,
 :root[data-theme="dark"] .catalog-card,
-:root[data-theme="dark"] .media-art,
-:root[data-theme="dark"] .card {
+:root[data-theme="dark"] .media-art {
   background: var(--fn-bg-1);
   border-color: var(--fn-border);
   color: var(--fn-text-1);
 }
-:root[data-theme="dark"] .file-table-heading {
-  background: var(--fn-bg-3);
-  color: var(--fn-text-2);
-}
-:root[data-theme="dark"] .file-row:hover,
-:root[data-theme="dark"] .file-row.selected {
-  background: var(--fn-primary-soft);
-}
-:root[data-theme="dark"] .file-preview,
-:root[data-theme="dark"] .image-preview {
-  background: var(--fn-bg-2);
-  border-color: var(--fn-border);
-}
 
-/* 弹层与对话框 */
-:root[data-theme="dark"] .account-menu,
-:root[data-theme="dark"] .launcher-search,
-:root[data-theme="dark"] .directory-create-dialog,
-:root[data-theme="dark"] .modal-surface,
-:root[data-theme="dark"] [role="dialog"] {
-  background: var(--fn-bg-2);
-  border-color: var(--fn-border);
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .launcher-search input {
-  background: var(--fn-bg-3);
-  color: var(--fn-text-0);
-}
-:root[data-theme="dark"] .toast {
-  background: rgba(46, 47, 48, 0.95);
-}
-
-/* 媒体与系统应用细节 */
-:root[data-theme="dark"] .media-module .media-hero,
-:root[data-theme="dark"] .media-module.video .media-hero,
-:root[data-theme="dark"] .media-module.music .media-hero {
-  background: var(--fn-window-surface);
-  border-color: var(--fn-border);
-}
 :root[data-theme="dark"] .media-module .media-caption strong,
 :root[data-theme="dark"] .media-module .media-caption small {
   color: var(--fn-text-1);
 }
+
 :root[data-theme="dark"] .media-module .media-caption strong {
   color: var(--fn-text-0);
 }
-:root[data-theme="dark"] .state-panel,
-:root[data-theme="dark"] .state-panel p,
-:root[data-theme="dark"] .state-panel strong {
-  color: var(--fn-text-2);
-}
-:root[data-theme="dark"] .state-panel strong {
-  color: var(--fn-text-1);
-}
-:root[data-theme="dark"] .data-values > div {
-  border-color: var(--fn-border);
-}
 
-/* 外壳顶栏在深色下用玻璃深底（飞牛 --semi-color-Component-card dark） */
-:root[data-theme="dark"] .system-bar {
-  background: rgba(12, 13, 13, 0.7);
-  color: var(--fn-text-0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-:root[data-theme="dark"] .system-bar .connection,
-:root[data-theme="dark"] .system-bar .system-metric,
-:root[data-theme="dark"] .system-bar time {
-  color: var(--fn-text-1);
-}
-
-/* 旧 styles.css 给系统侧栏选中项写死了浅蓝底 #e0ecff（深色下与令牌文字撞成 1.65:1） */
-:root[data-theme="dark"] .module-sidebar button.selected,
-:root[data-theme="dark"] .module-sidebar button.active,
-:root[data-theme="dark"] .system-module .module-sidebar button.selected,
-/* 商店与 Docker 的活动标签同理：粉彩底在深色下不成立 */
-:root[data-theme="dark"] .docker-tabs > button.active,
-:root[data-theme="dark"] .store-sources button.active {
-  background: color-mix(in srgb, var(--fn-brand-5) 22%, transparent);
-  color: var(--fn-brand-3);
-}
-
-/* 媒体左栏：上面的通用覆盖会把"选中项"的文字也压成次要色，这里补回白字（选中块是强调色实心底） */
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .toolbar .tabs button.active,
-:root[data-theme="dark"] .media-module.fnos-app > .app-rail .rail-list button.active {
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .toolbar .tabs button.active,
+:root[data-theme="dark"] .media-module.fnos-app:not(.video-immersive-home) > .app-rail .rail-list button.active {
   color: #fff;
 }
-/* 排序控件选中态：深色下 #0066FF 只有 ~3:1，换亮一档 */
-:root[data-theme="dark"] .file-sort button.active {
-  color: var(--fn-brand-3);
-}
-/* Docker 状态徽标：深色下深绿文字不可读 */
-:root[data-theme="dark"] .docker-state {
-  color: var(--fn-text-2);
-  background: var(--fn-fill-1);
-}
-:root[data-theme="dark"] .docker-state.up {
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.16);
-}
-/* 商店分类/侧栏选中项 */
+
 :root[data-theme="dark"] .store-sidebar .tabs button.active,
 :root[data-theme="dark"] .store-categories button.active {
   color: var(--fn-brand-3);
   background: color-mix(in srgb, var(--fn-brand-5) 22%, transparent);
 }
 
-/* 商店分类 chips（Store.tsx 渲染的 .chips）与音乐强调色在深色下的可读性 */
 :root[data-theme="dark"] .chips button.active {
   color: var(--fn-brand-3);
   background: color-mix(in srgb, var(--fn-brand-5) 22%, transparent);
 }
-/* 白字压在 #e04a5f 上只有 3.95:1，深色下把音乐强调色压深一档 */
+
 :root[data-theme="dark"] .media-module.fnos-app.music {
   --app-accent: #c93d51;
   --app-accent-soft: rgba(201, 61, 81, 0.16);

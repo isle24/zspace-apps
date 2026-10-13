@@ -36,8 +36,8 @@
 }
 .secondary:hover:not(:disabled) {
   background: var(--fn-primary-soft);
-  border-color: var(--fn-primary);
-  color: var(--fn-primary);
+  border-color: var(--fn-link);
+  color: var(--fn-link);
 }
 .icon-button {
   width: var(--fn-control-height);
@@ -64,12 +64,35 @@ select,
 textarea {
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-strong);
-  background: var(--fn-bg-0);
+  background: var(--fn-control-bg);
   color: var(--fn-text-0);
   min-height: var(--fn-control-height-lg);
   padding: 0 12px;
   font-size: var(--fn-font-size-base);
 }
+/*
+ * range 不是「输入框」。
+ *
+ * 上面那条通用规则给 `input` 加了 min-height: 40px、边框和背景 —— 进度条与音量条
+ * 也是 input[type=range]，于是它们被画成一个 40px 高的带边框大方框，正好盖住
+ * 真正的轨道。用户看到的就是"播放器进度条有个很大的 border 遮挡"。实测那个
+ * 方框是 1122×40、1px 边框、深色底，就是这条规则。
+ */
+input[type="range"] {
+  border: 0;
+  background: transparent;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--fn-primary);
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--fn-text-4);
@@ -77,7 +100,7 @@ textarea::placeholder {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--fn-primary);
+  border-color: var(--fn-link);
   box-shadow: 0 0 0 2px var(--fn-primary-soft);
   outline: none;
 }
@@ -93,7 +116,7 @@ textarea:focus {
   color: var(--fn-text-3);
 }
 .search:focus-within {
-  border-color: var(--fn-primary);
+  border-color: var(--fn-link);
   box-shadow: 0 0 0 2px var(--fn-primary-soft);
 }
 .search svg {
@@ -138,7 +161,7 @@ textarea:focus {
 }
 .tabs button.active {
   background: var(--fn-primary-soft);
-  color: var(--fn-primary);
+  color: var(--fn-link);
   font-weight: 500;
 }
 
@@ -169,7 +192,7 @@ textarea:focus {
 .eyebrow {
   font-size: 10px;
   letter-spacing: 1.4px;
-  color: var(--fn-primary);
+  color: var(--fn-link);
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -255,9 +278,9 @@ small.hint {
   box-shadow: var(--fn-shadow-popover);
   color: var(--fn-text-1);
 }
-.modal-backdrop,
-.dialog-backdrop {
+.modal-backdrop {
   background: var(--fn-overlay);
+  backdrop-filter: blur(4px);
 }
 
 /* ---------- 复选与开关 ---------- */
@@ -301,4 +324,342 @@ small.hint {
 }
 .state-panel .state-art {
   margin-bottom: 4px;
+}
+
+/* ---------- 下载中心：添加任务对话框 ---------- */
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.download-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(560px, calc(100vw - 40px));
+  height: fit-content;
+  border: 1px solid var(--fn-card-border);
+  border-radius: var(--fn-radius-lg);
+  background: var(--fn-bg-1);
+  color: var(--fn-text-0);
+  box-shadow: var(--fn-shadow-dropdown);
+  padding: 20px 22px;
+}
+.download-dialog::backdrop {
+  background: rgba(12, 16, 24, 0.42);
+  backdrop-filter: blur(2px);
+}
+.download-dialog h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.download-dialog > p.muted {
+  margin: 0 0 14px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.download-dialog label {
+  display: block;
+  margin-bottom: 12px;
+}
+.download-dialog label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.download-dialog textarea,
+.download-dialog input[type="text"],
+.download-dialog input:not([type]) {
+  width: 100%;
+  border: 1px solid var(--fn-card-border);
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-bg-0);
+  color: var(--fn-text-0);
+  padding: 8px 10px;
+  font-size: var(--fn-font-size-base);
+  font-family: inherit;
+  resize: vertical;
+}
+.download-dialog textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fn-font-size-sm);
+  line-height: 1.5;
+}
+.download-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.download-watch {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  cursor: pointer;
+}
+.download-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--fn-warning-text);
+  font-size: var(--fn-font-size-sm);
+}
+.download-status {
+  margin: 0 0 10px;
+  font-size: var(--fn-font-size-sm);
+}
+.download-status.ok { color: var(--fn-success-text); }
+.download-status.error { color: var(--fn-danger-text); }
+.download-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ---------- 任务中心：设备任务列表 ---------- */
+.device-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.device-tasks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--fn-card-border);
+}
+.device-tasks li:first-child { border-top: 0; }
+.device-task-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-primary-soft);
+  color: var(--fn-link);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.device-task-body { flex: 1; min-width: 0; }
+.device-task-body strong {
+  display: block;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.device-task-body p {
+  margin: 3px 0 0;
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+}
+.device-task-body progress { width: 100%; height: 4px; margin-top: 6px; }
+.device-task-size {
+  color: var(--fn-text-2);
+  font-size: var(--fn-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 文件预览区：有封面就显示封面（影视/音乐服务会给缩略图），保持与媒体窗口一致的圆角 */
+.file-preview-art {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--fn-fill-0);
+}
+
+/* ===== 应用商店窗口：两个来源的切换 ===== */
+.store-window {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+.store-sources {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.store-sources button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 8px 14px;
+  border: 1px solid var(--fn-border);
+  border-radius: 12px;
+  background: none;
+  color: var(--fn-text-2);
+  font-size: 13px;
+  transition: background-color 200ms cubic-bezier(0.32, 0.72, 0, 1), border-color 200ms, color 200ms;
+}
+.store-sources button small {
+  font-size: 11px;
+  color: var(--fn-text-3);
+}
+.store-sources button:hover {
+  background: var(--fn-fill-0);
+}
+.store-sources button.active {
+  border-color: var(--fn-brand-5);
+  background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
+  color: var(--fn-brand-5);
+  font-weight: 600;
+}
+.store-sources button.active small {
+  color: rgba(10, 108, 255, 0.75);
+}
+.store-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ===== 官方商店（只读） ===== */
+.official-store {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.official-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fn-text-3);
+  max-width: 70ch;
+}
+.official-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.official-section > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.official-section > header svg {
+  width: 17px;
+  height: 17px;
+  color: var(--fn-brand-5);
+}
+.official-section > header strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.official-section > header small {
+  font-size: 12px;
+  color: var(--fn-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.official-section .spacer {
+  flex: 1;
+}
+.official-filter {
+  height: 30px;
+  width: 160px;
+  padding: 0 12px;
+  border: 1px solid var(--fn-border);
+  border-radius: 999px;
+  background: none;
+  font-size: 12.5px;
+}
+.official-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fn-text-3);
+}
+.official-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.official-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 13px;
+  border: 1px solid var(--fn-border);
+  border-radius: 12px;
+  background: var(--fn-fill-0);
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms;
+}
+.official-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(24, 42, 84, 0.12);
+}
+.official-card header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.official-card header strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.official-meta {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--fn-text-3);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.official-flags {
+  display: flex;
+  gap: 5px;
+  margin: 0;
+}
+.official-flags em {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-3);
+}
+:root[data-theme="dark"] .official-card,
+:root[data-theme="dark"] .store-sources button.active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* 下载中心批量操作的结果提示：成功/失败都照实说 */
+.download-bulk {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  background: var(--fn-fill-0);
+  color: var(--fn-text-2);
+}
+/* 状态只用背景着色，文字走令牌 —— 深浅两种主题下都可读 */
+.download-bulk.ok {
+  background: rgba(46, 158, 91, 0.16);
+  color: var(--fn-text-1);
+}
+.download-bulk.error {
+  background: var(--fn-danger-soft, rgba(219, 56, 44, 0.16));
+  color: var(--fn-text-1);
 }

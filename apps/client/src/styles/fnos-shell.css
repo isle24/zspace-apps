@@ -550,7 +550,7 @@
   font-size: 15px;
 }
 .login-card input::placeholder {
-  color: rgba(11, 11, 12, 0.4);
+  color: var(--fn-text-3);
 }
 .login-card input:focus {
   border-color: var(--fn-primary);
@@ -595,8 +595,10 @@
 .login-card small {
   color: rgba(255, 255, 255, 0.75);
 }
-.login-card .inline-error {
-  color: #ffd9d5;
+.login-screen .login-card .inline-error {
+  color: var(--fn-danger-text);
+  background: var(--fn-danger-soft);
+  border-color: var(--fn-danger);
 }
 .login-heading .eyebrow,
 .login-footer {
@@ -696,10 +698,6 @@
 }
 
 /* ---------- 应用启动器搜索 ---------- */
-.search-backdrop {
-  background: rgba(15, 20, 28, 0.28);
-  backdrop-filter: blur(3px);
-}
 .launcher-search {
   border-radius: var(--fn-radius-xl);
   background: rgba(255, 255, 255, 0.96);
@@ -1006,7 +1004,7 @@
   align-items: center;
   gap: 6px;
   border-radius: 10px;
-  background: #fff;
+  background: var(--fn-control-bg);
   padding-right: 10px;
 }
 .login-screen .login-card .password-field input {
@@ -1058,8 +1056,9 @@
   position: fixed;
   inset: 0;
   z-index: 8500; /* 低于左侧应用栏（9000），启动台打开时应用栏仍可见 */
-  background: transparent;
-  backdrop-filter: none;
+  background: var(--fn-launcher-bg);
+  backdrop-filter: blur(24px) saturate(115%);
+  -webkit-backdrop-filter: blur(24px) saturate(115%);
   display: block;
 }
 .launchpad {
@@ -1070,10 +1069,16 @@
   align-items: center;
   gap: 22px;
   padding: 60px 40px 40px 106px;
-  background: rgba(12, 14, 22, 0.42);
-  backdrop-filter: blur(42px) saturate(140%) brightness(0.62);
-  -webkit-backdrop-filter: blur(42px) saturate(140%) brightness(0.62);
+  background: transparent;
+  color: var(--fn-text-0);
   overflow-y: auto;
+}
+.launchpad-close {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  color: var(--fn-text-1);
+  background: var(--fn-fill-1);
 }
 .launchpad-search {
   display: flex;
@@ -1084,14 +1089,15 @@
   height: 44px;
   padding: 0 16px;
   border-radius: var(--fn-radius-pill);
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.82);
+  background: var(--fn-bg-2);
+  border: 1px solid var(--fn-border);
+  color: var(--fn-text-2);
   flex-shrink: 0;
 }
 .launchpad-search:focus-within {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.38);
+  background: var(--fn-bg-2);
+  border-color: var(--fn-focus-border);
+  box-shadow: 0 0 0 2px var(--fn-primary-soft);
 }
 .launchpad-search svg {
   width: 18px;
@@ -1105,12 +1111,12 @@
   border: 0;
   background: transparent;
   box-shadow: none;
-  color: #fff;
+  color: var(--fn-text-0);
   font-size: 15px;
   padding: 0;
 }
 .launchpad-search input::placeholder {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--fn-text-3);
 }
 .launchpad-search input:focus {
   border: 0;
@@ -1136,7 +1142,7 @@
   transition: background var(--fn-duration-fast) var(--fn-ease);
 }
 .launchpad-grid button:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fn-fill-2);
 }
 .launchpad-grid .app-icon {
   width: 56px;
@@ -1151,8 +1157,8 @@
 .launchpad-grid button > span {
   font-size: var(--fn-font-size-base);
   font-weight: 500;
-  color: #fff;
-  text-shadow: var(--fn-shadow-text);
+  color: var(--fn-text-0);
+  text-shadow: none;
   text-align: center;
   max-width: 104px;
   display: -webkit-box;
@@ -1221,7 +1227,7 @@
 .remote-shortcuts .shortcut-head p { flex: 1 1 auto; margin: 0; font-size: 13px; color: var(--fn-text-3); }
 .remote-shortcuts .shortcut-new {
   display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 20px;
-  border: 0; border-radius: 8px; background: #2f6bff; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 0; border-radius: 8px; background: var(--fn-primary); color: var(--fn-on-primary); font-size: 14px; font-weight: 600; cursor: pointer;
 }
 .remote-shortcuts .shortcut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .remote-shortcuts .shortcut-tile {
@@ -1281,19 +1287,19 @@
 .remote-shortcuts .shortcut-colors button {
   width: 22px; height: 22px; border: 2px solid transparent; border-radius: 5px; cursor: pointer;
 }
-.remote-shortcuts .shortcut-colors button.active { border-color: #fff; }
+.remote-shortcuts .shortcut-colors button.active { border-color: var(--fn-text-0); }
 .remote-shortcuts .shortcut-help { width: 16px; height: 16px; color: var(--fn-text-3); }
 .remote-shortcuts .shortcut-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .remote-shortcuts .shortcut-check small { color: var(--fn-text-3); }
 .remote-shortcuts .shortcut-notes { font-size: 12.5px; color: var(--fn-text-3); line-height: 1.7; }
 .remote-shortcuts .shortcut-notes strong { display: block; margin-bottom: 2px; color: var(--fn-text-1); }
 .remote-shortcuts .shortcut-notes p { margin: 0; }
-.remote-shortcuts .shortcut-error { margin: 0; font-size: 12.5px; color: #ff7875; }
+.remote-shortcuts .shortcut-error { margin: 0; font-size: 12.5px; color: var(--fn-danger-text); }
 .remote-shortcuts .shortcut-modal footer { display: flex; justify-content: flex-end; gap: 10px; }
 .remote-shortcuts .shortcut-cancel, .remote-shortcuts .shortcut-confirm {
   height: 38px; padding: 0 24px; border: 0; border-radius: 8px; font-size: 14px; cursor: pointer;
 }
 .remote-shortcuts .shortcut-cancel { background: var(--fn-fill-0); color: var(--fn-text-1); }
-.remote-shortcuts .shortcut-confirm { background: #2f6bff; color: #fff; font-weight: 600; }
+.remote-shortcuts .shortcut-confirm { background: var(--fn-primary); color: var(--fn-on-primary); font-weight: 600; }
 .remote-window .remote-relay { margin-top: 8px; font-size: 13px; }
 .remote-window .remote-relay summary { cursor: pointer; color: var(--fn-text-3); }

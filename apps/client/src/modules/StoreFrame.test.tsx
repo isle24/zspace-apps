@@ -1,0 +1,24 @@
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { api } from '../api/client';
+import { StoreFrame } from './StoreFrame';
+afterEach(()=>{cleanup();vi.restoreAllMocks();api.base='';api.storeSession='';delete document.documentElement.dataset.theme;});
+it('synchronizes initial and changed desktop themes only after a valid frame handshake',async()=>{
+ api.base=location.origin;api.storeSession='a'.repeat(48);
+ vi.spyOn(api,'init').mockResolvedValue();
+ vi.spyOn(api,'grantForStoreFrame').mockResolvedValue({sessionId:api.storeSession,expiresAt:new Date(Date.now()+60000).toISOString(),storeAddress:location.origin});
+ document.documentElement.dataset.theme='dark';
+ render(<StoreFrame/>);
+ const frame=await screen.findByTitle('空间商店') as HTMLIFrameElement;
+ const post=vi.spyOn(frame.contentWindow!,'postMessage');
+ const ready={type:'space-store-host-ready',nonce:'a'.repeat(32)};
+ await act(async()=>window.dispatchEvent(new MessageEvent('message',{origin:'https://unrelated.test',source:frame.contentWindow,data:ready})));
+ expect(post).not.toHaveBeenCalled();
+ await act(async()=>window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:frame.contentWindow,data:ready})));
+ expect(post).toHaveBeenCalledWith({type:'space-store-host-theme',nonce:ready.nonce,theme:'dark'},location.origin);
+ await act(async()=>{document.documentElement.dataset.theme='light'});
+ await waitFor(()=>expect(post).toHaveBeenCalledWith({type:'space-store-host-theme',nonce:ready.nonce,theme:'light'},location.origin));
+ cleanup();post.mockClear();
+ await act(async()=>{document.documentElement.dataset.theme='dark'});
+ expect(post).not.toHaveBeenCalled();
+});

@@ -671,6 +671,14 @@ function Desktop() {
           {/* 飞牛启动台：全屏磨砂覆盖层 + 居中搜索胶囊 + 六列应用网格 */}
           <div
             className="launchpad"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key !== "Tab") return;
+              const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled),button:not(:disabled),[tabindex="0"]'));
+              const first = items[0], last = items[items.length - 1];
+              if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+              else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="全部应用"
@@ -685,6 +693,7 @@ function Desktop() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </label>
+            <button className="launchpad-close icon-button" aria-label="关闭全部应用" onClick={closeSearch}><X /></button>
             <div className="launchpad-grid">
               {apps
                 .filter((a) =>

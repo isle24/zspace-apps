@@ -1316,164 +1316,94 @@
   }
 }
 
-/* Complete runtime screens share the existing fnOS store design tokens. */
-.runtime-store {
-  min-width: 0;
-  padding: 4px 24px 24px;
+/* Both app catalogues use the same sidebar, spacing and compact application cards. */
+.store-module.has-runtime > .store-layout > .store-sidebar { display:none; }
+.store-module.has-runtime .store-main > .runtime-store { flex:1 0 auto; }
+.runtime-store { display:flex; align-items:stretch; position:relative; min-width:0; padding:0; color:var(--fn-text-0); }
+.runtime-market-sidebar { flex:0 0 184px; width:184px; display:flex; flex-direction:column; gap:4px; padding:18px 12px; background:var(--fn-bg-0); border-right:1px solid var(--fn-card-border); }
+.runtime-market-sidebar h2 { display:flex; align-items:center; gap:8px; font-size:16px; margin:0 0 16px; }
+.runtime-market-sidebar h2 svg { width:21px; height:21px; color:var(--fn-primary); }
+.runtime-tabs { display:flex; flex-direction:column; gap:4px; margin:0; padding:0; border:0; }
+.runtime-tabs button { display:flex; align-items:center; gap:9px; width:100%; padding:10px 12px; text-align:left; color:var(--fn-text-1); border:0; border-radius:var(--fn-radius-md); min-height:40px; background:transparent; font-size:13px; }
+.runtime-tabs button svg { width:18px; height:18px; }
+.runtime-tabs button:hover, .runtime-categories button:hover { background:var(--fn-row-hover); }
+.runtime-tabs button.active, .store-module .runtime-store .runtime-categories button.active { background:var(--fn-primary-soft); color:var(--fn-text-0); font-weight:600; }
+.runtime-category-heading { margin:18px 12px 6px; font-size:12px; color:var(--fn-text-2); }
+.store-module .runtime-store .runtime-categories { display:flex; flex-direction:column; gap:4px; margin:0; padding:0; }
+.store-module .runtime-store .runtime-categories button { padding:10px 12px; width:100%; height:auto; min-height:36px; border:0; border-radius:var(--fn-radius-md); background:transparent; color:var(--fn-text-1); text-align:left; justify-content:flex-start; }
+.runtime-market-main { padding:24px; flex:1; min-width:0; background:var(--fn-window-surface); }
+.runtime-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.runtime-heading h2 { margin:0 0 8px; font-size:22px; font-weight:600; }
+.runtime-heading p { color:var(--fn-text-2); font-size:12px; }
+.runtime-heading > button { flex-shrink:0; border:1px solid var(--fn-border); border-radius:var(--fn-radius-md); padding:8px 12px; font-size:12px; color:var(--fn-text-1); }
+.store-module .runtime-store .search { width:100%; max-width:none; margin:0 0 18px; min-height:40px; background:var(--fn-bg-1); border-color:var(--fn-card-border); border-radius:var(--fn-radius-md); }
+.store-module .runtime-store .search input { flex:1; min-width:0; }
+.runtime-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); gap:16px; margin-top:18px; }
+.runtime-card { border:1px solid var(--fn-card-border); border-radius:var(--fn-radius-lg); background:var(--fn-bg-1); padding:16px; margin:12px 0; min-width:0; }
+.runtime-grid .runtime-card { display:flex; flex-direction:column; margin:0; transition:border-color .15s,box-shadow .15s; }
+.runtime-grid .runtime-card:hover { border-color:var(--fn-border-strong); box-shadow:var(--fn-shadow-card); }
+.runtime-card-heading { display:flex; align-items:center; gap:12px; min-width:0; }
+.runtime-card-heading > div { min-width:0; }
+.runtime-card-heading .store-app-icon { width:48px; height:48px; flex:0 0 48px; border-radius:12px; }
+.runtime-card h3 { font-size:15px; color:var(--fn-text-0); margin:0 0 5px; overflow-wrap:anywhere; }
+.runtime-card p { color:var(--fn-text-2); line-height:1.65; }
+.runtime-card small { color:var(--fn-text-2); font-size:12px; overflow-wrap:anywhere; }
+.runtime-card .runtime-card-description { margin:14px 0 16px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:40px; font-size:12px; }
+.runtime-card .runtime-source-warning { margin-bottom:10px; color:var(--fn-warning); }
+.runtime-actions, .runtime-batch { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.runtime-grid .runtime-actions { margin-top:auto; justify-content:space-between; }
+.runtime-actions button, .runtime-batch button { min-height:34px; padding:6px 12px; border:1px solid var(--fn-border); border-radius:var(--fn-radius-md); font-size:12px; }
+.runtime-actions button.primary { border-color:transparent; }
+.runtime-store pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; padding:12px; color:var(--fn-text-1); background:var(--fn-bg-0); border-radius:8px; }
+.runtime-source-facts { margin-top:12px; font-size:12px; }
+.runtime-digest, .runtime-review .data-values dd { overflow-wrap:anywhere; }
+.runtime-review article + article { border-top:1px solid var(--fn-border); margin-top:24px; padding-top:20px; }
+.runtime-settings { max-width:560px; padding-top:20px; }
+.runtime-store select { max-width:100%; }
+.runtime-store .wizard-backdrop { position:fixed; inset:0; z-index:1000; padding:24px; background:var(--fn-overlay); }
+.runtime-market-main > section > h2 { margin-bottom:16px; font-size:22px; }
+/* An embedded store is a window, so it needs no second landing-page hero. */
+.standalone-store.is-connected .standalone-intro { display:none; }
+.standalone-store.is-connected .standalone-content { margin-top:20px; }
+.standalone-store.is-embedded { min-height:100dvh; padding:0; background:var(--fn-window-surface); }
+.standalone-store.is-embedded > .standalone-brand, .standalone-store.is-embedded > .standalone-intro, .standalone-store.is-embedded > .standalone-footer { display:none; }
+.standalone-store.is-embedded > .standalone-content { max-width:none; min-height:100dvh; margin:0; border:0; border-radius:0; box-shadow:none; }
+.standalone-store.is-embedded .store-module { min-height:100dvh; }
+@media (max-width:700px) {
+ .runtime-store { flex-direction:column; }
+ .runtime-market-sidebar { flex:auto; width:100%; padding:10px 12px; border-right:0; border-bottom:1px solid var(--fn-border); }
+ .runtime-market-sidebar h2, .runtime-category-heading { display:none; }
+ .runtime-tabs { flex-direction:row; overflow-x:auto; gap:4px; }
+ .runtime-tabs button { flex:0 0 auto; width:auto; white-space:nowrap; padding:9px 10px; }
+ .store-module .runtime-store .runtime-categories { flex-direction:row; overflow-x:auto; padding-top:6px; }
+ .store-module .runtime-store .runtime-categories button { width:auto; flex:0 0 auto; white-space:nowrap; }
+ .runtime-market-main { padding:18px 14px; }
+ .runtime-heading { align-items:flex-start; }
+ .runtime-heading h2 { font-size:19px; }
+ .runtime-heading > button { padding:7px 9px; }
+ .runtime-grid { grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); }
+ .runtime-review .data-values > div { display:block; }
+ .runtime-review .data-values dd { margin:6px 0 0; }
+ .runtime-store .wizard-backdrop { padding:12px; }
 }
-.store-module .runtime-store .search {
-  width: 100%;
-  max-width: none;
-  margin: 16px 0 12px;
-}
-.store-module .runtime-store .search input {
-  flex: 1;
-  min-width: 0;
-}
-/* Runtime filters sit in the content pane, rather than the legacy sidebar. */
-.store-module .runtime-store .chips {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.store-module .runtime-store .chips button {
-  width: auto;
-  padding: 0 14px;
-  border: 1px solid var(--fn-border);
-  border-radius: var(--fn-radius-pill);
-}
-.store-module .runtime-store .chips button.active {
-  border-color: var(--fn-primary);
-}
-.runtime-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 12px 0 20px;
-  border-bottom: 1px solid var(--fn-divider);
-  margin-bottom: 20px;
-}
-.runtime-tabs button {
-  border: 0;
-  background: transparent;
-  padding: 10px 14px;
-  color: var(--fn-text-2);
-  border-radius: 8px;
-}
-.runtime-tabs button.active {
-  color: var(--fn-primary);
-  background: var(--fn-primary-soft);
-}
-.runtime-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.runtime-heading h2 {
-  margin: 0 0 8px;
-}
-.runtime-heading p {
-  color: var(--fn-text-2);
-}
-.runtime-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 16px;
-  margin-top: 20px;
-}
-.runtime-card {
-  background: var(--fn-bg-1);
-  border: 1px solid var(--fn-card-border);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 12px 0;
-  min-width: 0;
-}
-.runtime-grid .runtime-card {
-  margin: 0;
-}
-.runtime-card h3 {
-  margin: 12px 0 8px;
-}
-.runtime-card p {
-  color: var(--fn-text-2);
-  line-height: 1.65;
-}
-.runtime-card small {
-  color: var(--fn-text-3);
-  overflow-wrap: anywhere;
-}
-.runtime-actions,
-.runtime-batch {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 16px;
-}
-.runtime-actions button,
-.runtime-batch button {
-  min-height: 38px;
-}
-.runtime-store pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 320px;
-  overflow: auto;
-  padding: 12px;
-  background: var(--fn-bg-0);
-  border-radius: 8px;
-}
-.runtime-digest {
-  overflow-wrap: anywhere;
-}
-.runtime-review .data-values dd {
-  overflow-wrap: anywhere;
-}
-.runtime-review article + article {
-  border-top: 1px solid var(--fn-border);
-  margin-top: 24px;
-  padding-top: 20px;
-}
-.runtime-settings {
-  max-width: 560px;
-  padding-top: 20px;
-}
-.runtime-store select {
-  max-width: 100%;
-}
-@media (max-width: 680px) {
-  .runtime-store {
-    padding: 4px 12px 20px;
-  }
-  .runtime-tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    margin: 0 -12px 16px;
-    padding: 8px 12px 12px;
-  }
-  .runtime-tabs button {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .runtime-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .runtime-grid {
-    grid-template-columns: 1fr;
-  }
-  .runtime-card {
-    padding: 16px;
-  }
-  .runtime-actions > button {
-    flex: 1 1 130px;
-  }
-  .runtime-review .data-values > div {
-    display: block;
-  }
-  .runtime-review .data-values dd {
-    margin: 6px 0 0;
-  }
+
+/* Keep the NAS sign-in view and legacy catalogue consistent with the app market. */
+.store-module .store-sidebar { flex-basis:184px; width:184px; padding:18px 12px; background:var(--fn-bg-0); }
+.store-module .store-banner { margin:24px 24px 18px; padding:0; border:0; border-radius:0; background:transparent; }
+.store-module .store-banner .eyebrow, .store-module .banner-orbit { display:none; }
+.store-module .store-banner h1 { font-size:22px; margin:0 0 8px; }
+.store-module .catalog-grid { grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); gap:16px; padding:0 24px 24px; }
+.store-module .catalog-card { border-radius:var(--fn-radius-lg); border-color:var(--fn-card-border); min-height:188px; padding:16px 16px 56px; background:var(--fn-bg-1); }
+.store-module .catalog-card > .store-app-icon { width:48px; height:48px; flex-basis:48px; border-radius:12px; }
+.store-module .catalog-card > div { padding-right:0; }
+.store-module .catalog-card h3 { font-size:15px; color:var(--fn-text-0); }
+.store-module .catalog-card p { color:var(--fn-text-2); font-size:12px; }
+.store-module .catalog-card .tag { position:absolute; left:16px; bottom:18px; font-size:11px; background:var(--fn-fill-0); color:var(--fn-text-2); }
+.store-module .catalog-card > button { top:auto; bottom:16px; right:16px; min-height:32px; font-size:12px; }
+@media(max-width:700px) {
+ .store-module .store-sidebar { flex:0 0 auto; width:100%; padding:10px 12px; }
+ .store-module .store-banner { margin:18px 14px; }
+ .store-module .catalog-grid { padding:0 14px 20px; }
+ .store-header { flex-wrap:wrap; }
+ .store-header .primary,.store-header .secondary { padding:0 10px; font-size:12px; }
 }

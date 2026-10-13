@@ -26,6 +26,7 @@ import { AppIcon, apps } from "../desktop/apps";
 import { Pagination, pagedRequest, usePage, canPage, PAGE_SIZE } from "./Pagination";
 import { Search, Status, useResource } from "./common";
 import type { Instance } from "./Store";
+import { VideoWindowBackdrop } from "./VideoWindowBackdrop";
 
 /**
  * 媒体窗口（相册 / 影视 / 音乐共用的外壳）。
@@ -71,15 +72,6 @@ const PhotosWindow=lazy(()=>import("./PhotosWindow").then(m=>({default:m.PhotosW
 const MusicWindow=lazy(()=>import("./MusicWindow").then(m=>({default:m.MusicWindow})));
 export function MediaWindow(props:{id:string;connected:boolean;onPlay:(s:MediaSelection)=>void}){return <Suspense fallback={<p role="status">正在打开媒体库…</p>}>{props.id==="photos"?<PhotosWindow connected={props.connected}/>:props.id==="music"?<MusicWindow connected={props.connected} onPlay={props.onPlay}/> :<GenericMediaWindow {...props}/>}</Suspense>}
 
-function HeroBackdrop({ source }: { source?: string }) {
-  const [failed, setFailed] = useState(false);
-  return source && !failed ? <img className="hero-backdrop" src={source} alt="" referrerPolicy="no-referrer"
-    onError={() => setFailed(true)}
-    onLoad={event => {
-      const image = event.currentTarget;
-      if (image.naturalWidth < image.naturalHeight * 1.2) setFailed(true);
-    }} /> : <span className="hero-art-unavailable">{failed ? "横版背景图暂不可用" : "设备未提供横版背景图"}</span>;
-}
 function GenericMediaWindow({
   id,
   connected,
@@ -209,6 +201,10 @@ function GenericMediaWindow({
   const [heroIndex, setHeroIndex] = useState(0);
   const heroItems = hero.data ?? [];
   const heroItem = heroItems[Math.min(heroIndex, Math.max(0, heroItems.length - 1))];
+  const immersiveHome = id === "video" && tab === "libraries" && !parent;
+  const backdrop = immersiveHome ? safeMediaUrl(heroItem?.backdrop) : undefined;
+  const [backdropFailed, setBackdropFailed] = useState(false);
+  useLayoutEffect(() => setBackdropFailed(false), [api.nasSession, heroItem?.id, backdrop]);
   const [heroBusy, setHeroBusy] = useState(false);
   const [heroError, setHeroError] = useState("");
   const heroRequest = useRef(0);
@@ -362,7 +358,8 @@ function GenericMediaWindow({
   const heading =
     parent?.name || (id === "video" ? "首页" : id === "photos" ? tabLabel : "歌曲");
   return (
-    <div className={`media-module ${id}${shell ? " fnos-app" : ""}`}>
+    <div className={`media-module ${id}${shell ? " fnos-app" : ""}${immersiveHome ? " video-immersive-home" : ""}`}>
+      {immersiveHome && <VideoWindowBackdrop key={`${api.nasSession}:${heroItem?.id}:${backdrop ?? ""}`} source={backdrop} onFailure={() => setBackdropFailed(true)} />}
       <aside className="app-rail">
       <div className="media-hero">
         {app ? <AppIcon app={app} /> : <Icon weight="duotone" />}
@@ -530,8 +527,7 @@ function GenericMediaWindow({
           className="video-hero"
           aria-label="首页推荐影片"
         >
-          <HeroBackdrop key={`${heroItem.id}:${heroItem.backdrop ?? ""}`} source={safeMediaUrl(heroItem.backdrop)} />
-          <div className="hero-shade" />
+          {(!backdrop || backdropFailed) && <span className="hero-art-unavailable">{backdropFailed ? "横版背景图暂不可用" : "设备未提供横版背景图"}</span>}
           <div className="hero-text">
             <h1>{heroItem.name}</h1>
             <p className="hero-meta">{itemSubtitle(heroItem, "video")}</p>

@@ -45,7 +45,7 @@
   height: 44px;
   border-radius: var(--fn-radius-md);
   background: var(--fn-primary-soft);
-  color: var(--fn-primary);
+  color: var(--fn-link);
   font-size: 24px;
   flex-shrink: 0;
 }
@@ -118,8 +118,8 @@
   border-radius: 999px;
   background: var(--fn-primary);
 }
-.sys-meter.warn > span { background: #ff9500; }
-.sys-meter.danger > span { background: #ff3b30; }
+.sys-meter.warn > span { background: var(--fn-warning); }
+.sys-meter.danger > span { background: var(--fn-danger); }
 .sys-disks {
   list-style: none;
   margin: 0;
@@ -159,10 +159,6 @@
   color: var(--fn-text-2);
   font-size: var(--fn-font-size-sm);
 }
-:root[data-theme="dark"] .sys-card { background: var(--fn-window-surface); }
-:root[data-theme="dark"] .sys-fact { background: rgba(255, 255, 255, 0.04); }
-:root[data-theme="dark"] .sys-meter { background: rgba(255, 255, 255, 0.08); }
-:root[data-theme="dark"] .sys-device-icon { background: rgba(10, 132, 255, 0.18); }
 
 /* ---------- 存储池 ---------- */
 .sys-pool-head {
@@ -219,17 +215,17 @@
   height: 15px;
 }
 .network-card header svg:last-of-type {
-  color: #2e9e5b;
+  color: var(--fn-success-text);
 }
 .network-card .net-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #b6b6bd;
+  background: var(--fn-text-3);
   flex: none;
 }
 .network-card .net-dot.up {
-  background: #2e9e5b;
+  background: var(--fn-success);
   box-shadow: 0 0 0 3px rgba(46, 158, 91, 0.16);
 }
 .network-card .net-tag {
@@ -311,7 +307,7 @@
 }
 .settings-split > nav button.active {
   background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
-  color: var(--fn-brand-5);
+  color: var(--fn-link);
   font-weight: 600;
 }
 .settings-split > nav small {
@@ -361,11 +357,6 @@
   color: var(--fn-text-3);
   font-size: 13px;
 }
-:root[data-theme="dark"] .network-card,
-:root[data-theme="dark"] .settings-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.09);
-}
 
 /* ===== Docker 窗口（只读）===== */
 .docker-view {
@@ -402,7 +393,7 @@
 }
 .docker-tabs > button.active {
   background: color-mix(in srgb, var(--fn-brand-5) 10%, transparent);
-  color: var(--fn-brand-5);
+  color: var(--fn-link);
   font-weight: 600;
 }
 .docker-tabs .spacer {
@@ -416,8 +407,8 @@
 .docker-note.warn {
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(214, 158, 46, 0.12);
-  color: #8a6116;
+  background: var(--fn-warning-soft);
+  color: var(--fn-warning-text);
 }
 .docker-grid {
   display: grid;
@@ -458,14 +449,14 @@
   height: 8px;
   border-radius: 50%;
   flex: none;
-  background: #b6b6bd;
+  background: var(--fn-text-3);
 }
 .docker-dot.up {
-  background: #2e9e5b;
+  background: var(--fn-success);
   box-shadow: 0 0 0 3px rgba(46, 158, 91, 0.16);
 }
 .docker-dot.down {
-  background: #b6b6bd;
+  background: var(--fn-text-3);
 }
 .docker-state {
   font-size: 11.5px;
@@ -475,8 +466,8 @@
   color: var(--fn-text-3);
 }
 .docker-state.up {
-  background: rgba(46, 158, 91, 0.14);
-  color: #23794a;
+  background: var(--fn-success-soft);
+  color: var(--fn-success-text);
 }
 .docker-image,
 .docker-ports {
@@ -540,7 +531,7 @@
   border-bottom: 0;
 }
 .docker-row:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--fn-row-hover);
 }
 .docker-row-name {
   display: flex;
@@ -573,8 +564,8 @@
   display: flex;
   flex-direction: column;
   border-radius: 14px;
-  background: #14161c;
-  color: #e8e8ec;
+  background: var(--fn-code-bg);
+  color: var(--fn-code-text);
   box-shadow: -16px 0 40px rgba(10, 14, 26, 0.34);
   overflow: hidden;
 }
@@ -583,7 +574,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--fn-divider);
 }
 .docker-logpanel header svg {
   width: 15px;
@@ -594,7 +585,7 @@
 }
 .docker-logpanel .icon-button {
   color: inherit;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--fn-fill-2);
   border-radius: 999px;
 }
 .docker-logpanel pre {
@@ -607,11 +598,6 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-all;
-}
-:root[data-theme="dark"] .docker-card,
-:root[data-theme="dark"] .docker-table {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.09);
 }
 
 /* ===== 远程访问 ===== */
@@ -637,7 +623,7 @@
 .remote-card > svg {
   width: 22px;
   height: 22px;
-  color: var(--fn-brand-5);
+  color: var(--fn-link);
   flex: none;
   margin-top: 2px;
 }
@@ -667,8 +653,4 @@
   line-height: 1.6;
   color: var(--fn-text-3);
   max-width: 65ch;
-}
-:root[data-theme="dark"] .remote-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.09);
 }

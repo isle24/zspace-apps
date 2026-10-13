@@ -1323,3 +1323,24 @@
   color: var(--fn-text-2);
   font-size: var(--fn-font-size-base);
 }
+
+/* Keep the NAS sign-in view and legacy catalogue consistent with the app market. */
+.store-module .store-sidebar { flex-basis:184px; width:184px; padding:18px 12px; background:var(--fn-bg-0); }
+.store-module .store-banner { margin:24px 24px 18px; padding:0; border:0; border-radius:0; background:transparent; }
+.store-module .store-banner .eyebrow, .store-module .banner-orbit { display:none; }
+.store-module .store-banner h1 { font-size:22px; margin:0 0 8px; }
+.store-module .catalog-grid { grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); gap:16px; padding:0 24px 24px; }
+.store-module .catalog-card { border-radius:var(--fn-radius-lg); border-color:var(--fn-card-border); min-height:188px; padding:16px 16px 56px; background:var(--fn-bg-1); }
+.store-module .catalog-card > .store-app-icon { width:48px; height:48px; flex-basis:48px; border-radius:12px; }
+.store-module .catalog-card > div { padding-right:0; }
+.store-module .catalog-card h3 { font-size:15px; color:var(--fn-text-0); }
+.store-module .catalog-card p { color:var(--fn-text-2); font-size:12px; }
+.store-module .catalog-card .tag { position:absolute; left:16px; bottom:18px; font-size:11px; background:var(--fn-fill-0); color:var(--fn-text-2); }
+.store-module .catalog-card > button { top:auto; bottom:16px; right:16px; min-height:32px; font-size:12px; }
+@media(max-width:700px) {
+ .store-module .store-sidebar { flex:0 0 auto; width:100%; padding:10px 12px; }
+ .store-module .store-banner { margin:18px 14px; }
+ .store-module .catalog-grid { padding:0 14px 20px; }
+ .store-header { flex-wrap:wrap; }
+ .store-header .primary,.store-header .secondary { padding:0 10px; font-size:12px; }
+}

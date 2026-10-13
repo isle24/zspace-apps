@@ -149,18 +149,18 @@ a svg {
 }
 .hint {
   font-size: 12px;
-  color: #8491a6;
+  color: var(--fn-text-2);
   line-height: 1.8;
   margin-top: 20px;
 }
 .error-text {
-  color: #c44352 !important;
+  color: var(--fn-danger);
 }
 .inline-error {
   font-size: 13px;
-  border: 1px solid #ffd6db;
-  background: #fff2f4;
-  color: #b52e43;
+  border: 1px solid var(--fn-danger);
+  background: var(--fn-danger-soft);
+  color: var(--fn-danger-text);
   padding: 10px 14px;
   border-radius: 9px;
   margin: 10px 0;
@@ -172,9 +172,9 @@ a svg {
   gap: 10px;
   padding: 11px 17px;
   font-size: 12px;
-  color: #877247;
-  background: #fff9e9;
-  border: 1px solid #f8eac9;
+  color: var(--fn-warning-text);
+  background: var(--fn-warning-soft);
+  border: 1px solid var(--fn-warning);
   border-radius: 9px;
   margin: 12px 24px;
 }
@@ -185,8 +185,8 @@ a svg {
   display: inline-flex;
   padding: 4px 9px;
   font-size: 10px;
-  background: #edf4ff;
-  color: #6c89b0;
+  background: var(--fn-primary-soft);
+  color: var(--fn-link);
   border-radius: 6px;
 }
 .spinner {
@@ -496,8 +496,8 @@ a svg {
   position: absolute;
   display: flex;
   flex-direction: column;
-  background: #fff;
-  color: #25304a;
+  background: var(--fn-window-surface);
+  color: var(--fn-text-0);
   border: 1px solid #edf3ffbb;
   border-radius: 13px;
   box-shadow:
@@ -786,11 +786,11 @@ a svg {
   flex-direction: column;
   gap: 7px;
   font-size: 12px;
-  color: #40506a;
+  color: var(--fn-text-1);
   margin: 15px 0;
 }
 .field small {
-  color: #9aa7ba;
+  color: var(--fn-text-3);
   font-size: 10px;
   line-height: 1.65;
 }
@@ -830,7 +830,7 @@ a svg {
   margin: 0;
 }
 .check-field small {
-  color: #8da0b8;
+  color: var(--fn-text-2);
   font-size: 10px;
 }
 .login-status {
@@ -876,15 +876,15 @@ a svg {
   width: 166px;
   flex-shrink: 0;
   padding: 22px 10px;
-  background: #f5f8fc;
-  border-right: 1px solid #eaf0f6;
+  background: var(--fn-window-sidebar);
+  border-right: 1px solid var(--fn-border);
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 .module-sidebar > p {
   font-size: 10px;
-  color: #9ca8b9;
+  color: var(--fn-text-2);
   margin: 2px 13px 13px;
 }
 .module-sidebar > button {
@@ -895,15 +895,15 @@ a svg {
   border-radius: 8px;
   font-size: 12px;
   text-align: left;
-  color: #6b7c96;
+  color: var(--fn-text-1);
 }
 .module-sidebar > button svg {
   height: 18px;
   width: 18px;
 }
 .module-sidebar > button.selected {
-  background: #e0ecff;
-  color: #2176e9;
+  background: var(--fn-primary-soft);
+  color: var(--fn-link);
   font-weight: 600;
 }
 .sidebar-bottom {
@@ -912,13 +912,13 @@ a svg {
   display: flex;
   gap: 8px;
   font-size: 10px;
-  color: #8999b0;
+  color: var(--fn-text-2);
   line-height: 1.7;
 }
 .sidebar-bottom small {
   display: block;
   font-size: 8px;
-  color: #a6b0c1;
+  color: var(--fn-text-3);
 }
 .sidebar-bottom svg {
   width: 20px;
@@ -934,13 +934,13 @@ a svg {
   align-items: center;
   gap: 9px;
   padding: 10px 18px;
-  border-bottom: 1px solid #edf1f7;
+  border-bottom: 1px solid var(--fn-divider);
   flex-wrap: wrap;
 }
 .breadcrumb,
 .crumb button {
   font-size: 11px;
-  color: #647690;
+  color: var(--fn-text-2);
   padding: 5px 0;
 }
 .crumb {
@@ -984,9 +984,9 @@ a svg {
 .file-search-form select {
   min-height: 34px;
   max-width: 100%;
-  border: 1px solid #dce5f1;
+  border: 1px solid var(--fn-border);
   border-radius: 8px;
-  background: #f7f9fc;
+  background: var(--fn-control-bg);
   padding: 0 8px;
   color: inherit;
   font: inherit;
@@ -994,7 +994,7 @@ a svg {
 }
 .file-search-summary {
   margin-top: 10px;
-  color: #53647b;
+  color: var(--fn-text-1);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -1002,13 +1002,13 @@ a svg {
   margin-top: 8px;
   font-size: 11px;
   line-height: 1.6;
-  color: #74849a;
+  color: var(--fn-text-2);
 }
 .recent-filter-note, .file-search-error {
   margin: 0 25px 16px;
 }
 .file-search-error {
-  color: #b83e50;
+  color: var(--fn-danger-text);
   font-size: 12px;
 }
 .search {
@@ -1025,7 +1025,7 @@ a svg {
 .search svg {
   height: 16px;
   width: 16px;
-  color: #8696ae;
+  color: var(--fn-text-2);
 }
 .search input {
   border: 0;
@@ -1045,24 +1045,24 @@ a svg {
   min-height: 235px;
   gap: 12px;
   padding: 25px;
-  color: #94a8c5;
+  color: var(--fn-text-2);
 }
 .state-panel h3 {
-  color: #667b99;
+  color: var(--fn-text-1);
   font-size: 15px;
   font-weight: 500;
 }
 .state-panel p {
-  color: #9aa9bd;
+  color: var(--fn-text-3);
   font-size: 12px;
   max-width: 440px;
   word-break: break-word;
 }
 .state-panel.error {
-  color: #afadbe;
+  color: var(--fn-text-2);
 }
 .state-panel.error h3 {
-  color: #816c82;
+  color: var(--fn-danger-text);
 }
 .file-content {
   padding: 0 24px 25px;
@@ -1098,7 +1098,7 @@ a svg {
   border-top: 1px solid #edf1f7;
 }
 .file-row > span:not(:first-child) {
-  color: #8b9ab0;
+  color: var(--fn-text-2);
   font-size: 10px;
 }
 .file-row:hover,
@@ -1181,17 +1181,17 @@ a svg {
   padding: 13px 0;
   display: flex;
   gap: 18px;
-  border-bottom: 1px solid #edf1f6;
+  border-bottom: 1px solid var(--fn-divider);
   align-items: flex-start;
 }
 .data-values dt {
-  color: #8b9bb1;
+  color: var(--fn-text-2);
   min-width: 85px;
   flex-shrink: 0;
 }
 .data-values dd {
   margin: 0;
-  color: #425773;
+  color: var(--fn-text-1);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -1215,21 +1215,21 @@ a svg {
   align-items: center;
   gap: 18px;
   padding: 20px;
-  background: #f4f8ff;
-  border: 1px solid #e7eef9;
+  background: var(--fn-bg-0);
+  border: 1px solid var(--fn-border);
   border-radius: 12px;
   font-size: 10px;
-  color: #93a4bd;
+  color: var(--fn-text-2);
 }
 .stats-row svg {
-  color: #6aaeff;
+  color: var(--fn-link);
   width: 30px;
   height: 30px;
 }
 .stats-row strong {
   display: block;
   font-size: 24px;
-  color: #476489;
+  color: var(--fn-text-0);
   margin-top: 7px;
   font-weight: 500;
 }
@@ -1261,7 +1261,7 @@ a svg {
   display: flex;
   align-items: center;
   gap: 20px;
-  border: 1px solid #e7edf6;
+  border: 1px solid var(--fn-border);
   padding: 20px;
   border-radius: 12px;
   margin-top: 12px;
@@ -1275,12 +1275,12 @@ a svg {
 .download-list article p,
 .job-list article p {
   font-size: 11px;
-  color: #8b9cb4;
+  color: var(--fn-text-2);
   margin-top: 6px;
 }
 .download-list article > svg,
 .job-list article > svg {
-  color: #60a8ee;
+  color: var(--fn-link);
 }
 .download-list progress {
   width: 100%;
@@ -1290,8 +1290,8 @@ a svg {
 }
 .settings-card {
   padding: 24px;
-  background: #fafcff;
-  border: 1px solid #e6edf7;
+  background: var(--fn-bg-1);
+  border: 1px solid var(--fn-border);
   border-radius: 14px;
   margin: 20px 0;
 }
@@ -1300,10 +1300,10 @@ a svg {
   align-items: flex-start;
   gap: 14px;
   padding: 20px 0;
-  border-top: 1px solid #e8eef6;
+  border-top: 1px solid var(--fn-divider);
 }
 .settings-item > svg {
-  color: #7e9dbc;
+  color: var(--fn-link);
   width: 35px;
   height: 35px;
 }
@@ -1316,14 +1316,14 @@ a svg {
   margin: auto;
 }
 .help .eyebrow {
-  color: #8aa3c2;
+  color: var(--fn-link);
 }
 .help h1 {
   margin: 15px 0;
 }
 .help p {
   font-size: 13px;
-  color: #8092ab;
+  color: var(--fn-text-2);
 }
 .help h3 {
   margin: 18px 0 7px;
@@ -1453,7 +1453,7 @@ a svg {
   align-items: center;
   gap: 14px;
   width: 100%;
-  border-bottom: 1px solid #edf1f7;
+  border-bottom: 1px solid var(--fn-divider);
   padding: 10px 0;
 }
 .song-list .media-art {
@@ -2322,7 +2322,7 @@ a svg {
     flex-direction: row;
     gap: 8px;
     border: 0;
-    background: #fafcff;
+    background: var(--fn-bg-1);
     overflow: auto;
   }
   .module-sidebar > p,
@@ -2336,11 +2336,11 @@ a svg {
     font-size: 11px;
     gap: 6px;
     border-radius: 22px;
-    background: #eff4fb;
+    background: var(--fn-fill-1);
   }
   .module-sidebar > button.selected {
-    background: #2488ff;
-    color: #fff;
+    background: var(--fn-primary);
+    color: var(--fn-window-surface);
   }
   .module-sidebar > button svg {
     width: 15px;
@@ -2455,7 +2455,7 @@ a svg {
   .job-list article {
     padding: 16px 12px;
     gap: 12px;
-    background: #fff;
+    background: var(--fn-window-surface);
   }
   .download-list article > svg,
   .job-list article > svg {
@@ -2482,7 +2482,7 @@ a svg {
   .settings-card {
     padding: 18px;
     margin: 16px 0;
-    background: #fff;
+    background: var(--fn-window-surface);
   }
   .data-values {
     font-size: 11px;
@@ -2879,15 +2879,15 @@ a svg {
 }
 .storage-register {
   font-size: 12px;
-  border: 1px solid #e0e9f6;
+  border: 1px solid var(--fn-border);
   border-radius: 10px;
   padding: 15px;
   margin: 15px 0;
-  background: #fbfdff;
+  background: var(--fn-bg-1);
 }
 .storage-register summary {
   cursor: pointer;
-  color: #4183d4;
+  color: var(--fn-link);
   line-height: 1.6;
 }
 .storage-candidates {
@@ -2900,16 +2900,16 @@ a svg {
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  border: 1px solid #e2eaf5;
+  border: 1px solid var(--fn-border);
   border-radius: 10px;
   padding: 14px 10px;
   text-align: left;
   min-width: 0;
-  background: #fff;
+  background: var(--fn-window-surface);
 }
 .storage-disk.selected {
-  background: #edf5ff;
-  border-color: #6faafb;
+  background: var(--fn-primary-soft);
+  border-color: var(--fn-focus-border);
 }
 .storage-disk > span {
   min-width: 0;
@@ -2923,7 +2923,7 @@ a svg {
 .storage-disk small {
   display: block;
   font-size: 9px;
-  color: #8ca0b9;
+  color: var(--fn-text-2);
   line-height: 1.8;
   overflow-wrap: anywhere;
   margin-top: 4px;
@@ -2931,7 +2931,7 @@ a svg {
 .storage-disk > svg {
   height: 20px;
   width: 20px;
-  color: #729ed0;
+  color: var(--fn-link);
 }
 .storage-disk > svg:last-child {
   height: 13px;
@@ -2939,7 +2939,7 @@ a svg {
 }
 .storage-disk:disabled {
   opacity: 0.65;
-  background: #f0f2f5;
+  background: var(--fn-fill-1);
 }
 .storage-picker .state-panel {
   min-height: 95px;
@@ -2950,10 +2950,10 @@ a svg {
 }
 .docker-storage {
   padding: 16px;
-  border: 1px solid #e0e9f4;
+  border: 1px solid var(--fn-border);
   border-radius: 10px;
   margin-top: 20px;
-  background: #f4f8ff;
+  background: var(--fn-bg-0);
   overflow-wrap: anywhere;
 }
 .docker-storage h3 {
@@ -2963,20 +2963,20 @@ a svg {
 .docker-storage strong {
   display: block;
   font-size: 11px;
-  color: #5b799e;
+  color: var(--fn-text-1);
   margin-bottom: 5px;
 }
 .docker-storage p {
   font-size: 10px;
   line-height: 1.8;
-  color: #8a9eb8;
+  color: var(--fn-text-2);
 }
 .docker-storage.unsafe {
-  background: #fff9ef;
-  border-color: #f4e4c7;
+  background: var(--fn-warning-soft);
+  border-color: var(--fn-warning);
 }
 .storage-success {
-  color: #36906c;
+  color: var(--fn-success-text);
   font-size: 11px;
   margin-top: 12px;
 }
@@ -3236,7 +3236,7 @@ a svg {
 }
 .connection-test {
   font-size: 11px;
-  color: #4286d9;
+  color: var(--fn-link);
   display: block;
   margin: -7px 0 5px auto;
   padding: 7px 0;
@@ -3246,9 +3246,9 @@ a svg {
   font-size: 10px;
   line-height: 1.7;
   padding: 9px 12px;
-  border: 1px solid #cfe8dc;
-  background: #effaf5;
-  color: #589777;
+  border: 1px solid var(--fn-success);
+  background: var(--fn-success-soft);
+  color: var(--fn-success-text);
   border-radius: 8px;
   margin-bottom: 14px;
 }
@@ -3279,7 +3279,7 @@ a svg {
   justify-content: space-between;
   gap: 12px;
   padding: 15px 24px 24px;
-  color: #899bb5;
+  color: var(--fn-text-2);
   font-size: 11px;
   flex-wrap: wrap;
 }
@@ -3421,18 +3421,18 @@ a svg {
 .file-actions { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px 18px; padding: 0 22px 16px; }
 .file-actions .file-download-actions { padding: 0; }
 .directory-create-action > .secondary { display: inline-flex; align-items: center; gap: 7px; }
-.directory-create-action > small { display: block; max-width: 360px; margin-top: 8px; color: #7c8aa1; font-size: 11px; line-height: 1.5; }
+.directory-create-action > small { display: block; max-width: 360px; margin-top: 8px; color: var(--fn-text-2); font-size: 11px; line-height: 1.5; }
 .directory-create-dialog { width: 440px; max-width: calc(100vw - 36px); max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 0; }
 .directory-create-dialog::backdrop { background: #29426355; backdrop-filter: blur(4px); }
 .directory-create-dialog form { padding: 20px 24px; overflow: auto; }
 .directory-create-parent { display: grid; gap: 5px; margin-bottom: 18px; font-size: 12px; }
-.directory-create-parent > span, .directory-create-hint { color: #7c8aa1; }
+.directory-create-parent > span, .directory-create-hint { color: var(--fn-text-2); }
 .directory-create-parent code { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
 .directory-create-dialog label { display: grid; gap: 8px; font-size: 12px; }
-.directory-create-dialog input { width: 100%; min-width: 0; padding: 10px; border: 1px solid #dce4f0; border-radius: 8px; }
+.directory-create-dialog input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--fn-border); border-radius: 8px; }
 .directory-create-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .directory-create-dialog p { font-size: 12px; line-height: 1.6; }
-.directory-create-error { color: #b44141; }
+.directory-create-error { color: var(--fn-danger-text); }
 @media (max-width: 640px) {
   .file-actions { padding: 0 14px 14px; }
   .directory-create-dialog form { padding: 16px; }
@@ -3441,16 +3441,16 @@ a svg {
 .transfer-main { padding-bottom: 20px; }
 .transfer-lifetime { padding: 0 22px; font-size: 11px; line-height: 1.7; }
 .transfer-list { list-style: none; margin: 18px 22px; padding: 0; }
-.transfer-row { display: flex; align-items: flex-start; gap: 14px; padding: 18px 0; border-bottom: 1px solid #edf1f7; }
-.transfer-icon { flex: 0 0 30px; font-size: 30px; color: #2382ff; }
+.transfer-row { display: flex; align-items: flex-start; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--fn-divider); }
+.transfer-icon { flex: 0 0 30px; font-size: 30px; color: var(--fn-link); }
 .transfer-detail { flex: 1; min-width: 0; }
 .transfer-title { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; }
 .transfer-title strong { font-size: 13px; overflow-wrap: anywhere; }
-.transfer-title > span { flex-shrink: 0; color: #7c8aa1; font-size: 11px; }
-.transfer-detail p { margin: 7px 0 0; font-size: 11px; color: #7c8aa1; line-height: 1.6; overflow-wrap: anywhere; }
-.transfer-detail progress { display: block; width: 100%; height: 5px; margin-top: 9px; accent-color: #2382ff; }
-.transfer-row.failed .transfer-title > span { color: #c85b55; }
-.transfer-row.completed .transfer-title > span { color: #258b72; }
+.transfer-title > span { flex-shrink: 0; color: var(--fn-text-2); font-size: 11px; }
+.transfer-detail p { margin: 7px 0 0; font-size: 11px; color: var(--fn-text-2); line-height: 1.6; overflow-wrap: anywhere; }
+.transfer-detail progress { display: block; width: 100%; height: 5px; margin-top: 9px; accent-color: var(--fn-link); }
+.transfer-row.failed .transfer-title > span { color: var(--fn-danger-text); }
+.transfer-row.completed .transfer-title > span { color: var(--fn-success-text); }
 .transfer-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .transfer-actions .secondary { font-size: 11px; }
 .transfer-tasks > .store-module { flex: 1; min-height: 0; overflow: auto; }

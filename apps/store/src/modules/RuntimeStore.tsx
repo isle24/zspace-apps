@@ -1,4 +1,5 @@
 import display from "../catalog-display.json";
+import { ShoppingBag, SquaresFour, Heart, Cube, ArrowClockwise, ListChecks, ClockCounterClockwise, Desktop, SlidersHorizontal } from "@phosphor-icons/react";
 import { RuntimeDesktop, RuntimeLogs, RuntimeSnapshots } from "./RuntimeAssets";
 import { useEffect, useRef, useState } from "react";
 import { api, message } from "../api/client";
@@ -23,14 +24,14 @@ import {
   type RuntimePlan,
 } from "./runtime-types";
 const tabs = [
-  ["catalog", "发现应用"],
-  ["cloud", "心愿与应用历史"],
-  ["instances", "我的应用"],
-  ["updates", "更新"],
-  ["jobs", "任务中心"],
-  ["snapshots", "备份与恢复"],
-  ["desktop", "应用桌面"],
-  ["settings", "设置"],
+  ["catalog", "发现应用", SquaresFour],
+  ["cloud", "心愿与应用历史", Heart],
+  ["instances", "我的应用", Cube],
+  ["updates", "更新", ArrowClockwise],
+  ["jobs", "任务中心", ListChecks],
+  ["snapshots", "备份与恢复", ClockCounterClockwise],
+  ["desktop", "应用桌面", Desktop],
+  ["settings", "设置", SlidersHorizontal],
 ] as const;
 type Catalog = { items: RuntimeApp[]; categories: { id: string; name: string }[] };
 function reviewedUpgrade(instance: RuntimeInstance, app?: RuntimeApp): PlanRequest | undefined {
@@ -308,17 +309,39 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
   return (
     <div className="runtime-store">
       <RuntimeTheme key={scope.generation} />
+      <aside className="runtime-market-sidebar">
+      <h2><ShoppingBag />空间商店</h2>
       <nav className="runtime-tabs" aria-label="完整应用管理">
-        {tabs.map(([key, label]) => (
+        {tabs.map(([key, label, Glyph]) => (
           <button
             key={key}
             className={tab === key ? "active" : ""}
             onClick={() => activeTab(key)}
           >
-            {label}
+            <Glyph aria-hidden="true" />{label}
           </button>
         ))}
       </nav>
+      <p className="runtime-category-heading">应用分类</p>
+          <div className="chips runtime-categories">
+            <button
+              className={tab === "catalog" && !category ? "active" : ""}
+              onClick={() => { setCategory(""); activeTab("catalog"); }}
+            >
+              全部应用
+            </button>
+            {catalogData?.categories?.map((item) => (
+              <button
+                className={tab === "catalog" && category === item.id ? "active" : ""}
+                key={item.id}
+                onClick={() => { setCategory(item.id); activeTab("catalog"); }}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+      </aside>
+      <main className="runtime-market-main">
       {error && (
         <p className="inline-error" role="alert">
           {error}
@@ -330,8 +353,8 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
         <section>
           <div className="runtime-heading">
             <div>
-              <h2>发现应用</h2>
-              <p>经过审查的应用配方，为你的空间增添可能</p>
+              <h2>发现适合你的应用</h2>
+              <p>{catalogData?.items.length || 0} 款应用 · 已安装 {instanceItems.filter(item => !item.archived).length} 款</p>
             </div>
             <button disabled={busy || !catalogData?.items.length} onClick={refresh}>
               {busy ? "检查中…" : "检查官方版本"}
@@ -342,23 +365,6 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
             onChange={setQuery}
             placeholder="搜索完整应用目录"
           />
-          <div className="chips">
-            <button
-              className={!category ? "active" : ""}
-              onClick={() => setCategory("")}
-            >
-              全部应用
-            </button>
-            {catalogData?.categories?.map((item) => (
-              <button
-                className={category === item.id ? "active" : ""}
-                key={item.id}
-                onClick={() => setCategory(item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
           <Status
             {...catalog}
             retry={catalog.reload}
@@ -367,15 +373,12 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
           <div className="runtime-grid">
             {listed.map((app) => (
               <article className="runtime-card" key={app.id}>
-                <span className="store-app-icon">
-                  <AppArtwork appId={app.id} icon={app.icon} />
-                </span>
-                <h3>{app.name}</h3>
-                <p>{app.description}</p>
-                <small>
-                  {app.version} · {app.recipeRevision || "配方版本待返回"}
-                </small>
-                <SourceFacts app={app} />
+                <div className="runtime-card-heading">
+                  <span className="store-app-icon"><AppArtwork appId={app.id} icon={app.icon} /></span>
+                  <div><h3>{app.name}</h3><small>{catalogData?.categories?.find(item => item.id === app.category)?.name || app.category} · {app.version}</small></div>
+                </div>
+                <p className="runtime-card-description">{app.description}</p>
+                {app.sourceError && <small className="runtime-source-warning">{app.sourceError}</small>}
                 <div className="runtime-actions">
                   <button
                     aria-label={`查看 ${app.name}`}
@@ -586,6 +589,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
         <RuntimeDesktop key={`${scope.generation}-${revision}`} />
       )}
       {tab === "settings" && <RuntimeSettings key={scope.generation} />}
+      </main>
       {detail && (
         <div className="wizard-backdrop">
           <section

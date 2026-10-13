@@ -4,6 +4,11 @@ export function StoreFrame() {
  const frame=useRef<HTMLIFrameElement>(null), [url,setURL]=useState(''), [error,setError]=useState('');
  useEffect(()=>{
   let active=true;let expected='',nonce='';const session=api.storeSession,address=api.storeAddress;
+  const sendTheme=()=>{
+   if(active&&expected&&nonce)frame.current?.contentWindow?.postMessage({type:'space-store-host-theme',nonce,theme:document.documentElement.dataset.theme==='dark'?'dark':'light'},expected);
+  };
+  const themeObserver=new MutationObserver(sendTheme);
+  themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   void api.init().then(()=>{
    if (!active) return;
    const base=new URL(api.base || location.origin);expected=base.origin;
@@ -14,6 +19,7 @@ export function StoreFrame() {
    if(event.data?.type==='space-store-host-ended'&&nonce&&event.data.nonce===nonce){void api.logoutStore();return}
    if(event.data?.type!=='space-store-host-ready'||typeof event.data.nonce!=='string'||!/^[a-f0-9-]{16,64}$/.test(event.data.nonce))return;
    nonce=event.data.nonce;
+   sendTheme();
    try{
     const grant=await api.grantForStoreFrame();
     if(!active||session!==api.storeSession||address!==api.storeAddress||grant.storeAddress!==expected)return;
@@ -21,7 +27,7 @@ export function StoreFrame() {
    }catch(e){if(active)setError(message(e))}
   };
   window.addEventListener('message',receive);
-  return()=>{active=false;window.removeEventListener('message',receive)};
+  return()=>{active=false;themeObserver.disconnect();window.removeEventListener('message',receive)};
  },[api.storeSession,api.storeAddress]);
  return <div className="embedded-complete-store">{error&&<p className="error-text" role="alert">{error}</p>}{url?<iframe ref={frame} title="空间商店" src={url} referrerPolicy="no-referrer" />:<p role="status">正在连接空间商店…</p>}</div>;
 }

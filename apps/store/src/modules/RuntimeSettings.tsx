@@ -7,6 +7,7 @@ import { Status, useResource } from "./common";
 import { StoreServiceSettings } from "./StoreServiceSettings";
 import type { RuntimeSettings as Settings } from "./runtime-types";
 export function RuntimeSettings() {
+  const embedded = window.parent !== window && new URLSearchParams(location.search).get('embedded') === '1';
   const [scope] = useState(() => api.captureStoreScope());
   const current = () => {
     const now = api.captureStoreScope();
@@ -134,6 +135,7 @@ export function RuntimeSettings() {
           <label className="field">
             外观
             <select
+              disabled={embedded}
               value={settings.theme}
               onChange={(e) => {
                 setSaved(false);
@@ -147,6 +149,7 @@ export function RuntimeSettings() {
               <option value="dark">深色</option>
               <option value="system">跟随系统</option>
             </select>
+            {embedded && <small>外观跟随空间桌面，请打开 Dock 的账号面板切换。</small>}
           </label>
           <label className="check-field">
             <input
@@ -199,6 +202,7 @@ export function RuntimeSettings() {
 
 function useTheme(settings: Settings | undefined) {
   useEffect(() => {
+    if (window.parent !== window && new URLSearchParams(location.search).get('embedded') === '1') return;
     if (!settings || !["light", "dark", "system"].includes(settings.theme))
       return;
     const media = window.matchMedia?.("(prefers-color-scheme: dark)");

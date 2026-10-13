@@ -1,0 +1,13 @@
+# Optional host Docker management. :ro is a filesystem mount option and does
+# not make Engine REST requests read-only. Use only on an authorized NAS host.
+services:
+  ui:
+    group_add:
+      - "${DOCKER_SOCKET_GID:?Set the host Docker socket group ID}"
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+        bind:
+          create_host_path: false

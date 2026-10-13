@@ -46,8 +46,8 @@
   --fn-text-0: #0b0b0c;
   --fn-text-1: rgba(11, 11, 12, 0.8);
   --fn-text-2: rgba(11, 11, 12, 0.62);
-  --fn-text-3: rgba(11, 11, 12, 0.42);
-  --fn-text-4: rgba(11, 11, 12, 0.28);
+  --fn-text-3: rgba(11, 11, 12, 0.66);
+  --fn-text-4: rgba(11, 11, 12, 0.58);
   --fn-text-anti: #ffffff;
 
   /* 描边与分隔 */
@@ -62,6 +62,9 @@
   --fn-warning: #e06c00;
   --fn-danger: #db382c;
   --fn-info: #0066ff;
+  --fn-success-text: #087648;
+  --fn-warning-text: #995500;
+  --fn-danger-text: #b72f25;
 
   /* 语义浅底（提示条、错误条、成功提示的底色） */
   --fn-success-soft: #e6f7ef;
@@ -72,6 +75,33 @@
   /* 交互底色 */
   --fn-row-hover: #f3f3f3;
   --fn-card-hover: #fafbfc;
+
+  /* 语义表面及兼容别名：旧模块也从同一主题获得颜色，不再回落到白底。 */
+  --fn-link: #005eeb;
+  --fn-control-bg: var(--fn-bg-0);
+  --fn-hover: var(--fn-row-hover);
+  --panel: var(--fn-window-surface);
+  --fn-code-bg: #f0f2f5;
+  --fn-code-text: #243147;
+  --fn-table-header: var(--fn-window-sidebar);
+  --fn-launcher-bg: rgba(238, 242, 248, 0.98);
+  --fn-widget-bg: rgba(255, 252, 245, 0.96);
+  --fn-surface: var(--fn-window-surface);
+  --fn-bg-secondary: var(--fn-bg-0);
+  --fn-text-primary: var(--fn-text-0);
+  --fn-text-secondary: var(--fn-text-2);
+  --surface: var(--fn-window-surface);
+  --surface-2: var(--fn-window-sidebar);
+  --text: var(--fn-text-0);
+  --text-0: var(--fn-text-0);
+  --text-1: var(--fn-text-1);
+  --text-2: var(--fn-text-2);
+  --muted: var(--fn-text-2);
+  --border: var(--fn-border);
+  --soft: var(--fn-bg-0);
+  --blue: var(--fn-link);
+  color: var(--fn-text-0);
+  color-scheme: light;
 
   /* 圆角阶梯：与飞牛实测一致 3 / 6 / 8 / 12 / 16 / 32 */
   --fn-radius-xs: 3px;
@@ -188,14 +218,30 @@
   --fn-text-0: #ffffff;
   --fn-text-1: rgba(242, 243, 244, 0.8);
   --fn-text-2: rgba(242, 243, 244, 0.6);
-  --fn-text-3: rgba(242, 243, 244, 0.35);
-  --fn-text-4: rgba(242, 243, 244, 0.25);
+  --fn-text-3: rgba(242, 243, 244, 0.62);
+  --fn-text-4: rgba(242, 243, 244, 0.54);
   --fn-text-anti: #0c0c0d;
 
   --fn-border: rgba(255, 255, 255, 0.16);
   --fn-card-border: rgba(255, 255, 255, 0.08);
   --fn-border-strong: rgba(255, 255, 255, 0.24);
   --fn-divider: rgba(255, 255, 255, 0.08);
+
+  --fn-link: #80b8ff;
+  --fn-success: #62dba0;
+  --fn-warning: #ffbc66;
+  --fn-danger: #ff9289;
+  --fn-info: var(--fn-link);
+  --fn-success-text: var(--fn-success);
+  --fn-warning-text: var(--fn-warning);
+  --fn-danger-text: var(--fn-danger);
+  --fn-focus-border: var(--fn-link);
+  --fn-code-bg: #151922;
+  --fn-code-text: #e8ecf3;
+  --fn-launcher-bg: rgba(20, 23, 30, 0.97);
+  --fn-widget-bg: rgba(38, 39, 42, 0.96);
+  color: var(--fn-text-0);
+  color-scheme: dark;
 
   --fn-success-soft: #10301f;
   --fn-warning-soft: #35240f;

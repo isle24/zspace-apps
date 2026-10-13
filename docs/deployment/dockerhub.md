@@ -79,6 +79,31 @@ bash deploy.sh catalog --skip-admin-bootstrap
 
 升级前保留当前镜像 ID、版本配置、原 secret，并对 PostgreSQL 做一致性备份，同时备份服务的私有元数据卷。将 `.env` 中镜像改成新版本，再执行相同命令即可拉取并更新；脚本不执行 `down -v`、`rm` 或清理数据操作。恢复步骤见[商店备份与迁移](./store-backup-migration.md)，已有受管 NAS 控制器升级见[控制器更新](./controller-update.md)。
 
+上述备份文档中的每日 systemd timer 仅安装在既有 zstore 服务器；本 Compose 部署包没有自动创建定时备份，新部署需自行配置。控制器更新工具需要仓库中的 Python 源码及其版本校验流程，不能仅凭这两个镜像更新已有 NAS 控制器。
+
+在 `deploy/dockerhub` 目录执行以下最小一致性备份。示例使用默认项目 `zspace-store` 和默认 secret 路径；自定义项目名时同时替换命令中的项目名和卷名，自定义 secret 路径时替换复制来源。先停止 catalog，保持 PostgreSQL 运行，避免数据库转储与私有元数据之间出现新的后台写入：
+
+```bash
+set -e
+umask 077
+backup_dir="$PWD/private-backups/$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$backup_dir"
+catalog_compose() {
+  docker compose --env-file catalog/.env --project-name zspace-store -f catalog/compose.yaml "$@"
+}
+catalog_compose stop catalog
+catalog_compose exec -T postgres pg_dump -U zstore -d zstore -Fc > "$backup_dir/postgres.dump"
+catalog_compose run --rm --no-deps -T --entrypoint tar --user 10001:10001 \
+  --volume zspace-store_catalog-data:/data:ro catalog -C /data -czf - . > "$backup_dir/catalog-data.tgz"
+cp catalog/.env "$backup_dir/catalog.env"
+cp catalog/.env.postgres-password "$backup_dir/postgres-password"
+chmod 600 "$backup_dir"/*
+catalog_compose images --format json > "$backup_dir/images.json"
+catalog_compose up -d --no-build --pull never --wait catalog
+```
+
+命令失败时 catalog 保持停止，检查并完成备份后再启动；不要把不完整转储用于恢复。备份目录包含数据库密码、后台私有资料和可能的镜像缓存，应放在私有存储并另存到独立介质。恢复时使用相同版本镜像、原 secret 和对应项目的两个持久卷，并按备份文档验证健康与后台数据，避免清理现有卷。
+
 旧 NAS UI 的 `/data` 卷可能是 root 拥有的 `0700` 目录，新镜像使用 UID/GID `10001:10001`。默认新卷会继承镜像的正确归属。迁移旧卷前先备份，再仅校正 UI 自身 `/data` 中服务文件的归属，或继续使用既有发布更新路径；不要递归修改 NAS 业务目录，也不要清空旧卷。
 
 可用独立项目名部署测试实例，保持端口与公开来源一致：

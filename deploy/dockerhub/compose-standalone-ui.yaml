@@ -1,0 +1,34 @@
+# Save as compose.yaml; replace all example NAS addresses together.
+name: zspace-ui
+services:
+  ui:
+    image: isle204/zspace-ui:2026.10.13-r3
+    platform: linux/amd64
+    user: 10001:10001
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    labels:
+      io.space-store.service: space-store
+      io.space.role: ui
+    ports: ["192.168.3.56:18436:18436"]
+    environment:
+      NAS_ORIGIN: http://192.168.3.56:5055
+      UI_PUBLIC_ORIGIN: http://192.168.3.56:18436
+      SPACE_STORE_ENDPOINT: http://192.168.3.56:18441
+    volumes: [ui-data:/data]
+    # Optional authorized host Docker management: uncomment both additions,
+    # replace 989 with `stat -c '%g' /var/run/docker.sock`, then recreate ui.
+    # group_add: ["989"]
+    # Add "/var/run/docker.sock:/var/run/docker.sock:ro" to volumes above.
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://127.0.0.1:18436/healthz >/dev/null"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+volumes:
+  ui-data:

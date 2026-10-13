@@ -1,5 +1,5 @@
 export type CloudUser={id:string;username:string;role:'user'|'admin';twoFactorRequired?:boolean;twoFactorEnabled?:boolean};
-export type CloudApp={id:string;name:string;description:string;category:string;icon:string;image:string;version:string;containerPort:number;dataTargets:string[];environment?:Array<{name:string;label:string;secret:boolean;default?:string}>;published:boolean;releaseNumber:number;manifestDigest?:string;githubSync?:string;imageDigest?:string};
+export type CloudApp={catalogOnly?:boolean;compatibilityNote?:string;sourceURL?:string;id:string;name:string;description:string;category:string;icon:string;image:string;version:string;containerPort:number;dataTargets:string[];environment?:Array<{name:string;label:string;secret:boolean;default?:string}>;published:boolean;releaseNumber:number;manifestDigest?:string;githubSync?:string;imageDigest?:string};
 export type Wish={id:string;name:string;description:string;image?:string;username?:string;status:string;createdAt:string;appId?:string};
 export type History={id:string;appId:string;appName:string;version:string;status:string;deviceName?:string;updatedAt:string};
 export class CloudCatalog{

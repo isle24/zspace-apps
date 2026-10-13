@@ -22,3 +22,15 @@ it('shows a wishlist submitted by the current account and its server status',asy
  expect(call.mock.calls.some(c=>c[0]==='wishlist'&&!!c[1])).toBe(true);
 });
 it('retains fallback applications when private history services are unavailable',async()=>{vi.spyOn(cloud,'user','get').mockReturnValue({id:'one',username:'alice',role:'user'});vi.spyOn(cloud,'request').mockImplementation(async(path)=>{if(path==='catalog')return {items:[{id:'reader',name:'备用阅读器',icon:'',description:'备用资料',version:'1.0',category:'reading',environment:[]}]} as never;throw Error('后台不可用')});render(<CloudAccountPanel/>);expect(await screen.findByText('备用阅读器')).toBeInTheDocument();expect(await screen.findByText(/应用目录仍可浏览/)).toBeInTheDocument()});
+it('lists pending references without allowing install or restore requests',async()=>{
+ vi.spyOn(cloud,'user','get').mockReturnValue({id:'one',username:'alice',role:'user'});
+ const call=vi.spyOn(cloud,'request').mockImplementation(async path=>({items:path==='catalog'?[{id:'native-reference',name:'原生资料',description:'资料',icon:'',version:'1.0',category:'tools',catalogOnly:true,compatibilityNote:'飞牛原生应用待适配',sourceURL:'https://github.com/conversun/fnos-apps'}]:path==='history'?[{id:'history',appId:'native-reference',appName:'原生资料',version:'1.0',status:'installed',updatedAt:'2026-10-13T00:00:00Z'}]:[]}) as never);
+ const curated=vi.fn();render(<CloudAccountPanel onCuratedInstall={curated}/>);
+ await screen.findByRole('heading',{name:'原生资料'});
+ expect(screen.getByRole('button',{name:'待适配'})).toBeDisabled();
+ expect(screen.getByRole('link',{name:'项目来源'})).toHaveAttribute('href','https://github.com/conversun/fnos-apps');
+ fireEvent.click(screen.getByRole('button',{name:'待适配'}));expect(curated).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'应用历史'}));
+ expect(screen.getByRole('button',{name:'安装支持待适配'})).toBeDisabled();
+ expect(call.mock.calls.some(c=>c[0].includes('install-plan'))).toBe(false);
+});

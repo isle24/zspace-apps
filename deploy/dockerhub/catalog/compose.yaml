@@ -1,7 +1,7 @@
 name: zspace-store
 services:
   catalog:
-    image: ${CATALOG_IMAGE:-isle204/zspace-store:2026.10.13-r2}
+    image: ${CATALOG_IMAGE:-isle204/zspace-store:2026.10.13-r3}
     platform: ${DOCKER_PLATFORM:-linux/amd64}
     restart: unless-stopped
     init: true
@@ -39,7 +39,7 @@ services:
       retries: 3
   bootstrap:
     profiles: [bootstrap]
-    image: ${CATALOG_IMAGE:-isle204/zspace-store:2026.10.13-r2}
+    image: ${CATALOG_IMAGE:-isle204/zspace-store:2026.10.13-r3}
     platform: ${DOCKER_PLATFORM:-linux/amd64}
     user: 10001:10001
     init: true

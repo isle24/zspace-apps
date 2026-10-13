@@ -4,8 +4,8 @@
 
 | 项目 | 镜像 | 入口 |
 | --- | --- | --- |
-| NAS 三方 UI | `isle204/zspace-ui:2026.10.13-r2` | 桌面 `/`、商店 `/shop.html`、`/space-store/` |
-| 云商店后台 | `isle204/zspace-store:2026.10.13-r2` | 管理后台 `/admin/`、云目录 `/api/cloud/` |
+| NAS 三方 UI | `isle204/zspace-ui:2026.10.13-r3` | 桌面 `/`、商店 `/shop.html`、`/space-store/` |
+| 云商店后台 | `isle204/zspace-store:2026.10.13-r3` | 管理后台 `/admin/`、云目录 `/api/cloud/` |
 
 镜像目标架构为 Linux AMD64。`latest` 用于跟随后续版本；生产建议保留明确版本 tag，或在配置中使用已核验的 `镜像@sha256:digest`。DockerHub 页面：[UI](https://hub.docker.com/r/isle204/zspace-ui)、[商店后台](https://hub.docker.com/r/isle204/zspace-store)。
 

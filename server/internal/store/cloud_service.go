@@ -38,20 +38,23 @@ type CloudEnvironment struct {
 // CloudApp deliberately contains public deployment metadata only. Registry
 // image configurations, account credentials and local NAS paths never enter it.
 type CloudApp struct {
-	ID             string             `json:"id"`
-	Name           string             `json:"name"`
-	Description    string             `json:"description"`
-	Category       string             `json:"category"`
-	Icon           string             `json:"icon"`
-	Image          string             `json:"image"`
-	Version        string             `json:"version"`
-	ContainerPort  int                `json:"containerPort"`
-	DataTargets    []string           `json:"dataTargets"`
-	Environment    []CloudEnvironment `json:"environment,omitempty"`
-	Published      bool               `json:"published"`
-	ReleaseNumber  int64              `json:"releaseNumber"`
-	ManifestDigest string             `json:"manifestDigest,omitempty"`
-	GithubSync     string             `json:"githubSync,omitempty"`
+	CatalogOnly       bool               `json:"catalogOnly,omitempty"`
+	CompatibilityNote string             `json:"compatibilityNote,omitempty"`
+	SourceURL         string             `json:"sourceURL,omitempty"`
+	ID                string             `json:"id"`
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	Category          string             `json:"category"`
+	Icon              string             `json:"icon"`
+	Image             string             `json:"image"`
+	Version           string             `json:"version"`
+	ContainerPort     int                `json:"containerPort"`
+	DataTargets       []string           `json:"dataTargets"`
+	Environment       []CloudEnvironment `json:"environment,omitempty"`
+	Published         bool               `json:"published"`
+	ReleaseNumber     int64              `json:"releaseNumber"`
+	ManifestDigest    string             `json:"manifestDigest,omitempty"`
+	GithubSync        string             `json:"githubSync,omitempty"`
 }
 
 type cloudService struct {
@@ -162,6 +165,7 @@ func (c *cloudService) register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/cloud/login", c.loginAccount)
 	mux.HandleFunc("GET /api/cloud/me", c.auth(false, func(w http.ResponseWriter, r *http.Request) { respond(w, 200, map[string]any{"user": cloudActor(r)}) }))
 	mux.HandleFunc("POST /api/cloud/logout", c.auth(false, c.logoutAccount))
+	mux.HandleFunc("GET /api/cloud/public-catalog", c.catalog)
 	mux.HandleFunc("GET /api/cloud/catalog", c.auth(false, c.catalog))
 	mux.HandleFunc("GET /api/cloud/catalog/{id}", c.auth(false, c.catalogDetail))
 	mux.HandleFunc("GET /api/cloud/catalog/signed", c.auth(false, c.signedCatalog))
@@ -178,6 +182,7 @@ func (c *cloudService) register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/cloud/history", c.auth(false, c.recordHistory))
 	mux.HandleFunc("GET /api/store/admin/apps", c.auth(true, c.adminApps))
 	mux.HandleFunc("POST /api/store/admin/apps", c.auth(true, c.saveApp))
+	mux.HandleFunc("POST /api/store/admin/apps/{id}/publish-listing", c.auth(true, c.publishListing))
 	mux.HandleFunc("POST /api/store/admin/apps/{id}/publish", c.auth(true, c.publishApp))
 	mux.HandleFunc("POST /api/store/admin/inspect-image", c.auth(true, c.inspectImage))
 	mux.HandleFunc("GET /api/store/admin/wishlist", c.auth(true, c.adminWishlist))

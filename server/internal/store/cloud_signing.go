@@ -99,7 +99,7 @@ func (c *cloudService) appendSignedCatalog(ctx context.Context, tx *cloudTx) err
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	payload := cloudSignedPayload{SchemaVersion: "store.catalog.v1", SourceID: "zstore-catalog", Sequence: sequence, PublishedAt: now, Apps: []cloudCatalogApp{}, Withdrawn: []any{}}
-	rows, err := tx.QueryContext(ctx, `SELECT app_id,release_number,manifest FROM cloud_releases ORDER BY app_id,release_number`)
+	rows, err := tx.QueryContext(ctx, `SELECT r.app_id,r.release_number,r.manifest,a.published_json FROM cloud_releases r JOIN cloud_apps a ON a.id=r.app_id WHERE a.published_json IS NOT NULL ORDER BY r.app_id,r.release_number`)
 	if err != nil {
 		return err
 	}
@@ -107,9 +107,18 @@ func (c *cloudService) appendSignedCatalog(ctx context.Context, tx *cloudTx) err
 		var appID string
 		var release int64
 		var manifest []byte
-		if err := rows.Scan(&appID, &release, &manifest); err != nil {
+		var published string
+		if err := rows.Scan(&appID, &release, &manifest, &published); err != nil {
 			rows.Close()
 			return err
+		}
+		var app CloudApp
+		if json.Unmarshal([]byte(published), &app) != nil {
+			rows.Close()
+			return errors.New("published app unavailable")
+		}
+		if app.CatalogOnly {
+			continue
 		}
 		n := len(payload.Apps) - 1
 		if n < 0 || payload.Apps[n].AppID != appID {
@@ -154,6 +163,11 @@ func (c *cloudService) signedCatalog(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]any{"payload": json.RawMessage(payload), "payloadBase64": base64.StdEncoding.EncodeToString(payload), "envelope": json.RawMessage(envelope), "publicKey": base64.StdEncoding.EncodeToString(c.signingKey.Public().(ed25519.PublicKey)), "protocol": "store.app.v1"})
 }
 func (c *cloudService) releaseManifest(w http.ResponseWriter, r *http.Request) {
+	app, err := c.readApp(r.PathValue("id"), true)
+	if err != nil || app.CatalogOnly {
+		fail(w, 404, "release_not_found", "应用交付不存在。")
+		return
+	}
 	var raw []byte
 	var release int64
 	if _, err := fmt.Sscanf(r.PathValue("release"), "r%d.json", &release); err != nil || release < 1 || fmt.Sprintf("r%d.json", release) != r.PathValue("release") {

@@ -30,6 +30,7 @@ RUN apk add --no-cache ca-certificates su-exec \
 COPY --from=go-build --chmod=0555 /out/space-gateway /usr/local/bin/space-gateway
 COPY --from=web-build /src/apps/catalog-admin/dist /web
 COPY --chmod=0555 docker/catalog/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=0555 docker/catalog/setup-admin.sh /usr/local/bin/setup-admin
 # Read the host's 0600 Compose secret, then entrypoint drops to UID 10001.
 EXPOSE 18442
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \

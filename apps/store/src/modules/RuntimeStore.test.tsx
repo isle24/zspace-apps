@@ -851,3 +851,16 @@ it("reads back an upstream ignore without losing the reviewed upgrade or mixing 
   expect(await screen.findByText(/已忽略上游版本：3.4.0/)).toBeInTheDocument();
   expect(screen.getByText(/可更新到已审查版本 3.3.1/)).toBeInTheDocument();
 });
+it('discovers public references without login and keeps pending applications non-installable',async()=>{
+ const {readPublicCatalog}=await import('../api/public-catalog');
+ const {cloud}=await import('../api/cloud-catalog');
+ vi.spyOn(cloud,'user','get').mockReturnValue(undefined);
+ vi.mocked(readPublicCatalog).mockResolvedValue({items:[{id:'native-reference',name:'原生参考',description:'公开资料',category:'tools',icon:'',version:'1.0',image:'',containerPort:0,dataTargets:[],environment:[],published:true,releaseNumber:0,catalogOnly:true,compatibilityNote:'安装支持待适配'},{id:'new-published',name:'新发布应用',description:'可安装目录',category:'tools',icon:'',version:'1.0',image:'docker.io/example/app@sha256:'+'a'.repeat(64),containerPort:8080,dataTargets:[],environment:[],published:true,releaseNumber:1,manifestDigest:'a'.repeat(64)}]});
+ render(<RuntimeStore/>);
+ expect(await screen.findByText('原生参考')).toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'原生参考安装支持待适配'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'安装 新发布应用'}));
+ expect(await screen.findByRole('form',{name:'商店账号'})).toBeInTheDocument();
+ expect(api.store).not.toHaveBeenCalledWith('v2/cloud/install-plan',expect.anything());
+ vi.mocked(readPublicCatalog).mockResolvedValue({items:[]});
+});

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -34,7 +35,7 @@ func cloudDecodeDraft(w http.ResponseWriter, r *http.Request, in *cloudDraftInpu
 }
 
 func cloudValidateApp(a CloudApp) bool {
-	if !cloudAppIDRE.MatchString(a.ID) || !cloudText(a.Name, 1, 128) || !cloudText(a.Description, 1, 2048) || !cloudAppIDRE.MatchString(a.Category) || !cloudVersionRE.MatchString(a.Version) || a.ContainerPort < 1 || a.ContainerPort > 65535 || len(a.DataTargets) > 16 || len(a.Environment) > 32 {
+	if a.CatalogOnly || !validCloudSource(a.SourceURL) || !cloudAppIDRE.MatchString(a.ID) || !cloudText(a.Name, 1, 128) || !cloudText(a.Description, 1, 2048) || !cloudAppIDRE.MatchString(a.Category) || !cloudVersionRE.MatchString(a.Version) || a.ContainerPort < 1 || a.ContainerPort > 65535 || len(a.DataTargets) > 16 || len(a.Environment) > 32 {
 		return false
 	}
 	if _, err := cloudImageReference(a.Image); err != nil {
@@ -97,7 +98,10 @@ func (c *cloudService) saveApp(w http.ResponseWriter, r *http.Request) {
 	if !cloudDecodeDraft(w, r, &in) {
 		return
 	}
-	if !cloudValidateApp(in.CloudApp) {
+	if in.CatalogOnly {
+		in.CloudApp = cloudListingProjection(in.CloudApp)
+	}
+	if !(in.CatalogOnly && cloudValidateListing(in.CloudApp) || !in.CatalogOnly && cloudValidateApp(in.CloudApp)) {
 		fail(w, 400, "invalid_app", "请检查应用资料、公开镜像、数据目录和环境参数；秘密参数不能设置默认值。")
 		return
 	}
@@ -115,6 +119,12 @@ func (c *cloudService) saveApp(w http.ResponseWriter, r *http.Request) {
 	c.publicationMu.Lock()
 	defer c.publicationMu.Unlock()
 	old, err := c.readApp(in.ID, false)
+	if in.CatalogOnly {
+		if published, publishedErr := c.readApp(in.ID, true); publishedErr == nil && !published.CatalogOnly {
+			fail(w, 409, "existing_delivery_preserved", "已有安装版本需要保留，不能改成待适配资料。")
+			return
+		}
+	}
 	status := 200
 	if err != nil {
 		status = 201
@@ -209,73 +219,83 @@ func (c *cloudService) compileManifest(app CloudApp, info CloudImageInspection) 
 }
 
 func (c *cloudService) publishApp(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
 	c.publicationMu.Lock()
 	defer c.publicationMu.Unlock()
-	app, err := c.readApp(id, false)
+	app, err := c.readApp(r.PathValue("id"), false)
 	if err != nil {
 		fail(w, 404, "cloud_app_not_found", "应用草稿不存在。")
 		return
 	}
-	if !cloudValidateApp(app) {
-		fail(w, 400, "invalid_app", "应用草稿无法发布，请重新保存完整应用资料。")
+	app, manifest, err := c.publishInstallable(r.Context(), app)
+	if err != nil {
+		issue := err.(*cloudPublicationError)
+		fail(w, issue.Status, issue.Code, issue.Message)
 		return
 	}
-	info, err := c.resolveImage(r.Context(), app.Image)
+	app.GithubSync = c.syncGithub(r.Context(), app, manifest)
+	if app.GithubSync != "not-configured" {
+		b, _ := json.Marshal(app)
+		c.db.ExecContext(r.Context(), `UPDATE cloud_apps SET draft_json=?,published_json=? WHERE id=?`, string(b), string(b), app.ID)
+		c.db.ExecContext(r.Context(), `UPDATE cloud_releases SET app_json=? WHERE app_id=? AND release_number=?`, string(b), app.ID, app.ReleaseNumber)
+	}
+	respond(w, 200, map[string]any{"app": app, "manifest": json.RawMessage(manifest), "protocol": "store.app.v1"})
+}
+
+type cloudPublicationError struct {
+	Status        int
+	Code, Message string
+}
+
+func (e *cloudPublicationError) Error() string { return e.Code }
+func (c *cloudService) publishInstallable(ctx context.Context, app CloudApp) (CloudApp, []byte, error) {
+	return c.publishInstallableUsing(ctx, app, c.resolveImage)
+}
+func (c *cloudService) publishInstallableUsing(ctx context.Context, app CloudApp, resolve func(context.Context, string) (CloudImageInspection, error)) (CloudApp, []byte, error) {
+	if !cloudValidateApp(app) {
+		return CloudApp{}, nil, &cloudPublicationError{400, "invalid_app", "应用草稿无法发布，请重新保存完整应用资料。"}
+	}
+	info, err := resolve(ctx, app.Image)
 	if err != nil || info.Architecture != "linux/amd64" || !cloudDigestRE.MatchString(info.ImageDigest) {
-		fail(w, 422, "image_unavailable", "无法核验此公开镜像的 linux/amd64 版本，请检查引用和仓库访问权限。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{422, "image_unavailable", "无法核验此公开镜像的 linux/amd64 版本，请检查引用和仓库访问权限。"}
 	}
 	ref, err := cloudImageReference(app.Image)
 	if err != nil {
-		fail(w, 400, "invalid_image", "公开镜像引用无效。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{400, "invalid_image", "公开镜像引用无效。"}
 	}
 	var prior int64
-	if err := c.db.QueryRowContext(r.Context(), `SELECT COALESCE(max(release_number),0) FROM cloud_releases WHERE app_id=?`, app.ID).Scan(&prior); err != nil {
-		fail(w, 500, "cloud_publish_failed", "无法读取发布记录。")
-		return
+	if err := c.db.QueryRowContext(ctx, `SELECT COALESCE(max(release_number),0) FROM cloud_releases WHERE app_id=?`, app.ID).Scan(&prior); err != nil {
+		return CloudApp{}, nil, &cloudPublicationError{500, "cloud_publish_failed", "无法读取发布记录。"}
 	}
 	app.ReleaseNumber = prior + 1
 	if app.ReleaseNumber > 2147483647 {
-		fail(w, 409, "release_limit", "此应用已达到版本发布上限。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{409, "release_limit", "此应用已达到版本发布上限。"}
 	}
 	app.Image = cloudRepository(ref) + "@" + info.ImageDigest
 	app.Published = true
 	app.GithubSync = "not-configured"
 	manifest, err := c.compileManifest(app, info)
 	if err != nil {
-		fail(w, 400, "manifest_invalid", "应用部署清单未通过结构与权限校验。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{400, "manifest_invalid", "应用部署清单未通过结构与权限校验。"}
 	}
 	app.ManifestDigest = tokenHash(string(manifest))
 	// Github synchronization is best effort after the local atomic publication;
 	// a repository outage never prevents the cloud catalog from serving a release.
 	b, _ := json.Marshal(app)
-	tx, err := c.db.BeginTx(r.Context(), nil)
+	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
-		fail(w, 500, "cloud_publish_failed", "无法发布应用。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{500, "cloud_publish_failed", "无法发布应用。"}
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(r.Context(), `INSERT INTO cloud_releases(app_id,release_number,app_json,manifest) VALUES(?,?,?,?)`, app.ID, app.ReleaseNumber, string(b), manifest); err == nil {
-		_, err = tx.ExecContext(r.Context(), `UPDATE cloud_apps SET draft_json=?,published_json=? WHERE id=?`, string(b), string(b), app.ID)
+	if _, err = tx.ExecContext(ctx, `INSERT INTO cloud_releases(app_id,release_number,app_json,manifest) VALUES(?,?,?,?)`, app.ID, app.ReleaseNumber, string(b), manifest); err == nil {
+		_, err = tx.ExecContext(ctx, `INSERT INTO cloud_apps(id,draft_json,published_json) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET draft_json=excluded.draft_json,published_json=excluded.published_json`, app.ID, string(b), string(b))
 	}
 	if err == nil {
-		err = c.appendSignedCatalog(r.Context(), tx)
+		err = c.appendSignedCatalog(ctx, tx)
 	}
 	if err != nil || tx.Commit() != nil {
-		fail(w, 500, "cloud_publish_failed", "无法发布应用。")
-		return
+		return CloudApp{}, nil, &cloudPublicationError{500, "cloud_publish_failed", "无法发布应用。"}
 	}
-	app.GithubSync = c.syncGithub(r.Context(), app, manifest)
-	if app.GithubSync != "not-configured" {
-		b, _ = json.Marshal(app)
-		c.db.ExecContext(r.Context(), `UPDATE cloud_apps SET draft_json=?,published_json=? WHERE id=?`, string(b), string(b), app.ID)
-		c.db.ExecContext(r.Context(), `UPDATE cloud_releases SET app_json=? WHERE app_id=? AND release_number=?`, string(b), app.ID, app.ReleaseNumber)
-	}
-	respond(w, 200, map[string]any{"app": app, "manifest": json.RawMessage(manifest), "protocol": "store.app.v1"})
+	return app, manifest, nil
 }
 
 var cloudDigestRE = regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)

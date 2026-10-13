@@ -32,10 +32,18 @@ func main() {
 	publishHost := flag.String("publish-host", "", "IP for Docker published ports; local default is loopback")
 	accessHost := flag.String("access-host", "", "Host clients use to open installed applications")
 	apiOnly := flag.Bool("api-only", false, "Serve backend APIs without a storefront")
+	publicationInput := flag.String("publish-cloud-apps-json", "", "Offline operator: publish public metadata and verified install deliveries from a JSON file")
 	catalogOnly := flag.Bool("catalog-only", false, "Serve a central directory; applications install on the NAS")
 	nasAdminOnly := flag.Bool("nas-admin-only", false, "Use only the fixed NAS administrator identity; no independent password bootstrap")
 	nasOrigin := flag.String("nas-origin", "", "Explicit fixed canonical NAS HTTP(S) identity origin; empty disables NAS authentication")
 	flag.Parse()
+	if *publicationInput != "" {
+		if err := runCloudPublication(*data, *publicationInput, *engine, *catalogOnly, *apiOnly); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(*listen, *data, *web, *engine, *alias, *root, *publicOrigin, *publishHost, *accessHost, *nasOrigin, *nasAdminOnly, *catalogOnly, *apiOnly); err != nil {
 		// Intentionally omit request, credentials and underlying command output.
 		fmt.Fprintln(os.Stderr, "gateway startup/serve failed:", err)

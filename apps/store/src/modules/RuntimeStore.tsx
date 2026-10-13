@@ -1,4 +1,7 @@
 import display from "../catalog-display.json";
+import {cloud,type CloudApp} from "../api/cloud-catalog";
+import {readPublicCatalog} from "../api/public-catalog";
+import {PublishedAppCard,publicCategoryNames} from "./PublishedAppCard";
 import { ShoppingBag, SquaresFour, Heart, Cube, ArrowClockwise, ListChecks, ClockCounterClockwise, Desktop, SlidersHorizontal } from "@phosphor-icons/react";
 import { RuntimeDesktop, RuntimeLogs, RuntimeSnapshots } from "./RuntimeAssets";
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +14,7 @@ import { RuntimeInstall } from "./RuntimeInstall";
 import { RuntimeJobs } from "./RuntimeJobs";
 import { RuntimeInstanceDetails } from "./RuntimeInstanceDetails";
 import { RuntimeSettings, RuntimeTheme } from "./RuntimeSettings";
-import { CloudAccountPanel } from "./CloudAccountPanel";
+import { CloudAccountPanel, CloudInstall } from "./CloudAccountPanel";
 import {trackCloudInstallHistory} from '../api/cloud-history';
 import {
   initializationLabel,
@@ -64,6 +67,8 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
     [selected, setSelected] = useState<string[]>([]),
     [checkedCatalog, setCheckedCatalog] = useState<Catalog>(),
     [checkStatus, setCheckStatus] = useState("");
+  const [cloudInstall,setCloudInstall]=useState<CloudApp>();
+  useEffect(()=>{const change=()=>setCloudInstall(undefined);window.addEventListener("space-cloud-account",change);return()=>window.removeEventListener("space-cloud-account",change)},[]);
   const [scope, setScope] = useState(() => ({
     session: api.storeSession,
     address: api.storeAddress,
@@ -87,6 +92,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
       setPlans(undefined);
       setDetail(undefined);
       setInstall(undefined);
+      setCloudInstall(undefined);
       setSelected([]);
       setBusy(false);
       setError("");
@@ -110,6 +116,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
         : Promise.resolve({ items: [], categories: [] }),
     [scope, revision],
   );
+  const publicApps=useResource(()=>scope.session?readPublicCatalog():Promise.resolve({items:[]}),[scope,revision]);
   useEffect(() => setCheckedCatalog(undefined), [scope, revision]);
   const catalogData = checkedCatalog || catalog.data;
   const appFor = (instance: RuntimeInstance) => catalogData?.items.find(app => app.id === instance.appId);
@@ -294,6 +301,10 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
+  const localIDs=new Set((catalogData?.items||[]).flatMap(app=>[app.id,app.id.replace(/^cloud-/,"")]));
+  const cloudApps=(publicApps.data?.items||[]).filter(app=>!localIDs.has(app.id));
+  const publishedListed=cloudApps.filter(app=>(!category||app.category===category)&&`${app.id} ${app.name} ${app.description}`.toLowerCase().includes(query.toLowerCase()));
+  const allCategories=[...new Map([...(catalogData?.categories||[]),...cloudApps.map(app=>({id:app.category,name:publicCategoryNames[app.category]||app.category}))].map(item=>[item.id,item])).values()];
   const instanceItems = instances.data?.items || [],
     updates = instanceItems.filter(
       (item) => !item.archived && !item.legacy && (updateFor(item) || item.updateAvailable),
@@ -330,7 +341,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
             >
               全部应用
             </button>
-            {catalogData?.categories?.map((item) => (
+            {allCategories.map((item) => (
               <button
                 className={tab === "catalog" && category === item.id ? "active" : ""}
                 key={item.id}
@@ -354,7 +365,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
           <div className="runtime-heading">
             <div>
               <h2>发现适合你的应用</h2>
-              <p>{catalogData?.items.length || 0} 款应用 · 已安装 {instanceItems.filter(item => !item.archived).length} 款</p>
+              <p>{(catalogData?.items.length || 0)+cloudApps.length} 款应用 · 已安装 {instanceItems.filter(item => !item.archived).length} 款</p>
             </div>
             <button disabled={busy || !catalogData?.items.length} onClick={refresh}>
               {busy ? "检查中…" : "检查官方版本"}
@@ -368,7 +379,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
           <Status
             {...catalog}
             retry={catalog.reload}
-            empty={!!catalog.data && !listed.length}
+            empty={!!catalog.data && !listed.length && !publishedListed.length && !publicApps.loading}
           />
           <div className="runtime-grid">
             {listed.map((app) => (
@@ -396,7 +407,10 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
                 </div>
               </article>
             ))}
+            {publishedListed.map(app=><PublishedAppCard key={app.id} app={app} busy={busy} onInstall={selected=>{if(cloud.signedIn)setCloudInstall(selected);else{activeTab("cloud");setCheckStatus("登录商店账号后，可以安装已发布的新应用。")}}}/>)}
           </div>
+          {publicApps.loading&&<p role="status" className="hint">正在读取公开应用目录…</p>}
+          {publicApps.error&&<p className="hint">已显示当前 NAS 的应用配方；公开目录暂未读取，可点击刷新商店重试。</p>}
         </section>
       )}
       {(tab === "instances" || tab === "updates") && (
@@ -672,6 +686,7 @@ export function RuntimeStore({ refreshKey = 0 }: { refreshKey?: number }) {
           </section>
         </div>
       )}
+      {cloudInstall&&<CloudInstall app={cloudInstall} close={()=>setCloudInstall(undefined)} finished={()=>{setCloudInstall(undefined);setRevision(n=>n+1)}}/>}
       {install && (
         <RuntimeInstall
           app={install}

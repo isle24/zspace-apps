@@ -65,8 +65,14 @@ func (c *cloudService) catalogDetail(w http.ResponseWriter, r *http.Request) {
 		fail(w, 404, "cloud_app_not_found", "应用未上架。")
 		return
 	}
-	c.cache.enqueue(app.Image)
+	if !app.CatalogOnly {
+		c.cache.enqueue(app.Image)
+	}
 	data := map[string]any{"app": app}
+	if app.CatalogOnly {
+		respond(w, 200, data)
+		return
+	}
 	var raw []byte
 	if err := c.db.QueryRowContext(r.Context(), `SELECT manifest FROM cloud_releases WHERE app_id=? AND release_number=?`, app.ID, app.ReleaseNumber).Scan(&raw); err == nil {
 		data["manifest"] = json.RawMessage(raw)
@@ -259,6 +265,10 @@ func (c *cloudService) recordHistory(w http.ResponseWriter, r *http.Request) {
 	app, err := c.readApp(in.AppID, true)
 	if err != nil {
 		fail(w, 400, "cloud_app_not_found", "应用未上架。")
+		return
+	}
+	if app.CatalogOnly {
+		fail(w, 400, "cloud_app_not_installable", "此应用仅公开资料，安装支持待适配。")
 		return
 	}
 	user := cloudActor(r)

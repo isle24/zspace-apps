@@ -193,3 +193,15 @@ func TestAPIOnlyRootDoesNotServeTheStorefront(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeCloudPublicationOperatorRequiresBoundedUniqueApps(t *testing.T) {
+	for _, body := range []string{`{"apps":[]}`, `{"apps":[{"id":"first"},{"id":"first"}]}`, `{"apps":[{"id":"first","privateKey":"forbidden"}]}`, `{"apps":[{"id":"first"}]} {}`} {
+		if _, err := decodeCloudPublication(strings.NewReader(body)); err == nil {
+			t.Fatal("invalid operator input accepted")
+		}
+	}
+	apps, err := decodeCloudPublication(strings.NewReader(`{"apps":[{"id":"first","name":"public info"}]}`))
+	if err != nil || len(apps) != 1 {
+		t.Fatal("valid input rejected", err)
+	}
+}

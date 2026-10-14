@@ -16,6 +16,7 @@
 - 正式 Compose 项目 `zspace-shop` 已在 `http://192.168.3.56:18443/` 健康运行，重启计数 0。`configured=false`，保留给用户本人首次创建管理员；`authMode=independent`、`nasAuth.enabled=false`。
 - 验收应用通过商店停止任务 `50da401e539e12565bffada876f1635f2273a9a206d3652f` 停止，随后只移除核验过的停止 QA 应用容器与空网络。测试目录、控制卷、账号数据库和镜像均保留；QA 引导/运行服务已停止。
 - 既有 UI 18436 healthz 与控制器 18441 bootstrap 均 HTTP 200。
+- GitHub 私有源码已发布 `a3d2103`，公开目录 README 已发布 `0496efb`；分别通过 contents API 核对 README blob SHA 与本地提交相同。
 
 ## 回归与边界
 

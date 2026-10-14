@@ -34,5 +34,5 @@
 - [x] Run the new image on a clean NAS port and new dedicated directories.
 - [x] Verify web setup/login/logout/restart, engine readiness and storage identity; perform a real application install and HTTP health check.
 - [x] Publish versioned and latest `isle204/zspace-shop` images, verify anonymous AMD64 registry manifests.
-- [ ] Update deployment docs and both GitHub README files; preserve sanitized source publishing workflow.
-- [ ] Deliver a concise pasteable Compose and browser address with exact verified limits.
+- [x] Update deployment docs and both GitHub README files; preserve sanitized source publishing workflow.
+- [x] Deliver a concise pasteable Compose and browser address with exact verified limits.

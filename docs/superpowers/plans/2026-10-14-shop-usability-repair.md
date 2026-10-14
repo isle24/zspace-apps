@@ -24,7 +24,7 @@
 ### Task 2: Domain and public catalog
 
 - [x] Read-only PostgreSQL and anonymous fallback counts:176 published,163 pending,13 install entries.
-- [ ] Identify and fix the actual zstore.2iwm.com HTTPS routing failure; verify public/admin/icon requests from NAS and workstation.
+- [x] Audit source Nginx and reproduce the reported HTTPS issue; current public/admin/icon requests pass from NAS, workstation and real Chrome. Historical intermittent trigger remains unconfirmed; do not claim a proven routing fix.
 - [x] Verify actual shop displays all 176 entries with explicit adaptation status.
 
 ### Task 3: latest lifecycle
@@ -33,4 +33,4 @@
 - [x] Implement journaled candidate switch, exact self receipt replacement, restart recovery and rollback; retain old stopped containers.
 - [x] Tag and push version plus latest, anonymously verify equal AMD64 digests.
 - [x] Upgrade isolated r1 QA and real NAS deployment; verify UI install flow without API-only registration.
-- [ ] Update all Compose examples/README files and source repository.
+- [x] Update all Compose examples/README files and source repository.

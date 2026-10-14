@@ -107,3 +107,12 @@ it.each(['offline', 'stalled'])('unmounts catalog at the server deadline with %s
   expect(screen.getByRole('button', { name: '登录商店' })).toBeInTheDocument();
   expect(api.storeSession).toBe('');
 });
+
+it('offers browser account creation for an independent LAN deployment', async () => {
+  vi.spyOn(api, 'store').mockResolvedValue({ configured: false, authMode: 'independent', setupRequiresLoopback: false });
+  render(<StandaloneStore />);
+  expect(await screen.findByRole('button', { name: '创建并登录' })).toBeEnabled();
+  expect(screen.getByText('首次使用，请在当前页面创建自己的商店管理员账号。')).toBeInTheDocument();
+  expect(screen.queryByText(/通过服务主机本地连接或 SSH 转发设置/)).not.toBeInTheDocument();
+  expect(screen.queryByText('使用 NAS 管理员登录')).not.toBeInTheDocument();
+});

@@ -258,7 +258,7 @@ def flatten(items):
   out.append(x);out.extend(flatten(x.get("children",[])))
  return out
 def mount(path):
- items=flatten(json.loads(cmd(["findmnt","-J","-T",path,"-o","TARGET,SOURCE,FSTYPE,MAJ:MIN"])).get("filesystems",[]))
+ items=flatten(json.loads(cmd(["findmnt","-J","-T",path,"-o","TARGET,SOURCE,FSTYPE,MAJ:MIN,FSROOT"])).get("filesystems",[]))
  if len(items)==1: return items[0]
  # NAS can report lower tmpfs and active kufs at the same target. Verify
  # the actual mounted inode device at each mountpoint rather than taking first.
@@ -280,7 +280,7 @@ def disk(source):
   visited.add(b.get("pkname"));b=byname.get(b.get("pkname"))
  return b
 rootmount=mount("/");rootdisk=disk(rootmount.get("source",""))
-all_mounts=flatten(json.loads(cmd(["findmnt","-J","-o","TARGET,SOURCE,FSTYPE,MAJ:MIN"])).get("filesystems",[]))
+all_mounts=flatten(json.loads(cmd(["findmnt","-J","-o","TARGET,SOURCE,FSTYPE,MAJ:MIN,FSROOT"])).get("filesystems",[]))
 system_disks=set()
 if rootdisk is not None: system_disks.add(rootdisk.get("path"))
 for mounted in all_mounts:
@@ -298,13 +298,37 @@ def no_links(path):
    st=os.lstat(q)
    if not __import__("stat").S_ISDIR(st.st_mode): raise ValueError("symlink or non-directory")
  return os.stat(path)
+def btrfs_bind_mount_verified(path,host_mount,permitted):
+ # Btrfs stat reports a subvolume anonymous device number; mountinfo reports
+ # the filesystem superblock's number. Verify both kernel mount views instead
+ # of treating those different numbers as a different physical data device.
+ if host_mount.get("fstype")!="btrfs": return False
+ try:
+  raw=subprocess.check_output(["findmnt","--kernel","-J","-T",path,"-o","TARGET,SOURCE,FSTYPE,MAJ:MIN,FSROOT"],text=True,stderr=subprocess.DEVNULL,timeout=10)
+  if len(raw)>65536:return False
+  entries=flatten(json.loads(raw).get("filesystems",[]))
+  if len(entries)!=1:return False
+  own=entries[0]
+  source=host_mount.get("source","").split("[")[0]
+  host_target=host_mount.get("target","");host_root=host_mount.get("fsroot","");own_root=own.get("fsroot","")
+  def canonical_mount_path(value):
+   return isinstance(value,str) and value.startswith("/") and not value.startswith("//") and "\x00" not in value and os.path.normpath(value)==value
+  if not all(canonical_mount_path(value) for value in (host_target,host_root,own_root,permitted)):return False
+  if host_target=="/":relative=permitted.lstrip("/")
+  elif permitted==host_target:relative=""
+  elif permitted.startswith(host_target+"/"):relative=permitted[len(host_target)+1:]
+  else:return False
+  expected_root=os.path.normpath(os.path.join(host_root,relative))
+  if own_root!=expected_root:return False
+  return source.startswith("/dev/") and own.get("target")==permitted and own.get("fstype")=="btrfs" and own.get("maj:min")==host_mount.get("maj:min") and own.get("source","").split("[")[0]==source
+ except Exception:return False
 def inspect(path,for_docker=False):
  if not os.path.isabs(path) or os.path.normpath(path)!=path: raise ValueError("noncanonical path")
  st=no_links(path);m=mount(path);source=m.get("source","");fs=m.get("fstype","");target=m.get("target","")
  if host_policy:
-  if m.get("maj:min")!=str(os.major(st.st_dev))+":"+str(os.minor(st.st_dev)): raise ValueError("host_storage_unverified")
   permitted=host_policy["cache"] if for_docker else host_policy["data"]
   if path!=permitted and not path.startswith(permitted+"/"): raise ValueError("host_storage_unverified")
+  if m.get("maj:min")!=str(os.major(st.st_dev))+":"+str(os.minor(st.st_dev)) and not btrfs_bind_mount_verified(path,m,permitted): raise ValueError("host_storage_unverified")
  b=disk(source);medium="unknown"
  if b and b.get("type")=="disk" and b.get("rota") in (False,0,True,1): medium="hdd" if b.get("rota") else "ssd"
  pool=bool(re.match(r"^/tmp/zfsv3/[^/]+(?:/|$)",path) and (target=="/tmp/zfsv3" or re.match(r"^/tmp/zfsv3/[^/]+(?:/|$)",target)) and ("kufs" in fs.lower() or "ku_fs" in fs.lower()))

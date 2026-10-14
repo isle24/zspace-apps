@@ -335,8 +335,17 @@ def check_container(g, s, record):
     if (host.get('PortBindings') or {}) != ports(g, s):
         reject()
     nets = (c.get('NetworkSettings') or {}).get('Networks') or {}
-    if set(nets) != {name(g)} or nets[name(g)].get('NetworkID') != g['networkId']:
+    if set(nets) != {name(g)}:
         reject()
+    endpoint = nets[name(g)]
+    if endpoint.get('NetworkID') != g['networkId']:
+        # Docker creates the configured network endpoint only at first start.
+        # Before that, and after stop, the exact HostConfig network ID and
+        # independently owned network authorize a wholly empty endpoint state.
+        state = c.get('State') or {}
+        if state.get('Status') not in ('created', 'exited') or state.get('Running') or state.get('Paused') or state.get('Restarting') or any(endpoint.get(k) for k in ('NetworkID', 'EndpointID', 'IPAddress', 'GlobalIPv6Address', 'Gateway', 'IPv6Gateway', 'MacAddress')):
+            reject()
+        network(g, False)
     base = im.get('Config') or {}
     if config.get('Entrypoint') != base.get('Entrypoint') or config.get('Cmd') != base.get('Cmd'):
         reject()

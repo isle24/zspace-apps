@@ -30,5 +30,5 @@ function Login() {
     return data;
   }, []);
   if (bootstrap.data?.authMode === 'nas-admin-only') return <div className="auth-box"><h2>使用 NAS 管理员登录</h2><p>请从空间桌面的“空间商店”入口连接当前 NAS 管理员身份。</p><a href="/" target="_top">打开空间桌面</a></div>;
-  return <><StoreServiceSettings />{bootstrap.error && <p role="alert">{bootstrap.error}<button onClick={bootstrap.reload}>重新读取</button></p>}<StoreAuth configured={bootstrap.data?.configured} onDone={() => {}} onLogout={() => { void api.logoutStore(); }} /></>;
+  return <><StoreServiceSettings />{bootstrap.error && <p role="alert">{bootstrap.error}<button onClick={bootstrap.reload}>重新读取</button></p>}<StoreAuth configured={bootstrap.data?.configured} setupRequiresLoopback={bootstrap.data?.setupRequiresLoopback} onDone={() => {}} onLogout={() => { void api.logoutStore(); }} /></>;
 }

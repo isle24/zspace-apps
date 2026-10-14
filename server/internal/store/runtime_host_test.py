@@ -57,6 +57,21 @@ class GuardTests(unittest.TestCase):
             self.fail('mutation attempted: '+repr(args))
         h.command=command
         return c,net,im,service,record
+    def test_created_container_has_configured_network_before_endpoint_materialization(self):
+        c,n,im,s,r=self.fixture()
+        c['State']={'Running':False,'Status':'created'}
+        endpoint={'NetworkID':'','EndpointID':'','IPAddress':'','GlobalIPv6Address':'','MacAddress':''}
+        c['NetworkSettings']['Networks'][h.name(self.g)]=endpoint
+        self.assertEqual('created',h.check_container(self.g,s,r)['State']['Status'])
+        c['State']={'Running':False,'Status':'exited'}
+        self.assertEqual('exited',h.check_container(self.g,s,r)['State']['Status'])
+        c['State']={'Running':True,'Status':'running'}
+        with self.assertRaises(ValueError):h.check_container(self.g,s,r)
+        c['State']={'Running':False,'Status':'created'}
+        endpoint['NetworkID']='f'*64
+        with self.assertRaises(ValueError):h.check_container(self.g,s,r)
+        endpoint['NetworkID']='';endpoint['EndpointID']='unexpected'
+        with self.assertRaises(ValueError):h.check_container(self.g,s,r)
     def test_cached_container_remains_owned_when_original_digest_appears(self):
         self.g['images'][0]['reference']='docker.io/library/nginx@sha256:'+'a'*64
         container,_,im,service,record=self.fixture()

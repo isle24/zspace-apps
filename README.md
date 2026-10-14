@@ -6,6 +6,48 @@
 
 项目提供 NAS H5 与独立商店部署，GitHub Actions 构建 macOS、Windows 与 Linux 桌面客户端；安装包当前未签名。原生 iOS/Android/HarmonyOS 尚未交付。源码仓库为私有的 isle24/zspace-apps，公共应用素材仍在 isle24/nas-app-store-catalog。
 
+<!-- standalone-shop-start -->
+## 独立商店 Docker（无需第三方桌面）
+
+只需要应用商店的极空间玩家，部署 `isle204/zspace-shop:2026.10.14-r1` 即可。首次在网页创建本地管理员账号，之后使用自己的商店账号登录；无需第三方 UI、NAS 会话、SSH 初始化或 PostgreSQL。支持 AMD64、Docker 27.3 及以上。
+
+把 `NAS_IP` 改为自己的 NAS 地址，粘贴到极空间 Docker Compose：
+
+```yaml
+# Paste into ZSpace Docker Compose. Change NAS_IP to your NAS LAN address.
+name: zspace-shop
+services:
+  shop:
+    image: isle204/zspace-shop:2026.10.14-r1
+    platform: linux/amd64
+    network_mode: bridge
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 45s
+    labels:
+      io.space-store.service: space-store
+      io.space.role: standalone-shop-bootstrap
+    environment:
+      NAS_IP: 192.168.3.56
+      SHOP_PORT: "18443"
+      # Optional: an unused dedicated folder on a physical NAS data disk.
+      # SHOP_DATA_ROOT: /data_n008/space-shop
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - shop-control:/control
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+volumes:
+  shop-control:
+```
+
+启动后打开 `http://你的NAS地址:18443/`。引导服务自动创建并管理独立商店运行容器；数据保存在 NAS 物理数据盘上的独立目录，`shop-control` 保存部署记录。保留控制卷、目录和原配置，停止后重启会复用同一商店。云端账号用于安装云端发布的应用、备份与同步，可在商店内单独注册登录。
+
+详见[独立商店部署说明](docs/deployment/standalone-shop-docker.md)。
+
+<!-- standalone-shop-end -->
+
 ## 本轮部署与管理员能力
 
 - [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui` 与 `isle204/zspace-store`，已发布 `2026.10.13-r3` / `latest`（Linux AMD64），无需源码编译。
@@ -73,7 +115,7 @@ bash scripts/build-mac.sh
 
 ## 独立商店与存储
 
-商店使用单独管理员账号和密码，没有默认密码。公开浏览目录不要求 NAS 登录；安装、存储登记、实例管理和任务查询需要商店授权。首次管理员配置只允许从服务本机完成，客户端切换商店地址会注销旧商店会话。
+商店使用单独管理员账号和密码，没有默认密码。公开浏览目录不要求 NAS 登录；安装、存储登记、实例管理和任务查询需要商店授权。独立商店 Docker 支持从 NAS 局域网地址首次创建管理员；本机 sidecar 的默认初始化仍只允许 loopback。客户端切换商店地址会注销旧商店会话。
 
 商店可在目标设备使用本地 Docker，也可在管理机使用已配置且 `usable: true` 的 sshbind 别名。安装目标以该商店的执行引擎与登记目录为准。独立部署、引导安装与访问配置见 [商店部署说明](docs/deployment/standalone-store.md)。服务参数区分 `--listen`（商店监听）、`--publish-host`（应用端口绑定）、`--access-host`（客户端访问应用的主机）和 `--public-origin`（显式浏览器来源）。
 

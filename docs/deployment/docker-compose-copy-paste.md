@@ -1,6 +1,8 @@
 # Docker Compose 直接复制部署
 
-镜像版本为 `2026.10.13-r3`，平台 `linux/amd64`。以下每段完整保存为各自目录的 `compose.yaml`，无需 `.env` 或宿主密码文件，也无需源码编译。
+只需要商店的 NAS 玩家，直接使用[独立商店 Compose](./standalone-shop-docker.md)，镜像 `isle204/zspace-shop:2026.10.14-r1`，首次在网页创建自己的管理员账号，无需第三方 UI。支持 AMD64 极空间、Docker 27.3 及以上。
+
+以下 UI 和中央后台镜像版本为 `2026.10.13-r3`，平台 `linux/amd64`。每段完整保存为各自目录的 `compose.yaml`，无需 `.env` 或宿主密码文件，也无需源码编译。
 
 ## NAS 三方 UI
 

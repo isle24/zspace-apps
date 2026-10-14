@@ -59,6 +59,9 @@ type Service struct {
 }
 
 func New(opts Options) (*Service, error) {
+	if err := validateSetupMode(opts); err != nil {
+		return nil, err
+	}
 	if opts.NASAdminOnly && opts.NASOrigin == "" {
 		return nil, errors.New("NAS administrator mode requires a fixed identity origin")
 	}
@@ -357,8 +360,11 @@ func (s *Service) configured() bool {
 	return s.db.QueryRow(`SELECT count(*) FROM admin`).Scan(&n) == nil && n == 1
 }
 func (s *Service) bootstrap(w http.ResponseWriter, r *http.Request) {
-    mode := "independent"; if s.opts.NASAdminOnly {mode="nas-admin-only"}
-	respond(w, 200, map[string]any{"authMode":mode, "configured": s.configured(), "setupRequiresLoopback": true, "nasAuth": map[string]any{"enabled": s.opts.NASOrigin != "", "origin": s.opts.NASOrigin, "storeId": s.storeID}})
+	mode := "independent"
+	if s.opts.NASAdminOnly {
+		mode = "nas-admin-only"
+	}
+	respond(w, 200, map[string]any{"authMode": mode, "configured": s.configured(), "setupRequiresLoopback": s.opts.SetupMode != "lan", "nasAuth": map[string]any{"enabled": s.opts.NASOrigin != "", "origin": s.opts.NASOrigin, "storeId": s.storeID}})
 }
 
 func (s *Service) status(w http.ResponseWriter, r *http.Request) {
@@ -372,7 +378,7 @@ func (s *Service) status(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg = err.Error()
 	}
-	s.requestRespond(w, r, 200, map[string]any{"nasAuth": map[string]any{"enabled": s.opts.NASOrigin != "", "origin": s.opts.NASOrigin, "storeId": s.storeID}, "configured": s.configured(), "engineMode": s.opts.EngineMode, "engineReady": err == nil, "engineMessage": msg, "nativeIntegration": "handoff", "setupRequiresLoopback": true})
+	s.requestRespond(w, r, 200, map[string]any{"nasAuth": map[string]any{"enabled": s.opts.NASOrigin != "", "origin": s.opts.NASOrigin, "storeId": s.storeID}, "configured": s.configured(), "engineMode": s.opts.EngineMode, "engineReady": err == nil, "engineMessage": msg, "nativeIntegration": "handoff", "setupRequiresLoopback": s.opts.SetupMode != "lan"})
 }
 func (s *Service) catalog(w http.ResponseWriter, r *http.Request) {
 	s.requestRespond(w, r, 200, map[string]any{"items": s.apps, "categories": []map[string]string{{"id": "monitoring", "name": "监控"}, {"id": "music", "name": "音乐"}, {"id": "video", "name": "视频"}, {"id": "photos", "name": "照片"}, {"id": "files", "name": "文件"}}})
@@ -402,7 +408,7 @@ func (s *Service) setup(w http.ResponseWriter, r *http.Request) {
 		fail(w, 403, "nas_admin_only", "商店使用当前 NAS 管理员身份，无需另设密码。")
 		return
 	}
-	if len(r.Header.Values("Forwarded")) > 0 || len(r.Header.Values("X-Forwarded-For")) > 0 {
+	if setupProxied(r) {
 		fail(w, 403, "setup_loopback_only", "首次配置须通过直接本地连接或SSH转发完成，不能通过反向代理。")
 		return
 	}
@@ -417,7 +423,18 @@ func (s *Service) setup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil || net.ParseIP(host) == nil || !net.ParseIP(host).IsLoopback() {
+	ip := net.ParseIP(host)
+	requestHost, _, hostErr := net.SplitHostPort(r.Host)
+	if hostErr != nil {
+		requestHost = strings.Trim(r.Host, "[]")
+	}
+	requestIP := net.ParseIP(requestHost)
+	if s.opts.SetupMode == "lan" && requestHost != "localhost" && (requestIP == nil || (!requestIP.IsPrivate() && !requestIP.IsLoopback())) {
+		fail(w, 403, "setup_lan_address_required", "首次配置请直接打开 NAS 的局域网 IP 地址。")
+		return
+	}
+	allowedLAN := s.opts.SetupMode == "lan" && ip != nil && ip.IsPrivate() && requestIP != nil && requestIP.IsPrivate() && r.Header.Get("Origin") != ""
+	if err != nil || ip == nil || (!ip.IsLoopback() && !allowedLAN) {
 		fail(w, 403, "setup_loopback_only", "首次配置须在网关主机的本地连接完成。")
 		return
 	}

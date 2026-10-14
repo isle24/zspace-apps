@@ -9,6 +9,7 @@ import (
 var ErrNotFound = errors.New("container not found")
 
 type Options struct {
+	SetupMode                                  string
 	CloudDatabaseURL                           string
 	NASAdminOnly                               bool
 	CatalogOnly                                bool

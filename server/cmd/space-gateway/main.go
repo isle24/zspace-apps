@@ -36,6 +36,7 @@ func main() {
 	catalogOnly := flag.Bool("catalog-only", false, "Serve a central directory; applications install on the NAS")
 	nasAdminOnly := flag.Bool("nas-admin-only", false, "Use only the fixed NAS administrator identity; no independent password bootstrap")
 	nasOrigin := flag.String("nas-origin", "", "Explicit fixed canonical NAS HTTP(S) identity origin; empty disables NAS authentication")
+	setupMode := flag.String("setup-mode", "loopback", "loopback or lan; opt-in direct LAN first setup for an independent storefront")
 	flag.Parse()
 	if *publicationInput != "" {
 		if err := runCloudPublication(*data, *publicationInput, *engine, *catalogOnly, *apiOnly); err != nil {
@@ -44,7 +45,7 @@ func main() {
 		}
 		return
 	}
-	if err := run(*listen, *data, *web, *engine, *alias, *root, *publicOrigin, *publishHost, *accessHost, *nasOrigin, *nasAdminOnly, *catalogOnly, *apiOnly); err != nil {
+	if err := runWithSetup(*listen, *data, *web, *engine, *alias, *root, *publicOrigin, *publishHost, *accessHost, *nasOrigin, *setupMode, *nasAdminOnly, *catalogOnly, *apiOnly); err != nil {
 		// Intentionally omit request, credentials and underlying command output.
 		fmt.Fprintln(os.Stderr, "gateway startup/serve failed:", err)
 		os.Exit(1)
@@ -52,6 +53,10 @@ func main() {
 }
 
 func run(listen, data, web, engine, alias, root, publicOrigin, publishHost, accessHost, nasOrigin string, nasOnly ...bool) error {
+	return runWithSetup(listen, data, web, engine, alias, root, publicOrigin, publishHost, accessHost, nasOrigin, "", nasOnly...)
+}
+
+func runWithSetup(listen, data, web, engine, alias, root, publicOrigin, publishHost, accessHost, nasOrigin, setupMode string, nasOnly ...bool) error {
 	if err := store.ValidateNASOrigin(nasOrigin); err != nil {
 		return err
 	}
@@ -61,7 +66,7 @@ func run(listen, data, web, engine, alias, root, publicOrigin, publishHost, acce
 	if err := os.MkdirAll(data, 0700); err != nil {
 		return fmt.Errorf("metadata directory unavailable")
 	}
-	s, err := store.New(store.Options{CloudDatabaseURL: os.Getenv("SPACE_CLOUD_DATABASE_URL"), DataDir: filepath.Join(data, "store"), StorageRoot: root, EngineMode: engine, SSHAlias: alias, PublishHost: publishHost, AccessHost: accessHost, NASOrigin: nasOrigin, NASAdminOnly: len(nasOnly) >= 1 && nasOnly[0], CatalogOnly: len(nasOnly) > 1 && nasOnly[1]})
+	s, err := store.New(store.Options{SetupMode: setupMode, CloudDatabaseURL: os.Getenv("SPACE_CLOUD_DATABASE_URL"), DataDir: filepath.Join(data, "store"), StorageRoot: root, EngineMode: engine, SSHAlias: alias, PublishHost: publishHost, AccessHost: accessHost, NASOrigin: nasOrigin, NASAdminOnly: len(nasOnly) >= 1 && nasOnly[0], CatalogOnly: len(nasOnly) > 1 && nasOnly[1]})
 	if err != nil {
 		return fmt.Errorf("store unavailable: %w", err)
 	}

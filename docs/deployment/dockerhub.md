@@ -1,6 +1,8 @@
 # DockerHub 镜像一键部署
 
-部署包只需要 Bash、Docker Engine 和 Docker Compose v2+，不需要本机 Node、Go、Python 或源码构建。两个项目使用独立名称与持久卷，可以分别更新。
+只需要 NAS 应用商店时，使用[独立商店 Docker 配置](./standalone-shop-docker.md)：`isle204/zspace-shop:2026.10.14-r1` 包含商店页面和安装执行器，首次在网页创建自己的本地管理员，不依赖第三方 UI。已验证 AMD64 极空间、Docker 27.3 及以上。
+
+以下 UI 和中央后台部署包只需要 Bash、Docker Engine 和 Docker Compose v2+，不需要本机 Node、Go、Python 或源码构建。两个项目使用独立名称与持久卷，可以分别更新。
 
 | 项目 | 镜像 | 入口 |
 | --- | --- | --- |

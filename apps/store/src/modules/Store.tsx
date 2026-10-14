@@ -996,10 +996,12 @@ export function safeAppUrl(value: unknown) {
 }
 export function StoreAuth({
   configured,
+  setupRequiresLoopback = true,
   onDone,
   onLogout,
 }: {
   configured?: boolean;
+  setupRequiresLoopback?: boolean;
   onDone: () => void;
   onLogout: () => void;
 }) {
@@ -1048,7 +1050,7 @@ export function StoreAuth({
         <h3>{setup ? "创建商店管理员" : "商店管理员登录"}</h3>
         <p>
           {setup
-            ? "通过服务主机本地连接或 SSH 转发设置。创建后自动登录。"
+            ? (setupRequiresLoopback ? "通过服务主机本地连接或 SSH 转发设置。创建后自动登录。" : "首次使用，请在当前页面创建自己的商店管理员账号。")
             : "使用商店账号授权安装与实例管理。"}
         </p>
       </div>

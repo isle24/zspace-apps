@@ -1,0 +1,26 @@
+# Paste into ZSpace Docker Compose. Change NAS_IP to your NAS LAN address.
+name: zspace-shop
+services:
+  shop:
+    image: isle204/zspace-shop:2026.10.14-r1
+    platform: linux/amd64
+    network_mode: bridge
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 45s
+    labels:
+      io.space-store.service: space-store
+      io.space.role: standalone-shop-bootstrap
+    environment:
+      NAS_IP: 192.168.3.56
+      SHOP_PORT: "18443"
+      # Optional: an unused dedicated folder on a physical NAS data disk.
+      # SHOP_DATA_ROOT: /data_n008/space-shop
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - shop-control:/control
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+volumes:
+  shop-control:

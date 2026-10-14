@@ -31,7 +31,7 @@ func main() {
 	publicOrigin := flag.String("public-origin", "", "Explicit HTTPS/HTTP browser origin behind a trusted reverse proxy")
 	publishHost := flag.String("publish-host", "", "IP for Docker published ports; local default is loopback")
 	accessHost := flag.String("access-host", "", "Host clients use to open installed applications")
-	apiOnly := flag.Bool("api-only", false, "Serve backend APIs without a storefront")
+	apiOnly := flag.Bool("api-only", false, "Serve backend APIs and optional public catalog/admin pages without a NAS storefront")
 	publicationInput := flag.String("publish-cloud-apps-json", "", "Offline operator: publish public metadata and verified install deliveries from a JSON file")
 	catalogOnly := flag.Bool("catalog-only", false, "Serve a central directory; applications install on the NAS")
 	nasAdminOnly := flag.Bool("nas-admin-only", false, "Use only the fixed NAS administrator identity; no independent password bootstrap")
@@ -117,7 +117,16 @@ func runWithSetup(listen, data, web, engine, alias, root, publicOrigin, publishH
 func apiOnlyWebHandler(root string) http.Handler {
 	admin := http.StripPrefix("/admin", webHandler(root))
 	status := apiOnlyHandler()
+	public := webHandler(root)
+	info, err := os.Lstat(filepath.Join(root, "public.html"))
+	hasPublicCatalog := root != "" && err == nil && info.Mode().IsRegular()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" && hasPublicCatalog {
+			request := r.Clone(r.Context())
+			request.URL.Path = "/public.html"
+			public.ServeHTTP(w, request)
+			return
+		}
 		if r.URL.Path == "/admin" {
 			http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 			return
@@ -134,7 +143,7 @@ func apiOnlyHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
-		if r.URL.Path != "/" {
+		if r.URL.Path != "/" && r.URL.Path != "/about" {
 			w.WriteHeader(404)
 			json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": map[string]string{"code": "API_ONLY", "message": "此域名提供商店后台接口，商店界面位于客户端"}})
 			return
@@ -280,6 +289,9 @@ func webHandler(root string) http.Handler {
 		}
 		var _ fs.File = f
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: http: https:; media-src 'self' blob: http: https:; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'")
+		if rel == "public.html" {
+			w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'")
+		}
 		http.ServeContent(w, r, info.Name(), info.ModTime(), f)
 	})
 }

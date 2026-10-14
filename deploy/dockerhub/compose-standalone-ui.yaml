@@ -2,7 +2,7 @@
 name: zspace-ui
 services:
   ui:
-    image: isle204/zspace-ui:2026.10.13-r3
+    image: isle204/zspace-ui:latest
     platform: linux/amd64
     user: 10001:10001
     restart: unless-stopped

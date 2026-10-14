@@ -2,7 +2,7 @@
 name: zspace-store
 services:
   secret-init:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: "no"
     read_only: true
@@ -65,7 +65,7 @@ services:
       start_period: 15s
       retries: 10
   catalog:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: unless-stopped
     init: true
@@ -98,7 +98,7 @@ services:
       retries: 3
   setup:
     profiles: [setup]
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     user: 10001:10001
     init: true

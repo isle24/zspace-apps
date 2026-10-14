@@ -1,15 +1,15 @@
 # DockerHub 镜像一键部署
 
-只需要 NAS 应用商店时，使用[独立商店 Docker 配置](./standalone-shop-docker.md)：`isle204/zspace-shop:2026.10.14-r1` 包含商店页面和安装执行器，首次在网页创建自己的本地管理员，不依赖第三方 UI。已验证 AMD64 极空间、Docker 27.3 及以上。
+只需要 NAS 应用商店时，使用[独立商店 Docker 配置](./standalone-shop-docker.md)：`isle204/zspace-shop:latest` 包含商店页面和安装执行器，首次在网页创建自己的本地管理员，不依赖第三方 UI。已验证 AMD64 极空间、Docker 27.3 及以上。
 
 以下 UI 和中央后台部署包只需要 Bash、Docker Engine 和 Docker Compose v2+，不需要本机 Node、Go、Python 或源码构建。两个项目使用独立名称与持久卷，可以分别更新。
 
 | 项目 | 镜像 | 入口 |
 | --- | --- | --- |
-| NAS 三方 UI | `isle204/zspace-ui:2026.10.13-r3` | 桌面 `/`、商店 `/shop.html`、`/space-store/` |
-| 云商店后台 | `isle204/zspace-store:2026.10.13-r3` | 管理后台 `/admin/`、云目录 `/api/cloud/` |
+| NAS 三方 UI | `isle204/zspace-ui:latest` | 桌面 `/`、商店 `/shop.html`、`/space-store/` |
+| 云商店后台 | `isle204/zspace-store:latest` | 管理后台 `/admin/`、云目录 `/api/cloud/` |
 
-镜像目标架构为 Linux AMD64。`latest` 用于跟随后续版本；生产建议保留明确版本 tag，或在配置中使用已核验的 `镜像@sha256:digest`。DockerHub 页面：[UI](https://hub.docker.com/r/isle204/zspace-ui)、[商店后台](https://hub.docker.com/r/isle204/zspace-store)。
+镜像目标架构为 Linux AMD64。Compose 默认使用 `latest`，用户更新时无需修改版本号；每次发布同时保留明确版本 tag，便于记录和回溯。DockerHub 页面：[UI](https://hub.docker.com/r/isle204/zspace-ui)、[商店后台](https://hub.docker.com/r/isle204/zspace-store)。
 
 解压部署包后进入含 `deploy.sh`、`ui/`、`catalog/` 的目录。若从仓库运行，先 `cd deploy/dockerhub`。两套 Compose 都只引用镜像，没有 `build`。
 
@@ -125,3 +125,15 @@ docker compose --env-file catalog/.env -f catalog/compose.yaml logs --tail 100 c
 ```
 
 使用自定义 secret 路径时，将 `POSTGRES_PASSWORD_FILE` 设置为直接文件路径，不使用变量表达式；一键脚本会按配置文件所在目录解析相对路径。手工运行 Compose（含备份命令）时，请先把 `POSTGRES_PASSWORD_FILE` 导出为同一文件的绝对路径，避免 Compose 按自身 YAML 所在目录解析到其他位置。整个部署过程不读取或重写 `sshbind` 配置，也不复制服务器 SSH 凭据。
+
+## 发布镜像
+
+以下入口每次用同一构建同时推送版本与 `latest` 标签：
+
+```bash
+bash scripts/publish-docker.sh shop 2026.10.14-r2
+bash scripts/publish-docker.sh ui 2026.10.14-r2
+bash scripts/publish-docker.sh store 2026.10.14-r2
+```
+
+独立 NAS 商店更新使用其部署文档中的受管切换流程。中央后台、UI 与应用数据卷均须保留，更新不要删除数据卷。

@@ -21,7 +21,7 @@ import sys
 import time
 import urllib.request
 
-RELEASE = 'shop-2026.10.14-r1'
+RELEASE = 'shop-2026.10.14-r2'
 SOCKET = '/var/run/docker.sock'
 CONTROL = Path('/control')
 
@@ -163,6 +163,29 @@ def commit_private(path, value):
     else: write_private(path, value)
 
 
+def replace_private(path, expected, value):
+    """Switch only an attested private receipt; retain complete old receipts elsewhere."""
+    path = Path(path)
+    actual = read_private(path)
+    if actual == value: return
+    if actual != expected:
+        raise ValueError('Receipt switch source changed; all resources were preserved')
+    before = path.lstat()
+    temporary = path.with_name('.' + path.name + '-switch-' + os.urandom(16).hex())
+    published = False
+    try:
+        write_private(temporary, value)
+        current = path.lstat()
+        if (current.st_dev, current.st_ino, current.st_ctime_ns) != (before.st_dev, before.st_ino, before.st_ctime_ns) or read_private(path) != expected:
+            raise ValueError('Receipt switch source changed; all resources were preserved')
+        os.replace(temporary, path); published = True
+        fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try: os.fsync(fd)
+        finally: os.close(fd)
+    finally:
+        if not published and os.path.lexists(temporary): os.unlink(temporary)
+
+
 class Cancelled(Exception):
     pass
 
@@ -254,14 +277,15 @@ def validate_helper(actual, cid, image, name, mount, arguments, user, labels, ro
         raise ValueError('Initializer mappings changed; all resources were preserved')
 
 
-def helper(api, image, name, mount, arguments, intent, phase, root=False, owner='10001:10001', cancelled=lambda: False):
-    path = CONTROL / ('helper-' + phase + '.json')
+def helper(api, image, name, mount, arguments, intent, phase, root=False, owner='10001:10001', cancelled=lambda: False, journal_prefix='', rerun=False, stop_only=False):
+    path = CONTROL / (journal_prefix + 'helper-' + phase + '.json')
     labels = {**host_module().BASE_LABELS, 'io.space-store.service': 'space-store', 'io.space.role': 'shop-initializer', 'io.space-store.bootstrap-intent': intent, 'io.space-store.bootstrap-phase': phase}
     user = '0:0' if root else owner
     saved = read_private(path) if os.path.lexists(path) else None
     if saved is not None and (saved.get('schema') != 1 or saved.get('intentId') != intent):
         raise ValueError('Initializer checkpoint changed; all resources were preserved')
     identity = saved['containerId'] if saved is not None else api.find(name)
+    if not identity and stop_only: return
     if not identity:
         checkpoint(cancelled)
         args = ['container', 'create', '--name', name, '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--network', 'none', '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m', '--mount', mount, '--user', user]
@@ -274,10 +298,18 @@ def helper(api, image, name, mount, arguments, intent, phase, root=False, owner=
     actual = api.inspect(identity)
     cid = saved['containerId'] if saved is not None else actual.get('Id', '')
     validate_helper(actual, cid, image, name, mount, arguments, user, labels, root)
+    if stop_only:
+        if actual.get('State', {}).get('Running'):
+            api.command('container', 'stop', '--time', '15', cid)
+        actual = api.inspect(cid)
+        validate_helper(actual, cid, image, name, mount, arguments, user, labels, root)
+        if actual.get('State', {}).get('Running') is not False:
+            raise ValueError('Receipt helper stop was not verified; all resources were preserved')
+        return
     checkpoint(cancelled)
     commit_private(path, {'schema': 1, 'containerId': cid, 'intentId': intent})
     state = actual.get('State', {})
-    if state.get('Status') == 'exited' and state.get('ExitCode') == 0: return
+    if state.get('Status') == 'exited' and state.get('ExitCode') == 0 and not rerun: return
     if not state.get('Running'):
         checkpoint(cancelled)
         api.command('container', 'start', cid)
@@ -293,9 +325,9 @@ def helper(api, image, name, mount, arguments, intent, phase, root=False, owner=
     raise ValueError('Initializer did not finish; all resources were preserved')
 
 
-def runtime_plan(config, socket_gid):
+def runtime_plan(config, socket_gid, release=None):
     host = host_module()
-    p = host.plan(config['root'] + '/service', config['root'] + '/apps', config['ip'], config['port'], RELEASE, config['uid'], config['gid'], 'local', config['cache'], socket_gid)
+    p = host.plan(config['root'] + '/service', config['root'] + '/apps', config['ip'], config['port'], release or RELEASE, config['uid'], config['gid'], 'local', config['cache'], socket_gid)
     p['command'] += ['--setup-mode', 'lan']
     p['labels']['io.space.role'] = 'standalone-shop-runtime'
     return p
@@ -341,11 +373,167 @@ def owned_runtime(api, own, config, socket_gid):
     path = CONTROL / 'deployment.json'
     if os.path.lexists(path):
         receipt = read_private(path)
-        validate_settings(receipt, p, image, socket_gid)
+        validate_deployment(api, receipt, config, socket_gid)
         validate_runtime(api.inspect(receipt['containerId']), receipt)
         return receipt
     intent = pending_intent(p, image, socket_gid)
     return resolve_pending_runtime(api, intent) if intent is not None else None
+
+
+def validate_deployment(api, receipt, config, socket_gid):
+    # Historical release/image identities are validated independently of the
+    # newly pulled bootstrap image, never treated as permission to adopt a name.
+    p = runtime_plan(config, socket_gid, receipt['plan']['release'])
+    image = receipt['imageId']
+    if not isinstance(image, str) or not re.fullmatch('sha256:[a-f0-9]{64}', image):
+        raise ValueError('Deployment image identity was not verified')
+    validate_settings(receipt, p, image, socket_gid)
+    validate_runtime(api.inspect(receipt['containerId']), receipt)
+
+
+def self_receipt(receipt):
+    p = receipt['plan']
+    return {'schema': 1, 'service': 'space-store', 'deployment': p['labels']['io.space-store.deployment'], 'release': p['release'], 'containerId': receipt['containerId'], 'imageId': receipt['imageId']}
+
+
+def start_owned(api, receipt, cancelled=lambda: False):
+    actual = api.inspect(receipt['containerId']); validate_runtime(actual, receipt)
+    checkpoint(cancelled)
+    if not actual.get('State', {}).get('Running'):
+        api.command('container', 'start', receipt['containerId'])
+    checkpoint(cancelled)
+
+
+def wait_bootstrap(config, cancelled=lambda: False):
+    for _ in range(30):
+        checkpoint(cancelled)
+        try: return bootstrap_state(config)
+        except (OSError, ValueError):
+            checkpoint(cancelled); time.sleep(1)
+    raise ValueError('Shop did not become ready; all resources were preserved')
+
+
+def upgrade_candidate(api, target, prefix):
+    path = CONTROL / (prefix + 'candidate.json')
+    if os.path.lexists(path):
+        receipt = read_private(path)
+        if {key: value for key, value in receipt.items() if key != 'containerId'} != target:
+            raise ValueError('Upgrade candidate checkpoint changed; all resources were preserved')
+        actual = api.inspect(receipt['containerId'])
+    else:
+        identity = api.find(target['plan']['name'])
+        if not identity: return None
+        actual = api.inspect(identity); receipt = {**target, 'containerId': actual.get('Id', '')}
+    validate_runtime(actual, receipt)
+    return receipt
+
+
+def upgrade_runtime(api, own, config, socket_gid, source, cancelled):
+    image = own['Image']
+    if not re.fullmatch('sha256:[a-f0-9]{64}', image): raise ValueError('Upgrade image identity was not verified')
+    prefix = 'upgrade-' + image[7:] + '-'
+    intent_path = CONTROL / (prefix + 'intent.json')
+    plan = runtime_plan(config, socket_gid, RELEASE + '-' + image[7:19])
+    try:
+        if os.path.lexists(intent_path):
+            intent = read_private(intent_path); target = intent['target']
+            expected_target = {'schema': 1, 'imageId': image, 'plan': plan, 'socketGid': socket_gid, 'intentId': target.get('intentId')}
+            if intent != {'schema': 1, 'source': source, 'target': expected_target} or not isinstance(target.get('intentId'), str) or not re.fullmatch('[a-f0-9]{64}', target['intentId']):
+                raise ValueError('Upgrade intent changed; all resources were preserved')
+        else:
+            if api.find(plan['name']): raise ValueError('The upgrade name is already in use; no service was adopted')
+            target = {'schema': 1, 'imageId': image, 'plan': plan, 'socketGid': socket_gid, 'intentId': os.urandom(32).hex()}
+            intent = {'schema': 1, 'source': source, 'target': target}
+            checkpoint(cancelled); write_private(intent_path, intent)
+        candidate = upgrade_candidate(api, target, prefix)
+    except Exception:
+        # A rejected name/configuration is not a request to shut down the old
+        # service. Restore it only before any receipt writer was authorized.
+        # A running unknown candidate may already be a recovery-stage writer.
+        if any(os.path.lexists(CONTROL / (prefix + 'helper-' + phase + '.json')) for phase in ('switch', 'rollback')):
+            raise
+        actual = api.inspect(source['containerId']); validate_runtime(actual, source)
+        identity = api.find(plan['name'])
+        if not actual.get('State', {}).get('Running') and identity and api.inspect(identity).get('State', {}).get('Running') is not False:
+            raise
+        start_owned(api, source, cancelled)
+        print(json.dumps({'event': 'upgrade_rejected', 'runtimeContainerId': source['containerId'], 'targetImageId': image}), flush=True)
+        return source
+    failed = CONTROL / (prefix + 'failed.json')
+    nonce = target['intentId'][:16]
+    mount = 'type=bind,src=' + config['root'] + '/service/metadata,dst=/write,bind-propagation=rprivate,bind-recursive=disabled'
+    def switch(old, new, phase):
+        opposite = 'rollback' if phase == 'switch' else 'switch'
+        # A timed-out/interrupted helper can still finish a CAS later. Attest
+        # and stop the opposite writer before authorizing another direction.
+        helper(api, image, 'shop-' + opposite + '-' + nonce, mount, ['--replace-receipt', json.dumps(self_receipt(new)), json.dumps(self_receipt(old))], target['intentId'], opposite, owner=plan['user'], journal_prefix=prefix, stop_only=True)
+        helper(api, image, 'shop-' + phase + '-' + nonce, mount, ['--replace-receipt', json.dumps(self_receipt(old)), json.dumps(self_receipt(new))], target['intentId'], phase, owner=plan['user'], journal_prefix=prefix, rerun=True)
+    if os.path.lexists(failed):
+        if read_private(failed) != {'schema': 1, 'sourceId': source['containerId'], 'targetImageId': image}:
+            raise ValueError('Upgrade failure checkpoint changed; all resources were preserved')
+        checkpoint(cancelled)
+        switch(candidate or source, source, 'rollback')
+        start_owned(api, source, cancelled)
+        print(json.dumps({'event': 'upgrade_failed', 'runtimeContainerId': source['containerId'], 'targetImageId': image}), flush=True)
+        return source
+    try:
+        if candidate is None:
+            args = host_module().create_arguments(plan, image)
+            args[2:2] = ['--no-healthcheck', '--label', 'io.space-store.bootstrap-intent=' + target['intentId']]
+            checkpoint(cancelled)
+            cid = api.command(*args[1:]); candidate = {**target, 'containerId': cid}
+            validate_runtime(api.inspect(cid), candidate)
+        checkpoint(cancelled)
+        commit_private(CONTROL / (prefix + 'candidate.json'), candidate)
+        state_path = CONTROL / (prefix + 'source-state.json')
+        if os.path.lexists(state_path):
+            state = read_private(state_path)
+            if not isinstance(state, dict) or set(state) != {'storeId', 'configured'} or not isinstance(state.get('storeId'), str) or not re.fullmatch('[a-f0-9]{48}', state['storeId']) or not isinstance(state.get('configured'), bool):
+                raise ValueError('Source shop identity checkpoint changed')
+        else:
+            # Compose has already stopped the old bootstrap. Restart only this
+            # attested old worker long enough to bind the public store identity.
+            if api.inspect(candidate['containerId']).get('State', {}).get('Running') is not False:
+                raise ValueError('Running candidate has no source identity checkpoint')
+            start_owned(api, source, cancelled)
+            state = wait_bootstrap(config, cancelled)
+            if not re.fullmatch('[a-f0-9]{48}', state.get('nasAuth', {}).get('storeId', '')) or not isinstance(state.get('configured'), bool):
+                raise ValueError('Source shop identity was not verified')
+            state = {'storeId': state['nasAuth']['storeId'], 'configured': state['configured']}
+            checkpoint(cancelled); write_private(state_path, state)
+        checkpoint(cancelled)
+        stop_owned(api, source)
+        if api.inspect(source['containerId']).get('State', {}).get('Running') is not False:
+            raise ValueError('Old shop stop was not verified')
+        checkpoint(cancelled)
+        switch(source, candidate, 'switch')
+        checkpoint(cancelled)
+        start_owned(api, candidate, cancelled)
+        observed = wait_bootstrap(config, cancelled)
+        if observed.get('nasAuth', {}).get('storeId') != state['storeId'] or observed.get('configured') != state['configured']:
+            raise ValueError('Upgraded shop identity changed; original deployment was retained')
+        checkpoint(cancelled)
+        commit_private(CONTROL / (prefix + 'previous.json'), source)
+        replace_private(CONTROL / 'deployment.json', source, candidate)
+        return candidate
+    except Exception as error:
+        # Atomic deployment publication is the commit boundary, including a
+        # lost directory-fsync response after the complete replacement landed.
+        if candidate is not None and read_private(CONTROL / 'deployment.json') == candidate:
+            if isinstance(error, Cancelled): raise
+            return candidate
+        candidate = candidate or upgrade_candidate(api, target, prefix)
+        if candidate is not None:
+            stop_owned(api, candidate)
+            switch(candidate, source, 'rollback')
+        if isinstance(error, Cancelled) or cancelled():
+            stop_owned(api, source)
+            raise Cancelled() from None
+        start_owned(api, source)
+        wait_bootstrap(config)
+        commit_private(failed, {'schema': 1, 'sourceId': source['containerId'], 'targetImageId': image})
+        print(json.dumps({'event': 'upgrade_failed', 'runtimeContainerId': source['containerId'], 'targetImageId': image}), flush=True)
+        return source
 
 
 def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
@@ -354,7 +542,9 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
     checkpoint(cancelled)
     if os.path.lexists(path):
         receipt = read_private(path)
-        validate_settings(receipt, p, image, socket_gid)
+        validate_deployment(api, receipt, config, socket_gid)
+        if receipt['imageId'] != image:
+            return upgrade_runtime(api, own, config, socket_gid, receipt, cancelled)
     else:
         intent = pending_intent(p, image, socket_gid)
         if intent is None:
@@ -394,7 +584,7 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
     return receipt
 
 
-def ready(config):
+def bootstrap_state(config):
     # Use the fixed local runtime without an environment proxy.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     target = 'http://' + config['ip'] + ':' + str(config['port'])
@@ -402,7 +592,12 @@ def ready(config):
         body = json.loads(response.read(65537))
     if body.get('data', {}).get('authMode') != 'independent' or body['data'].get('setupRequiresLoopback') is not False:
         raise ValueError('Independent shop startup was not verified')
-    return target
+    return body['data']
+
+
+def ready(config):
+    bootstrap_state(config)
+    return 'http://' + config['ip'] + ':' + str(config['port'])
 
 
 def supervise():
@@ -462,6 +657,8 @@ def supervise():
 
 
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == '--replace-receipt':
+        replace_private('/write/.space-store-container-self.json', json.loads(sys.argv[2]), json.loads(sys.argv[3])); return
     if len(sys.argv) == 6 and sys.argv[1] == '--init-directories':
         initialize(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]); return
     if len(sys.argv) == 5 and sys.argv[1] == '--init-directories':

@@ -159,7 +159,7 @@ it("keeps other applications free of Syncthing ports and rejects fractional acce
   expect(request).not.toHaveProperty("peerPort");
   expect(request).not.toHaveProperty("discoveryPort");
 });
-it.each(["", "removed", "unsafe"])(
+it.each(["removed", "unsafe"])(
   "keeps manual choice for %s defaults instead of selecting the first root",
   async (defaultRootId) => {
     api.storeSession = "test";
@@ -252,3 +252,10 @@ it.each(["session", "address"])(
     if (mode === "address") await api.setStoreAddress("");
   },
 );
+it("selects the first verified directory on a fresh shop without saved preferences", async () => {
+  api.storeSession="test";
+  vi.spyOn(api,"store").mockImplementation(async op => op==="roots"?{items:safeRoots}:op==="v2/settings"?{defaultRootId:""}:op==="storage"?{items:[],dockerStorageSafe:true}:{items:[]});
+  mountInstall();
+  await waitFor(()=>expect(screen.getByRole("button",{name:"生成安装计划"})).toBeEnabled());
+  expect(screen.getByLabelText("存储空间")).toHaveValue("data");
+});

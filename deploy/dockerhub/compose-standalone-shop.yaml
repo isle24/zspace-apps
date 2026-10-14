@@ -2,7 +2,7 @@
 name: zspace-shop
 services:
   shop:
-    image: isle204/zspace-shop:2026.10.14-r1
+    image: isle204/zspace-shop:latest
     platform: linux/amd64
     network_mode: bridge
     restart: unless-stopped

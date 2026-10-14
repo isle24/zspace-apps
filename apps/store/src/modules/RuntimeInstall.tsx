@@ -51,12 +51,13 @@ export function RuntimeInstall({
     if (selectedByUser.current || !current() || !roots.data || !preference.data)
       return;
     const id = preference.data.defaultRootId;
-    const root = roots.data.items.find(
+    const available = roots.data.items.filter(item=>item.roles.includes("data") && allowedStorage(item.storage));
+    const root = available.find(
       (item) =>
         item.id === id &&
         item.roles.includes("data") &&
         allowedStorage(item.storage),
-    );
+    ) || (!id ? available[0] : undefined);
     setRootId(root?.id || "");
   }, [roots.data, preference.data]);
   const directories = useResource(

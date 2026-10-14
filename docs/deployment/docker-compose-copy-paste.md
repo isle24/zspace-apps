@@ -1,8 +1,8 @@
 # Docker Compose 直接复制部署
 
-只需要商店的 NAS 玩家，直接使用[独立商店 Compose](./standalone-shop-docker.md)，镜像 `isle204/zspace-shop:2026.10.14-r1`，首次在网页创建自己的管理员账号，无需第三方 UI。支持 AMD64 极空间、Docker 27.3 及以上。
+只需要商店的 NAS 玩家，直接使用[独立商店 Compose](./standalone-shop-docker.md)，镜像 `isle204/zspace-shop:latest`，首次在网页创建自己的管理员账号，无需第三方 UI。支持 AMD64 极空间、Docker 27.3 及以上。
 
-以下 UI 和中央后台镜像版本为 `2026.10.13-r3`，平台 `linux/amd64`。每段完整保存为各自目录的 `compose.yaml`，无需 `.env` 或宿主密码文件，也无需源码编译。
+以下 UI 和中央后台默认使用 `latest`，当前对应 `2026.10.14-r2`，平台 `linux/amd64`。每段完整保存为各自目录的 `compose.yaml`，无需 `.env` 或宿主密码文件，也无需源码编译。
 
 ## NAS 三方 UI
 
@@ -13,7 +13,7 @@
 name: zspace-ui
 services:
   ui:
-    image: isle204/zspace-ui:2026.10.13-r3
+    image: isle204/zspace-ui:latest
     platform: linux/amd64
     user: 10001:10001
     restart: unless-stopped
@@ -60,7 +60,7 @@ docker compose up -d
 name: zspace-store
 services:
   secret-init:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: "no"
     read_only: true
@@ -123,7 +123,7 @@ services:
       start_period: 15s
       retries: 10
   catalog:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: unless-stopped
     init: true
@@ -156,7 +156,7 @@ services:
       retries: 3
   setup:
     profiles: [setup]
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     user: 10001:10001
     init: true

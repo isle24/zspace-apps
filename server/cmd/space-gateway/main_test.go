@@ -33,7 +33,7 @@ func TestCloudCORSDoesNotOpenAdminRoutes(t *testing.T) {
 	}
 }
 
-func TestAPIOnlyServesOnlyAdminUI(t *testing.T) {
+func TestAPIOnlyWithoutPublicBuildKeepsAdminAndStatus(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("管理后台"), 0600); err != nil {
 		t.Fatal(err)

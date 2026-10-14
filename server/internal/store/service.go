@@ -206,7 +206,7 @@ func New(opts Options) (*Service, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Service{controllerLocks: locks, db: db, opts: opts, engine: engine, storeID: id, ctx: ctx, cancel: cancel, wake: make(chan struct{}, 1), attempts: map[string]loginAttempt{}, nasSessions: map[string]*nasMemorySession{}, nasClient: newNASClient()}
 	if opts.StorageRoot != "" {
-		root := StorageRoot{ID: "storage", Name: "初始登记目录（需核验介质）", Path: opts.StorageRoot, Roles: []string{"data", "mediaReadOnly"}, Storage: StorageCandidate{Path: opts.StorageRoot, VolumeType: "unknown", Reason: "初始配置尚未核验设备；安装前将重新读取真实卷与Docker缓存位置。"}}
+		root := StorageRoot{ID: "storage", Name: "默认应用目录", Path: opts.StorageRoot, Roles: []string{"data", "mediaReadOnly"}, Storage: StorageCandidate{Path: opts.StorageRoot, VolumeType: "unknown", Reason: "初始配置尚未核验设备；安装前将重新读取真实卷与Docker缓存位置。"}}
 		b, _ := json.Marshal(root)
 		if _, err = db.Exec(`INSERT OR IGNORE INTO storage_roots(id,path,body)VALUES(?,?,?)`, root.ID, root.Path, string(b)); err != nil {
 			s.Close()
@@ -388,6 +388,51 @@ func (s *Service) roots(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fail(w, 500, "storage_failed", "无法读取登记目录。")
 		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+	if inspector, ok := s.engine.(storageInspector); ok {
+		for index := range roots {
+			root := &roots[index]
+			candidate, inspectErr := inspector.InspectStorage(ctx, root.Path)
+			if inspectErr != nil || (root.Storage.Identity != "" && root.Storage.Identity != candidate.Identity) {
+				root.Storage.InstallAllowed = false
+				root.Storage.MediaReadAllowed = false
+				root.Storage.Reason = "目录暂无法核验或设备身份已改变，请检查挂载后重试。"
+				continue
+			}
+			if root.Storage.Identity == "" && (safeDataStorage(candidate) || safeMediaStorage(candidate)) {
+				verified := *root
+				verified.Storage = candidate
+				verified.Roles = storageRoles(candidate)
+				body, _ := json.Marshal(verified)
+				mutationErr, authorized := s.requestDBMutation(w, r, `UPDATE storage_roots SET body=? WHERE id=? AND path=? AND COALESCE(json_extract(body,'$.storage.identity'),'')=''`, string(body), root.ID, root.Path)
+				if !authorized {
+					return
+				}
+				if mutationErr != nil {
+					fail(w, 500, "storage_failed", "无法保存首次核验的目录身份。")
+					return
+				}
+				pinned, readErr := s.root(root.ID)
+				if readErr != nil {
+					fail(w, 500, "storage_failed", "无法读取已核验的目录身份。")
+					return
+				}
+				*root = pinned
+				if pinned.Path != candidate.Path || pinned.Storage.Identity != candidate.Identity {
+					root.Storage.InstallAllowed = false
+					root.Storage.MediaReadAllowed = false
+					root.Storage.Reason = "目录核验期间身份已变化，请检查挂载后重试。"
+					continue
+				}
+			}
+			root.Storage = candidate
+			root.Roles = storageRoles(candidate)
+			if root.ID == "storage" && root.Name == "初始登记目录（需核验介质）" {
+				root.Name = "默认应用目录"
+			}
+		}
 	}
 	s.requestRespond(w, r, 200, map[string]any{"items": roots})
 }

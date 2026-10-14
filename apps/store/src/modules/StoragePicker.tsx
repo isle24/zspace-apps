@@ -64,6 +64,7 @@ export function StoragePicker({
   const [candidate, setCandidate] = useState<StorageCandidate>();
   const [path, setPath] = useState("");
   const [name, setName] = useState("");
+  const [create, setCreate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [registered, setRegistered] = useState("");
@@ -78,12 +79,13 @@ export function StoragePicker({
       const root = await api.store<StorageRoot>("roots", {
         path: path.trim(),
         ...(name.trim() ? { name: name.trim() } : {}),
+        ...(create ? {create:true} : {}),
       });
       if (!root.id || !allowedStorage(root.storage))
         throw new Error("登记目录的磁盘状态未验证，暂不可安装");
       onRegistered();
       onSelect(root.id);
-      setRegistered(`已登记 ${root.path}`);
+      setRegistered(`已添加 ${root.path}`);
     } catch (e) {
       setError(message(e));
     } finally {
@@ -120,8 +122,8 @@ export function StoragePicker({
             ))}
         </select>
       </label>
-      <details className="storage-register" open={!roots.length}>
-        <summary>选择 SSD / 数据盘，或登记已有专用目录</summary>
+      <details className="storage-register" open={!roots.some(root=>allowedStorage(root.storage))}>
+        <summary>添加安装目录：选择数据位置或手动填写</summary>
         <Status
           loading={discovery.loading}
           error={discovery.error}
@@ -135,7 +137,8 @@ export function StoragePicker({
               disabled={!allowedStorage(disk)}
               onClick={() => {
                 setCandidate(disk);
-                setPath("");
+                setPath(disk.path);
+                setCreate(false);
                 setRegistered("");
                 setError("");
               }}
@@ -153,9 +156,9 @@ export function StoragePicker({
                 <small>
                   {disk.source} · {disk.filesystem}
                 </small>
+                <small>{disk.path}</small>
                 <small>
-                  {disk.reason ||
-                    (disk.verifiedDataPool ? "已验证数据池" : "身份待验证")}
+                  {disk.reason || (allowedStorage(disk) ? "可用应用目录" : "身份待验证")}
                 </small>
               </span>
               {disk.systemDisk ? <WarningCircle /> : <ShieldCheck />}
@@ -165,19 +168,23 @@ export function StoragePicker({
         {candidate && (
           <p className="hint">
             已选择 {volumeLabel(candidate.volumeType)}：{candidate.mountPoint}
-            。请填写此数据盘上已经存在的应用专用目录。
+            。可直接添加所选目录，或在它下面创建新的专用目录。
           </p>
         )}
         <label className="field">
-          已有专用目录的绝对路径
+          应用专用目录的绝对路径
           <input
             value={path}
-            placeholder="填写 NAS 上已存在的专用目录"
+            placeholder="选择上方路径，或填写已映射数据位置内的绝对路径"
             onChange={(e) => setPath(e.target.value)}
           />
           <small>
-            登记不会创建目录。系统盘、eMMC 和未验证位置由服务端拒绝。
+            默认添加已有目录。新目录需勾选下方选项，父目录须已存在。
           </small>
+        </label>
+        <label className="check-field">
+          <input type="checkbox" checked={create} onChange={event=>setCreate(event.target.checked)}/>
+          创建新的专用目录并添加
         </label>
         <label className="field">
           目录显示名称（可选）
@@ -192,7 +199,7 @@ export function StoragePicker({
           disabled={busy || !path.trim().startsWith("/")}
           onClick={register}
         >
-          {busy ? "验证并登记…" : "登记已有目录"}
+          {busy ? "正在添加…" : create ? "创建并添加目录" : "添加已有目录"}
         </button>
         {error && (
           <p className="inline-error" role="alert">
@@ -224,12 +231,11 @@ export function StoragePicker({
         <p>
           {discovery.data?.message ||
             discovery.data?.dockerStorage?.reason ||
-            "正在检查存储安全状态"}
+            (discovery.loading ? "正在检查存储安全状态" : discovery.error ? "检测未完成，请核对上方错误后重新检测。" : "尚未确认 Docker 存储，请重新检测。")}
         </p>
-        {!discovery.data?.dockerStorageSafe && (
+        {!discovery.loading && !discovery.data?.dockerStorageSafe && (
           <p className="error-text">
-            镜像位置未通过检查，安装已禁用。请先将 Docker
-            数据迁移至已验证的数据盘。
+            {discovery.data?.dockerStorage ? "镜像位置未通过检查，请核对检测原因及 Docker 数据位置。" : "存储检测尚未成功，安装会在核验通过后开放。手动填写目录仍可使用。"}
           </p>
         )}
       </section>

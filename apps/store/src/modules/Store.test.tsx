@@ -298,7 +298,7 @@ it("never generates a plan when Docker image storage is unsafe", async () => {
   fireEvent.click(await screen.findByRole("button", { name: "查看" }));
   fireEvent.click(screen.getByRole("button", { name: "下一步" }));
   await screen.findByText(
-    "镜像位置未通过检查，安装已禁用。请先将 Docker 数据迁移至已验证的数据盘。",
+    "镜像位置未通过检查，请核对检测原因及 Docker 数据位置。",
   );
   expect(screen.getByRole("button", { name: "下一步" })).toBeDisabled();
   expect(requests.some((r) => r.path.endsWith("/plans"))).toBe(false);

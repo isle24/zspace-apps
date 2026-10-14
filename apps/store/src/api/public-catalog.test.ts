@@ -15,3 +15,15 @@ it('uses the public Github fallback and rejects executable fields in metadata-on
  const invalid=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>new Response(JSON.stringify({ok:true,data:{items:[{...listing,image:'nginx:stable',manifestDigest:'fake'}]}}),{status:200}));
  await expect(readPublicCatalog(invalid as typeof fetch)).rejects.toThrow();
 });
+it('tries Github with a fresh deadline after the primary catalog times out',async()=>{
+ vi.useFakeTimers();
+ try{
+  const fetcher=vi.fn((_url:string|URL|Request,init?:RequestInit)=>String(_url).startsWith('https://raw.githubusercontent.com')?Promise.resolve(new Response(JSON.stringify({items:[listing]}))):new Promise<Response>((_resolve,reject)=>init?.signal?.addEventListener('abort',()=>reject(Error('aborted')),{once:true})));
+  const pending=readPublicCatalog(fetcher as typeof fetch);
+  const assertion=expect(pending).resolves.toMatchObject({items:[listing]});
+  await vi.advanceTimersByTimeAsync(10001);
+  await assertion;
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(fetcher.mock.calls[1][1]?.signal?.aborted).toBe(false);
+ }finally{vi.useRealTimers()}
+});

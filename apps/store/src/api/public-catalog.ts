@@ -21,15 +21,21 @@ async function readJSON(response:Response){
  const buffer=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.length}
  return JSON.parse(new TextDecoder().decode(buffer));
 }
-export async function readPublicCatalog(fetcher:typeof fetch=(...args)=>fetch(...args)):Promise<PublicCatalog>{
+async function attempt(fetcher:typeof fetch,url:string):Promise<unknown>{
  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
- const options:RequestInit={credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:controller.signal};
  try{
-  let response:Response|undefined;
-  try{response=await fetcher('https://zstore.2iwm.com/api/cloud/public-catalog',options)}catch{if(controller.signal.aborted)throw Error('公开目录读取超时')}
-  if(response?.ok){const result=await readJSON(response);if(result?.ok!==true)throw Error('公开目录暂不可用');return validate(result.data)}
-  const fallback=await fetcher('https://raw.githubusercontent.com/isle24/nas-app-store-catalog/main/catalog-apps.json',options);
-  if(!fallback.ok)throw Error('公开目录与备用资料暂不可用');
-  return validate(await readJSON(fallback));
+  const response=await fetcher(url,{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:controller.signal});
+  if(!response.ok)throw Error('公开目录暂不可用');
+  return await readJSON(response);
  }finally{clearTimeout(timer)}
+}
+export async function readPublicCatalog(fetcher:typeof fetch=(...args)=>fetch(...args)):Promise<PublicCatalog>{
+ let result:unknown;
+ try{result=await attempt(fetcher,'https://zstore.2iwm.com/api/cloud/public-catalog')}
+ catch{
+  return validate(await attempt(fetcher,'https://raw.githubusercontent.com/isle24/nas-app-store-catalog/main/catalog-apps.json'));
+ }
+ const envelope=result as {ok?:boolean,data?:unknown};
+ if(envelope?.ok!==true)throw Error('公开目录暂不可用');
+ return validate(envelope.data);
 }

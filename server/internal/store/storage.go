@@ -67,7 +67,7 @@ func (s *Service) storage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	docker, err := e.DockerStorage(ctx)
-	msg := "请选择SSD上的专用既有目录，或明确核验的NAS虚拟数据池；镜像缓存也必须在非系统SSD/HDD上。"
+	msg := "请选择数据盘中的应用目录，可在商店已映射的数据位置添加或创建专用目录；Docker 镜像缓存也须位于数据盘。"
 	var d any = docker
 	safe := err == nil && safeDockerStorage(docker)
 	if err != nil {
@@ -80,8 +80,9 @@ func (s *Service) storage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Service) registerRoot(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Path string `json:"path"`
-		Name string `json:"name"`
+		Path   string `json:"path"`
+		Name   string `json:"name"`
+		Create bool   `json:"create"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -90,7 +91,7 @@ func (s *Service) registerRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.Name) > 128 || !filepath.IsAbs(in.Path) || filepath.Clean(in.Path) != in.Path || strings.ContainsAny(in.Path, "\x00\r\n,") {
-		fail(w, 400, "unsafe_storage_root", "请输入规范绝对目录；不会自动创建或修改该目录。")
+		fail(w, 400, "unsafe_storage_root", "请输入规范的绝对目录路径。")
 		return
 	}
 	e, ok := s.engine.(storageInspector)
@@ -100,9 +101,37 @@ func (s *Service) registerRoot(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 	defer cancel()
-	candidate, err := e.InspectStorage(ctx, in.Path)
+	var candidate StorageCandidate
+	var err error
+	if in.Create {
+		creator, supported := s.engine.(storageDirectoryCreator)
+		if !supported {
+			fail(w, 503, "storage_creation_unavailable", "当前执行器尚不支持创建目录，请先更新商店，或添加已有目录。")
+			return
+		}
+		if s.opts.StorageRoot != "" && !strings.HasPrefix(in.Path, strings.TrimRight(s.opts.StorageRoot, string(filepath.Separator))+string(filepath.Separator)) {
+			fail(w, 400, "storage_path_not_mapped", "新目录须位于商店已映射的应用数据目录内；选择其他数据盘请先配置 SHOP_DATA_ROOT。")
+			return
+		}
+		parent := filepath.Dir(in.Path)
+		proof, parentErr := e.InspectStorage(ctx, parent)
+		if parentErr != nil || !safeDataStorage(proof) {
+			fail(w, 400, "unsafe_storage_root", "父目录须已存在、可写并位于已映射的数据盘内。")
+			return
+		}
+		if err = s.engine.ValidatePath(ctx, parent, in.Path, true); err != nil {
+			fail(w, 400, "unsafe_storage_root", err.Error())
+			return
+		}
+		if !s.requestAuthorized(w, r) {
+			return
+		}
+		candidate, err = creator.CreateStorageDirectory(ctx, in.Path, proof.Identity)
+	} else {
+		candidate, err = e.InspectStorage(ctx, in.Path)
+	}
 	if err != nil || (!safeDataStorage(candidate) && !safeMediaStorage(candidate)) {
-		msg := "所选路径不存在、属于系统盘或不是可确认的数据卷。"
+		msg := "目录不存在、未映射到商店或未通过数据盘核验；新目录请勾选创建，并填写已映射数据目录下的路径。"
 		if err == nil && candidate.Reason != "" {
 			msg = candidate.Reason
 		}
@@ -342,6 +371,28 @@ def inspect(path,for_docker=False):
  v=os.statvfs(path)
  ident=str(st.st_dev)+":"+str(st.st_ino)+"|"+m.get("maj:min","")+"|"+source+"|"+target
  return {"path":path,"mountPoint":target,"source":source,"filesystem":fs,"identity":ident,"volumeType":medium,"freeBytes":v.f_bavail*v.f_frsize,"totalBytes":v.f_blocks*v.f_frsize,"systemDisk":bool(system),"verifiedDataPool":pool,"installAllowed":bool(allowed),"mediaReadAllowed":bool(media_read),"reason":reason}
+def create_directory(path,expected_parent):
+ canonical_dedicated(path)
+ parent=os.path.dirname(path);leaf=os.path.basename(path)
+ if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}",leaf): raise ValueError("invalid_directory_name")
+ proof=inspect(parent)
+ if not expected_parent or proof["identity"]!=expected_parent or not proof["installAllowed"]: raise ValueError("parent_identity_changed")
+ fd=os.open("/",os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:
+  for part in parent.split("/")[1:]:
+   child=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
+   os.close(fd);fd=child
+  entry=os.fstat(fd)
+  if not proof["identity"].startswith(str(entry.st_dev)+":"+str(entry.st_ino)+"|"): raise ValueError("parent_identity_changed")
+  os.mkdir(leaf,0o700,dir_fd=fd)
+  child=os.open(leaf,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
+  try:
+   created=os.fstat(child);os.fsync(child);os.fsync(fd)
+   candidate=inspect(path)
+   if not candidate["identity"].startswith(str(created.st_dev)+":"+str(created.st_ino)+"|") or not candidate["installAllowed"]: raise ValueError("created_identity_changed")
+   return candidate
+  finally:os.close(child)
+ finally:os.close(fd)
 try:
  if mode=="docker":
   info=json.loads(cmd(["docker","info","--format","{{json .}}"]))
@@ -354,6 +405,7 @@ try:
    result["installAllowed"]=False
    result["reason"]="Docker image store may use independent containerd storage; cache location unverified, install blocked."
  elif mode=="inspect": result=inspect(requested)
+ elif mode=="create": result=create_directory(requested,sys.argv[3] if len(sys.argv)>3 else "")
  elif host_policy: result=[inspect(host_policy["data"])]
  else:
   mounts=all_mounts;result=[];seen=set()
@@ -380,16 +432,17 @@ try:
 except Exception: sys.exit(3)
 `
 
-func (e *commandEngine) storageCommand(ctx context.Context, mode, path string) (string, error) {
+func (e *commandEngine) storageCommand(ctx context.Context, mode, path string, proof ...string) (string, error) {
 	if e.mode == "disabled" {
 		return "", errors.New("执行引擎未配置，尚不能发现真实数据卷。")
 	}
 	var out string
 	var err error
+	args := append([]string{"-c", storageScript, mode, path}, proof...)
 	if e.mode == "sshbind" {
-		out, _, err = e.remote(ctx, "python3", "-c", storageScript, mode, path)
+		out, _, err = e.remote(ctx, append([]string{"python3"}, args...)...)
 	} else {
-		out, _, err = e.runner(ctx, "python3", "-c", storageScript, mode, path)
+		out, _, err = e.runner(ctx, "python3", args...)
 	}
 	if err != nil {
 		return "", errors.New("无法通过findmnt、lsblk与Docker确认存储；未执行写入。")

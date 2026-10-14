@@ -9,7 +9,7 @@
 <!-- standalone-shop-start -->
 ## 独立商店 Docker（无需第三方桌面）
 
-只需要应用商店的极空间玩家，部署 `isle204/zspace-shop:2026.10.14-r1` 即可。首次在网页创建本地管理员账号，之后使用自己的商店账号登录；无需第三方 UI、NAS 会话、SSH 初始化或 PostgreSQL。支持 AMD64、Docker 27.3 及以上。
+只需要应用商店的极空间玩家，部署 `isle204/zspace-shop:latest` 即可。首次在网页创建本地管理员账号，之后使用自己的商店账号登录；无需第三方 UI、NAS 会话、SSH 初始化或 PostgreSQL。支持 AMD64、Docker 27.3 及以上。
 
 把 `NAS_IP` 改为自己的 NAS 地址，粘贴到极空间 Docker Compose：
 
@@ -18,7 +18,7 @@
 name: zspace-shop
 services:
   shop:
-    image: isle204/zspace-shop:2026.10.14-r1
+    image: isle204/zspace-shop:latest
     platform: linux/amd64
     network_mode: bridge
     restart: unless-stopped
@@ -42,7 +42,7 @@ volumes:
   shop-control:
 ```
 
-启动后打开 `http://你的NAS地址:18443/`。引导服务自动创建并管理独立商店运行容器；数据保存在 NAS 物理数据盘上的独立目录，`shop-control` 保存部署记录。保留控制卷、目录和原配置，停止后重启会复用同一商店。云端账号用于安装云端发布的应用、备份与同步，可在商店内单独注册登录。
+启动后打开 `http://你的NAS地址:18443/`。引导服务自动创建并管理独立商店运行容器；数据保存在 NAS 物理数据盘上的独立目录，`shop-control` 保存部署记录。保留控制卷、目录和原配置，停止后重启会复用同一商店。安装时默认应用目录自动核验，也可手动添加或创建专用目录。云端账号用于安装云端发布的应用、备份与同步，可在商店内单独注册登录。更新保留原项目与数据卷，拉取 `latest` 并重新创建即可；版本标签同时保留。
 
 详见[独立商店部署说明](docs/deployment/standalone-shop-docker.md)。
 
@@ -50,7 +50,7 @@ volumes:
 
 ## 本轮部署与管理员能力
 
-- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui` 与 `isle204/zspace-store`，已发布 `2026.10.13-r3` / `latest`（Linux AMD64），无需源码编译。
+- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui` 与 `isle204/zspace-store`，已发布 `2026.10.14-r2` / `latest`（Linux AMD64），无需源码编译。
 - [2026-10-13 UI、镜像与目录验收](docs/verification/2026-10-13-ui-docker-catalog-delivery.md)：统一商店、全局影视背景、深色主题、启动器与缓存修复；NAS 已更新。
 - [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：175 个来源全部收录后台，新增 169 草稿，原有 7 条记录保留；原生或复杂定义继续适配后发布。
 - [两个 Docker Compose 部署入口](docs/deployment/docker-compose.md)：NAS 三方 UI、云商店与 PostgreSQL 后台；另说明 NAS 本地应用安装执行器的受管部署。
@@ -213,7 +213,7 @@ bash scripts/verify.sh --all    # 类型检查 + 单测 + 构建 + 两种主题�
 name: zspace-ui
 services:
   ui:
-    image: isle204/zspace-ui:2026.10.13-r3
+    image: isle204/zspace-ui:latest
     platform: linux/amd64
     user: 10001:10001
     restart: unless-stopped
@@ -260,7 +260,7 @@ docker compose up -d
 name: zspace-store
 services:
   secret-init:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: "no"
     read_only: true
@@ -323,7 +323,7 @@ services:
       start_period: 15s
       retries: 10
   catalog:
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     restart: unless-stopped
     init: true
@@ -356,7 +356,7 @@ services:
       retries: 3
   setup:
     profiles: [setup]
-    image: isle204/zspace-store:2026.10.13-r3
+    image: isle204/zspace-store:latest
     platform: linux/amd64
     user: 10001:10001
     init: true

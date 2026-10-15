@@ -122,7 +122,12 @@ jobs:
       - name: Verify client
         run: |
           pnpm --filter @space/client typecheck
-          pnpm --filter @space/client test
+          if [[ '${{ matrix.runner }}' == 'macos-15-intel' ]]; then
+            # Keep jsdom workers from competing with imports on the Intel runner.
+            pnpm --filter @space/client exec vitest run --maxWorkers=2
+          else
+            pnpm --filter @space/client test
+          fi
       - name: Build matching Go sidecar
         run: node scripts/ci-build-sidecar.mjs '${{ matrix.target }}'
       - name: Build unsigned desktop installers

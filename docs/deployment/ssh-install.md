@@ -1,86 +1,56 @@
-# SSH 安装应用商店和桌面 UI
+# SSH 自动生成 Compose 并安装
 
-适用于 Linux AMD64（`x86_64`）NAS，要求已启用 Docker，服务端版本至少为 20.10。本机只需要 POSIX `sh`、Docker CLI、`ip`，以及 `ss` 或 `netstat` 等基础系统工具。无需在 NAS 安装 Node.js、Go、Python 或 Compose；脚本从固定版本的商店镜像使用 Docker CLI 27.3.1 和 Compose 2.32.4。
+脚本会自动识别每台 NAS 的局域网 IP，不内置固定 NAS 地址。默认安装 UI 和独立商店，兼容 Linux AMD64、Docker 20.10 及以上。
 
-默认安装桌面 UI 和独立商店，固定使用 `isle204/zspace-ui:2026.10.15-r5`、`isle204/zspace-shop:2026.10.15-r3`。普通应用仍通过网页中的受管安装流程安装。SSH 脚本不创建账号、设置明文密码或代替用户同意条款。
-
-## 下载并安装
-
-通过 NAS 的 SSH 登录后，将下面的 IP 换成 NAS 的局域网地址执行。先完成 HTTPS 下载，再运行保存的文件，下载失败时不会执行半截脚本：
+## 直接执行
 
 ```sh
-installer="$(mktemp /tmp/zspace-install.XXXXXX)" && curl -fsSL https://zstore.2iwm.com/install.sh -o "$installer" && sh "$installer" --ip 192.168.3.56
+installer="$(mktemp /tmp/zspace-install.XXXXXX)" && curl -fsSL https://zstore.2iwm.com/install.sh -o "$installer" && sh "$installer"
 ```
 
-如果当前账号没有 Docker 权限，在最后一步使用 `sudo sh "$installer" --ip 192.168.3.56`。脚本会报告权限问题，不会安装系统软件或修改用户组。脚本保留在临时文件中，便于先查看内容或排错；下载完整不等于安装成功，以最后的健康检查结果为准。
+无需修改 IP。当前 SSH 账号需有 Docker 权限；权限不足时，使用 `sudo sh "$installer"` 执行下载好的脚本。首次账号在网页创建，脚本不生成或保存密码。
 
-安装成功后访问：
+## 实际执行流程
 
-- 桌面 UI：`http://192.168.3.56:18436`
-- 独立商店：`http://192.168.3.56:18443`
+1. 从 SSH 服务端地址、本机路由及网卡自动识别局域网 IP。
+2. 核对真实数据挂载及底层块设备，选择可用空间最多的固态数据盘。
+3. 在该盘创建与项目同名的专用目录，并保存 `compose.yaml`。
+4. 创建 UI 数据和商店控制目录，Compose 的命名卷绑定到这些 SSD 目录；应用运行数据默认放在安装目录的 `runtime/` 下。
+5. 从已保存的 Compose 文件启动 Docker，等待 UI 和商店健康后输出访问地址。
 
-在网页创建首个账号并查看条款。UI 的 NAS 地址使用 `http://NAS_IP:5055`。
+默认目录结构如下，`<SSD>` 是自动识别的盘，并非固定路径：
 
-## 预检查和选项
-
-下载后可先执行只读检查：
-
-```sh
-sh "$installer" --check --ip 192.168.3.56
-sh "$installer" --help
+```text
+<SSD>/zspace-suite/
+  compose.yaml
+  ui-data/
+  shop-control/
+  runtime/
 ```
 
-`--check` 验证本机 LAN 地址、Linux AMD64、Docker 服务端版本、访问权限、项目资源冲突和端口占用，不拉取镜像、不创建 Docker 资源。实际数据磁盘、缓存位置、目录身份和挂载安全检查由商店启动器在安装阶段执行；预检查通过并不表示这些后续检查已通过。
+访问地址使用识别到的 NAS IP：UI 为 `http://NAS_IP:18436`，商店为 `http://NAS_IP:18443`。仅商店模式不创建 `ui-data/`，也不启动 UI。
 
-| 选项 | 含义 |
+Compose 保存 `isle204/zspace-ui:latest` 和 `isle204/zspace-shop:latest`。宿主已有 Compose v2 时，可在安装目录执行 `docker compose pull && docker compose up -d` 更新；也可将文件导入 NAS 的 Docker Compose 管理页面。首次安装脚本使用商店镜像内的 Compose，宿主无需另外安装 Compose、Python、Node.js 或 Go。
+
+## 可选参数
+
+| 参数 | 用途 |
 | --- | --- |
-| `--ip NAS_LAN_IP` | 指定本机接口上实际存在的 RFC1918 私有 IPv4 地址；推荐显式填写。 |
-| `--shop-only` | 只安装独立商店，不拉取或启动 UI，不占用 18436 端口。 |
-| `--project-name NAME` | 使用新的专用项目名，默认 `zspace-suite`；以小写字母或数字开头，最长 40 字符，后续可含 `_` 和 `-`。 |
-| `--data-root /data_disk/new-directory` | 仅把指定路径作为 `SHOP_DATA_ROOT` 传给商店启动器。路径必须为尚未被其他安装使用的专用目录，位于 NAS 数据磁盘上。 |
-| `--check` | 只读预检查。 |
-| `--help` | 显示帮助。 |
+| `--check` | 只读显示识别到的 IP、SSD 和 Compose 路径，检查版本与冲突，不创建文件或拉镜像。 |
+| `--shop-only` | 仅安装独立商店。 |
+| `--install-dir /data_固态盘/my-shop` | 在指定的已验证 SSD 挂载根目录下新建专用目录。 |
+| `--project-name my-shop` | 修改项目名，默认 `zspace-suite`。 |
+| `--ip NAS_IP` | 多网卡时手动指定本机局域网地址；通常不需要填写。 |
+| `--data-root PATH` | 高级选项：覆盖应用运行数据路径，仍由启动器验证目录身份；默认不需要填写。 |
 
-省略 `--ip` 时，脚本先检查 SSH 连接的服务端地址，再检查路由源地址，最后检查是否只有一个可用的本机私有 IPv4；无法确定时停止并要求指定。不会把远端 SSH 客户端地址当作 NAS 地址。
-
-数据路径仅接受 ASCII 字母、数字、`/`、`_`、`.`、`-`，不接受尾随 `/`、`..`、系统目录、逗号、空白或 shell 表达式。自选路径例子：
+例如只装商店：
 
 ```sh
-sh "$installer" --ip 192.168.3.56 --data-root /data_n008/space-shop
-sh "$installer" --shop-only --ip 192.168.3.56 --project-name my-shop
+sh "$installer" --shop-only
 ```
 
-省略数据路径时，启动器根据已核实的 Docker 数据盘选择新的专用目录。脚本本身不在用户指定目录中创建文件。商店数据与 Docker 镜像缓存必须分开，已有目录不会被自动接管。
+不使用已有目录，不覆盖文件，不接管已有容器、卷或网络。端口已被使用时停止安装；已有 NAS 服务无需重新安装。失败时保留已创建的文件和数据，便于检查 `compose.yaml` 和容器日志。
 
-## 已有安装与失败处理
+固态盘识别会检查全部底层设备，Btrfs 还核对内核记录的所有成员。系统盘、机械盘、机械盘上的 SSD 缓存和无法核验的成员不会被当成可安装 SSD。找不到可验证 SSD 时停止，不自动退到机械盘。
 
-这是首次安装入口。再次执行时，只要发现该项目的容器、控制卷、UI 数据卷或网络，便停止并保留全部资源，不执行升级、覆盖或删除。它也检查名称相同但标签不同的资源，防止接管其他服务。即使选择 `--shop-only`，已有同名 UI 资源仍会让该项目检查失败。
-
-新的 `--project-name` 可避开项目名称冲突，但不会绕过端口冲突。默认安装需要 18436 和 18443 均空闲；仅商店需要 18443 空闲。脚本同时检查 Docker 的已有端口预留和系统 TCP 监听。工作中的安装应继续使用原来的网页；如需迁移或升级，请按照独立商店部署文档核对数据、控制卷和版本，不要通过删除控制卷强行重跑。
-
-脚本先拉取固定版本镜像，再启动临时的 Compose 执行容器。执行容器以项目专用名称获得互斥，在该名称生效后再次核对资源和 Docker 端口，防止延迟的并发安装接管已完成的部署。它使用只读根目录、移除全部 capabilities、禁用提权、独立无网络环境及临时 `/tmp`，只挂载本地 Docker socket；Compose 配置通过标准输入传入，不挂载宿主根目录或用户数据目录。执行结束只删除它自身的临时执行容器。
-
-脚本固定连接本机 `/var/run/docker.sock` Unix socket，忽略继承的 `DOCKER_HOST`、Docker context、API 版本、TLS 和 Docker 配置目录覆盖。它不支持通过远程 Docker 地址或其他 socket 安装。
-
-Compose 最多等待 180 秒通过服务健康检查；脚本随后再次确认每个服务均为 `running` 且 `healthy`，才输出 `Installation ready` 和访问地址。镜像拉取耗时不计入该健康检查时限。镜像拉取、启动或健康检查失败时，已产生的镜像、服务容器、卷和数据均保留，终端会返回非零状态。
-
-默认项目的排错命令：
-
-```sh
-docker --host unix:///var/run/docker.sock ps -a --filter label=com.docker.compose.project=zspace-suite
-docker --host unix:///var/run/docker.sock logs zspace-suite-shop
-docker --host unix:///var/run/docker.sock inspect zspace-suite-shop
-```
-
-如果首次执行被中断，先核对这些保留资源及商店数据状态。不要删除控制卷、数据目录或业务容器来消除脚本提示。常规重启原有容器会继续使用原有启动器的所有权核对和持久化状态，不需要重新执行首次安装脚本。
-
-## 开发验证
-
-```sh
-sh -n deploy/docker-installer/install.sh
-python3 deploy/docker-installer/test_install.py
-```
-
-测试使用临时 Unix socket 和记录所有操作的假 Docker CLI，实际执行安装脚本及临时容器中的固定 shell 检查逻辑；不连接宿主 Docker 或拉取镜像。覆盖旧版本边界、无效输入、本地地址判定、远程环境覆盖、外部资源冲突、并发延迟冲突、仅商店模式、健康状态及失败保留行为。它验证脚本控制流程，真实 Docker 不同版本的端到端验证需另外执行。
-
-本轮实际验收：Docker 20.10.24、24.0.9、26.1.4 的隔离 Linux AMD64 引擎均完成 UI＋商店安装、目录验证和 Syncthing 安装/HTTP 200/停止；最终脚本也验证了独立商店模式。详见[兼容验收](../verification/2026-10-15-docker-compat.md)。
+宿主需有 `ip`、`findmnt`、`lsblk`、`df`、`stat`、`sha256sum` 及 `ss`/`netstat` 等 NAS 基础工具。真实 SSD 识别、目录持久化和旧引擎验证范围见[验收记录](../verification/2026-10-15-ssd-compose.md)。

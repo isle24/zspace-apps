@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { api, type Collection, type Item } from "../api/client";
 import { VideoDetails } from "./VideoDetails";
 import { NasModule } from "./NasModule";
@@ -32,6 +32,21 @@ it('does not turn movie versions with episode zero into a made-up season or epis
   expect(screen.queryByLabelText('选集')).not.toBeInTheDocument();
   expect(screen.queryByText(/第 0 [季集]/)).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: '版本与文件' })).toBeInTheDocument();
+});
+
+it('only numbers files with real positive episodes and keeps their original queue indices', async () => {
+  const items = [
+    { ...episode, id: 'extra', name: 'Extra.mkv', metadata: { episode: 0 } },
+    { ...episode, id: 'actual', name: 'Actual episode.mkv', metadata: { episode: 5 } },
+    { ...episode, id: 'version', name: 'Other version.mkv', metadata: {} },
+  ];
+  detailRead(items);
+  const onPlay = vi.fn();
+  render(<VideoDetails {...props} onPlay={onPlay} />);
+  const grid = await screen.findByLabelText('选集');
+  expect(within(grid).getAllByRole('button')).toHaveLength(1);
+  fireEvent.click(within(grid).getByRole('button', { name: '5' }));
+  expect(onPlay).toHaveBeenCalledWith({ items, index: 1, kind: 'video' });
 });
 
 it("loads official collection metadata and passes the actual episode path and version in its queue", async () => {

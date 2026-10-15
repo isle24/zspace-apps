@@ -53,7 +53,11 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
   const files = useResource(async () => connected ? normalizeCollection(await api.read("video.files", { ...params, ...(directory ? { file_path: directory.path } : {}) })) : { items: [] }, [api.nasSession, connected, collectionId, classificationId, collection.path, directory?.id, directory?.path]);
   const items = files.data?.items || [];
   const playable = items.filter((item) => !isDirectory(item) && hasPath(item));
-  const hasEpisodes = playable.some(item => positiveIndex(item.metadata?.episode) !== undefined);
+  const episodes = playable.flatMap((item, index) => {
+    const number = positiveIndex(item.metadata?.episode);
+    return number ? [{ item, index, number }] : [];
+  });
+  const hasEpisodes = episodes.length > 0;
   const firstEpisode = positiveIndex(playable[0]?.metadata?.episode);
   const values = info.data?.values;
   const title = text(values?.title) || collection.name;
@@ -133,14 +137,14 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
           /* 只有设备返回真实正集数时显示选集，电影版本不伪装成剧集。
              使用设备集数，并保留具体文件名以区分同一集的不同版本。 */
           <div className="video-episode-grid" aria-label="选集">
-            {playable.map((item, index) => (
+            {episodes.map(({ item, index, number }) => (
               <button
                 key={`${item.id}:${item.path}`}
                 className="video-episode-chip"
                 title={item.name}
                 onClick={() => onPlay({ items: playable, index, kind: "video" })}
               >
-                {positiveIndex(item.metadata?.episode) ?? index + 1}
+                {number}
               </button>
             ))}
           </div>

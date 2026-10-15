@@ -37,7 +37,7 @@ it('standalone mode never reads NAS identity or exchanges even with persisted tr
   api.trustStoreNasBinding(await api.getStoreNasBinding());
   const identity = vi.spyOn(api, 'getStoreNasBinding'); const connect = vi.spyOn(api, 'connectStoreWithNas');
   render(<Store onInstances={() => {}} />);
-  await screen.findByText(/独立商店 · 执行模式/);
+  await screen.findByText('独立商店 · 登录后核验执行引擎与安装目标。');
   expect(identity).not.toHaveBeenCalled(); expect(connect).not.toHaveBeenCalled(); expect(exchanges).toBe(0);
   fireEvent.click(screen.getByRole('button', { name: '管理员登录' }));
   expect(await screen.findByLabelText('管理员账号')).toBeInTheDocument();
@@ -98,6 +98,26 @@ it('treats disabled NAS auth as normal independent administrator login', async (
   fireEvent.click(screen.getByRole('button', { name: '管理员登录' }));
   expect(await screen.findByLabelText('管理员账号')).toBeInTheDocument();
   expect(exchanges).toBe(0);
+});
+
+it('describes login requirements without inferring empty catalog or failed engine from independent bootstrap', async () => {
+  const calls: Array<{path:string;public?:boolean}> = [];
+  vi.spyOn(api, 'store').mockImplementation(async (path, _body, isPublic) => {
+    calls.push({path,public:isPublic});
+    if (path !== 'bootstrap') throw Error('protected request before login');
+    return {configured:true,authMode:'independent',setupRequiresLoopback:false,nasAuth:{enabled:false,origin:'',storeId}} as never;
+  });
+  render(<Store embedded onInstances={() => {}} />);
+  expect(await screen.findByText('请先登录商店管理员')).toBeInTheDocument();
+  expect(screen.getByText('登录后查看完整应用目录')).toBeInTheDocument();
+  expect(await screen.findByText('独立商店 · 登录后核验执行引擎与安装目标。')).toBeInTheDocument();
+  expect(screen.queryByText(/0 款应用/)).not.toBeInTheDocument();
+  expect(screen.queryByText('这里还没有内容')).not.toBeInTheDocument();
+  expect(screen.queryByText('设备返回的列表为空')).not.toBeInTheDocument();
+  expect(screen.queryByText(/引擎未就绪/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every(call=>call.path==='bootstrap'&&call.public===true)).toBe(true);
 });
 
 it('does not offer unavailable NAS login after an independent shop logout', async () => {

@@ -589,7 +589,7 @@ export function Store({
             {nasAuthError && <p className="error-text" role="alert">{nasAuthError}</p>}
           </div>
         )}
-        {status.data && (
+        {status.data && (session ? (
           <p className="store-target">
             独立商店 · 执行模式：
             {(
@@ -604,7 +604,7 @@ export function Store({
             · {status.data.engineReady ? "引擎可用" : "引擎未就绪"}
             。安装目标以此服务登记的存储目录为准。
           </p>
-        )}
+        ) : <p className="store-target">独立商店 · 登录后核验执行引擎与安装目标。</p>)}
         {auth && (
           <StoreAuth
             configured={status.data?.configured}
@@ -652,7 +652,7 @@ export function Store({
             </span>
           </div>
         )}
-        {status.data?.engineMode === "disabled" && (
+        {session && status.data?.engineMode === "disabled" && (
           <details className="engine-guidance">
             <summary>配置应用商店的执行设备</summary>
             <p>
@@ -682,17 +682,20 @@ export function Store({
             <div className="store-banner">
               <span className="eyebrow">A LITTLE MORE POSSIBILITY</span>
               <h1>发现适合你的应用</h1>
-              <p>{catalog.data?.items.length || 0} 款应用 · 影音、阅读与实用工具</p>
+              <p>{session ? `${catalog.data?.items.length || 0} 款应用 · 影音、阅读与实用工具` : "登录后浏览影音、阅读与实用工具"}</p>
               <div className="banner-orbit">
                 <Cube weight="duotone" />
               </div>
             </div>
             <Status
               {...catalog}
-              empty={!!catalog.data && !listed.length}
+              loading={!!session && catalog.loading}
+              connected={!!session}
+              disconnected={{ title: "请先登录商店管理员", detail: "登录后查看完整应用目录" }}
+              empty={!!session && !!catalog.data && !listed.length}
               retry={catalog.reload}
             />
-            <div className="catalog-grid">
+            {session && <div className="catalog-grid">
               {listed.map((app) => (
                 <article className="catalog-card" key={app.id}>
                   <span className={`store-app-icon app-${app.id}`}>
@@ -713,7 +716,7 @@ export function Store({
                   </button>
                 </article>
               ))}
-            </div>
+            </div>}
           </>
         )}
         {tab === "installed" && (

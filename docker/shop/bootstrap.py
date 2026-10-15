@@ -19,9 +19,10 @@ import stat
 import subprocess
 import sys
 import time
+import urllib.parse
 import urllib.request
 
-RELEASE = 'shop-2026.10.14-r2'
+RELEASE = 'shop-2026.10.15-r1'
 SOCKET = '/var/run/docker.sock'
 CONTROL = Path('/control')
 
@@ -61,7 +62,23 @@ def configuration(env, info, control_source):
     uid = int(env.get('SHOP_UID', '10001')); gid = int(env.get('SHOP_GID', '10001'))
     if not 1 <= uid <= 2147483647 or not 1 <= gid <= 2147483647:
         raise ValueError('The shop runtime must use a non-root account')
-    return {'root': root, 'cache': cache, 'ip': str(ip), 'port': port, 'uid': uid, 'gid': gid}
+    config = {'root': root, 'cache': cache, 'ip': str(ip), 'port': port, 'uid': uid, 'gid': gid}
+    ui_origin = env.get('SHOP_UI_ORIGIN', '')
+    if ui_origin:
+        if re.search(r'[\x00-\x20\x7f]', ui_origin):
+            raise ValueError('SHOP_UI_ORIGIN must be a bare HTTP(S) origin')
+        try:
+            origin = urllib.parse.urlsplit(ui_origin)
+            valid = (origin.scheme in ('http', 'https') and origin.hostname and '*' not in origin.hostname
+                     and origin.username is None and origin.password is None
+                     and origin.path in ('', '/') and not origin.query and not origin.fragment
+                     and (origin.port is None or 1 <= origin.port <= 65535))
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError('SHOP_UI_ORIGIN must be a bare HTTP(S) origin without credentials')
+        config['uiOrigin'] = origin.scheme + '://' + origin.netloc
+    return config
 
 
 def directory_no_links(path):
@@ -329,6 +346,8 @@ def runtime_plan(config, socket_gid, release=None):
     host = host_module()
     p = host.plan(config['root'] + '/service', config['root'] + '/apps', config['ip'], config['port'], release or RELEASE, config['uid'], config['gid'], 'local', config['cache'], socket_gid)
     p['command'] += ['--setup-mode', 'lan']
+    if config.get('uiOrigin'):
+        p['command'] += ['--public-origin', config['uiOrigin']]
     p['labels']['io.space.role'] = 'standalone-shop-runtime'
     return p
 

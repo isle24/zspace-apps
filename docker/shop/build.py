@@ -18,7 +18,7 @@ def build_arguments(tag, push, context):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tag', default='isle204/zspace-shop:2026.10.14-r2')
+    parser.add_argument('--tag', default='isle204/zspace-shop:2026.10.15-r1')
     parser.add_argument('--push', action='store_true')
     args = parser.parse_args()
     build_arguments(args.tag, args.push, '/public/context')

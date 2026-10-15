@@ -77,14 +77,14 @@ export class Gateway {
   set storeSession(value: string) {
     this.installSession(value, "password");
   }
-  private installSession(value: string, source: "password" | "nas-grant") {
+  private installSession(value: string, source: "password" | "nas-grant", reason?: "logout") {
     this.cancelExpiry?.();
     this.cancelExpiry = undefined;
     this.expiresAt = 0;
     this.session = value;
     this.authSource = source;
     this.generation++;
-    window.dispatchEvent(new Event("space-store-session"));
+    window.dispatchEvent(new CustomEvent("space-store-session", { detail: { reason } }));
   }
   get storeAuthSource() {
     return this.session ? this.authSource : "";
@@ -392,7 +392,7 @@ export class Gateway {
   async logoutStore() {
     const session = this.session,
       address = this.address;
-    this.storeSession = "";
+    this.installSession("", "password", "logout");
     if (!session) return;
     await this.revokeSession(address, session);
   }
@@ -400,6 +400,8 @@ export class Gateway {
     // This never mutates current session/address, including on a late failure.
     const response = await fetch(address + "/api/store/logout", {
       method: "POST",
+      // The host may unmount this frame as soon as local logout is announced.
+      keepalive: true,
       credentials: "omit",
       redirect: "error",
       headers: {

@@ -28,6 +28,27 @@ class CombinedOriginTests(unittest.TestCase):
             with self.subTest(origin=value), self.assertRaises(ValueError):
                 shop.configuration({**self.env, 'SHOP_UI_ORIGIN': value}, self.info, '/control/source')
 
+    def test_ui_origin_rejects_values_that_do_not_match_browser_origin(self):
+        for value in ['http://SHOP.EXAMPLE:80', 'https://shop.example:443', 'http://shop.example:',
+                      'http://SHOP.EXAMPLE', 'http://shop.example\\other', 'http://shop%41.example',
+                      'http://192.168.3.56:018436', 'http://[0:0:0:0:0:0:0:1]:18436']:
+            with self.subTest(origin=value), self.assertRaisesRegex(ValueError, 'canonical'):
+                shop.configuration({**self.env, 'SHOP_UI_ORIGIN': value}, self.info, '/control/source')
+
+    def test_ui_origin_accepts_canonical_domain_ipv6_and_optional_trailing_slash(self):
+        for value in ['https://shop.example', 'http://shop.example:18436', 'http://[::1]:18436',
+                      'http://192.168.3.56:18436/', 'http://127.0.0.1',
+                      'http://a.0xg', 'http://a.1e2']:
+            with self.subTest(origin=value):
+                config = shop.configuration({**self.env, 'SHOP_UI_ORIGIN': value}, self.info, '/control/source')
+                self.assertEqual(config['uiOrigin'], value.rstrip('/'))
+
+    def test_ui_origin_rejects_whatwg_numeric_hosts_that_are_not_canonical_ipv4(self):
+        for value in ['http://0x7f000001', 'http://0x7f.0.0.1', 'http://a.1', 'http://a.09',
+                      'http://a.0x1', 'http://a.0x', 'http://0x', 'http://0xffffffff']:
+            with self.subTest(origin=value), self.assertRaisesRegex(ValueError, 'canonical'):
+                shop.configuration({**self.env, 'SHOP_UI_ORIGIN': value}, self.info, '/control/source')
+
 
 if __name__ == '__main__':
     unittest.main()

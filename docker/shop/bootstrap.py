@@ -22,7 +22,7 @@ import time
 import urllib.parse
 import urllib.request
 
-RELEASE = 'shop-2026.10.15-r1'
+RELEASE = 'shop-2026.10.15-r2'
 SOCKET = '/var/run/docker.sock'
 CONTROL = Path('/control')
 
@@ -77,7 +77,20 @@ def configuration(env, info, control_source):
             valid = False
         if not valid:
             raise ValueError('SHOP_UI_ORIGIN must be a bare HTTP(S) origin without credentials')
-        config['uiOrigin'] = origin.scheme + '://' + origin.netloc
+        canonical_origin = origin.scheme + '://' + origin.netloc
+        try:
+            host_module().validate_nas_origin(canonical_origin)
+            try:
+                ipaddress.ip_address(origin.hostname)
+            except ValueError:
+                # WHATWG treats a numeric final label as an IPv4 address,
+                # including hexadecimal numbers and the empty 0x suffix.
+                # Only the canonical IP literals accepted above are stable.
+                if re.fullmatch(r'(?:[0-9]+|0x[0-9a-f]*)', origin.hostname.rsplit('.', 1)[-1]):
+                    raise ValueError('Noncanonical browser IPv4 host')
+        except ValueError:
+            raise ValueError('SHOP_UI_ORIGIN must use a canonical browser origin, for example http://192.168.3.56:18436 or https://shop.example') from None
+        config['uiOrigin'] = canonical_origin
     return config
 
 
@@ -392,17 +405,24 @@ def owned_runtime(api, own, config, socket_gid):
     path = CONTROL / 'deployment.json'
     if os.path.lexists(path):
         receipt = read_private(path)
-        validate_deployment(api, receipt, config, socket_gid)
+        validate_deployment(api, receipt, config, socket_gid, allow_origin_migration=receipt.get('imageId') != image)
         validate_runtime(api.inspect(receipt['containerId']), receipt)
         return receipt
     intent = pending_intent(p, image, socket_gid)
     return resolve_pending_runtime(api, intent) if intent is not None else None
 
 
-def validate_deployment(api, receipt, config, socket_gid):
+def validate_deployment(api, receipt, config, socket_gid, allow_origin_migration=False):
     # Historical release/image identities are validated independently of the
     # newly pulled bootstrap image, never treated as permission to adopt a name.
     p = runtime_plan(config, socket_gid, receipt['plan']['release'])
+    if allow_origin_migration and config.get('uiOrigin'):
+        # Only a new image may add the explicitly configured UI origin. The
+        # complete historical plan must still match before controlling it;
+        # changing/removing an existing origin or any host setting stays blocked.
+        original = runtime_plan({key: value for key, value in config.items() if key != 'uiOrigin'}, socket_gid, receipt['plan']['release'])
+        if receipt['plan'] == original:
+            p = original
     image = receipt['imageId']
     if not isinstance(image, str) or not re.fullmatch('sha256:[a-f0-9]{64}', image):
         raise ValueError('Deployment image identity was not verified')
@@ -561,7 +581,7 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
     checkpoint(cancelled)
     if os.path.lexists(path):
         receipt = read_private(path)
-        validate_deployment(api, receipt, config, socket_gid)
+        validate_deployment(api, receipt, config, socket_gid, allow_origin_migration=receipt.get('imageId') != image)
         if receipt['imageId'] != image:
             return upgrade_runtime(api, own, config, socket_gid, receipt, cancelled)
     else:

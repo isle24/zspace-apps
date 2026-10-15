@@ -23,16 +23,16 @@ export async function receiveHostGrant(event: MessageEvent, nonce: string, paren
 export function installStoreHostBridge() {
   if (window.parent===window || new URLSearchParams(location.search).get('embedded')!=='1') return ()=>{};
   const nonce=crypto.randomUUID ? crypto.randomUUID() : [...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');
-  let active=true,connected=false;
+  let active=true,connected=false,hostOrigin='';
   const receive=(event: MessageEvent)=>{
     if (!active) return;
     if (receiveHostTheme(event,nonce,window.parent,location.origin)) return;
     void receiveHostGrant(event,nonce,window.parent,location.origin).then(accepted=>{
-      if(accepted)connected=true;
+      if(active&&accepted){connected=true;hostOrigin=event.origin}
       if (active && accepted) window.parent.postMessage({type:'space-store-host-connected',nonce},event.origin);
     }).catch(()=>{ /* Login remains available; no credentials enter diagnostics. */ });
   };
-  const sessionChanged=()=>{if(active&&connected&&!api.storeSession)window.parent.postMessage({type:'space-store-host-ended',nonce},location.origin)};
+  const sessionChanged=(event:Event)=>{if(active&&connected&&!api.storeSession)window.parent.postMessage({type:'space-store-host-ended',nonce,reason:(event as CustomEvent).detail?.reason==='logout'?'logout':'expired'},hostOrigin)};
   window.addEventListener('space-store-session',sessionChanged);
   window.addEventListener('message',receive);
   for (const origin of [location.origin,'tauri://localhost','http://tauri.localhost','https://tauri.localhost']) {

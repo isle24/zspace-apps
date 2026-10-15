@@ -39,7 +39,7 @@ it.each([200, 500])('revokes the captured old service session without disturbing
   await api.setStoreAddress('https://new.example');
   expect(api.storeSession).toBe('');
   expect(fetcher).toHaveBeenCalledWith('https://old.example/api/store/logout', expect.objectContaining({
-    method: 'POST', headers: expect.objectContaining({ 'X-Store-Session': 'old-session' }),
+    method: 'POST', keepalive: true, headers: expect.objectContaining({ 'X-Store-Session': 'old-session' }),
   }));
   api.storeSession = 'replacement-session';
   await api.setStoreAddress('https://newer.example');
@@ -48,6 +48,24 @@ it.each([200, 500])('revokes the captured old service session without disturbing
   await Promise.resolve(); await Promise.resolve();
   expect(api.storeAddress).toBe('https://newer.example');
   expect(api.storeSession).toBe('newest-session');
+});
+
+it('keeps logout revocation alive after immediate local exit can unmount the embedded page', async () => {
+  let finish!: (response: Response) => void;
+  const fetcher = vi.fn(() => new Promise<Response>(resolve => { finish = resolve; }));
+  vi.stubGlobal('fetch', fetcher);
+  const api = new Gateway();
+  api.storeSession = 'captured-session';
+  const pending = api.logoutStore();
+  expect(api.storeSession).toBe('');
+  expect(fetcher).toHaveBeenCalledWith('/api/store/logout', expect.objectContaining({
+    method: 'POST', keepalive: true, credentials: 'omit', redirect: 'error',
+    headers: expect.objectContaining({ 'X-Store-Session': 'captured-session' }), body: '{}',
+  }));
+  api.storeSession = 'replacement-session';
+  finish(reply({}));
+  await pending;
+  expect(api.storeSession).toBe('replacement-session');
 });
 
 it('expires a server-issued session without a request', async () => {

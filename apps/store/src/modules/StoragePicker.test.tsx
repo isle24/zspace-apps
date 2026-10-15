@@ -147,3 +147,30 @@ it("allows manual creation when automatic discovery fails and ends the checking 
   expect(JSON.parse(String(call?.[1].body))).toMatchObject({path:"/ssd/apps",create:true});
   expect(screen.queryByText("正在检查存储安全状态")).not.toBeInTheDocument();
 });
+
+it('keeps discovery, directory selection, registration and retry from submitting the install form', async () => {
+  api.storeSession = 'synthetic';
+  let unavailable = false;
+  vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+    if (String(input).endsWith('/storage')) {
+      if (unavailable) throw Error('offline');
+      return new Response(JSON.stringify({ok:true,data:{items:[ssd],dockerStorage:ssd,dockerStorageSafe:true,message:''}}));
+    }
+    return new Response(JSON.stringify({ok:true,data:{id:'new',path:'/ssd/apps',roles:['data'],storage:ssd}}));
+  }));
+  const submit = vi.fn(), selected = vi.fn();
+  render(<form onSubmit={event => { event.preventDefault(); submit(); }}><StoragePicker roots={[]} rootId="" onSelect={selected} onRegistered={()=>{}} onSafety={()=>{}} /></form>);
+  fireEvent.click(await screen.findByRole('button', {name:/SSD ·/}));
+  expect(submit).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', {name:'添加已有目录'}));
+  await waitFor(()=>expect(selected).toHaveBeenCalledWith('new'));
+  expect(submit).not.toHaveBeenCalled();
+  unavailable = true;
+  fireEvent.click(screen.getByRole('button', {name:'重新检测存储设备'}));
+  expect(submit).not.toHaveBeenCalled();
+  const retry = await screen.findByRole('button', {name:'重新读取'});
+  unavailable = false;
+  fireEvent.click(retry);
+  await screen.findByRole('button', {name:/SSD ·/});
+  expect(submit).not.toHaveBeenCalled();
+});

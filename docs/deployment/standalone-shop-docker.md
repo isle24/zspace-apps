@@ -45,6 +45,10 @@ docker compose pull
 docker compose up -d --wait
 ```
 
-源码构建：`python3 docker/shop/build.py --tag isle204/zspace-shop:2026.10.15-r1`。脚本构建商店前端与 Go 服务，校验固定版本 Docker CLI/Compose 下载内容，再构建 AMD64 镜像；同一次构建生成版本和 `latest` 两个标签；加 `--push` 同时推送。也可使用 `bash scripts/publish-docker.sh shop 2026.10.14-r2`。
+源码构建：`python3 docker/shop/build.py --tag isle204/zspace-shop:2026.10.15-r2`。脚本构建商店前端与 Go 服务，校验固定版本 Docker CLI/Compose 下载内容，再构建 AMD64 镜像；同一次构建生成版本和 `latest` 两个标签；加 `--push` 同时推送。也可使用 `bash scripts/publish-docker.sh shop 2026.10.15-r2`。
 
 需要同时部署 UI 的新用户，使用[UI 与商店合并配置](./ui-shop-compose.md)。该配置用 `SHOP_UI_ORIGIN` 明确允许 UI 的来源，首次账号创建仍直接访问商店端口。
+
+## 已有商店接入第三方 UI
+
+从旧版独立商店升级到 `2026.10.15-r2` 时，可以在原 Compose 中新增 `SHOP_UI_ORIGIN: http://你的NAS地址:18436`，再拉取新镜像并重新创建。保留原项目名、控制卷和所有存储/网络参数。来源必须是浏览器显示的规范 HTTP(S) 来源，不含路径、账号、查询参数、显式默认端口或大写域名。仅支持新镜像为原先未配置来源的商店增加此项，不自动替换或删除已有来源。

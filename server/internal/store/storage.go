@@ -99,6 +99,17 @@ func (s *Service) registerRoot(w http.ResponseWriter, r *http.Request) {
 		fail(w, 503, "storage_discovery_unavailable", "引擎缺少卷发现能力。")
 		return
 	}
+	if in.Create {
+		// Directory creation is a host mutation, not just a metadata write.
+		// Keep maintenance out until the new directory has been registered.
+		if !s.requestLock(w, r, &s.operation) {
+			return
+		}
+		defer s.operation.Unlock()
+		if !s.requestMaintenanceReady(w, r) {
+			return
+		}
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 	defer cancel()
 	var candidate StorageCandidate

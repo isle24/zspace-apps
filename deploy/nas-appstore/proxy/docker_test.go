@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -11,6 +12,27 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestContainerListMarksManagedServicesProtected(t *testing.T) {
+	h := dockerFixture(t, true, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`[{"Id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Names":["/zspace-suite-ui-1"],"Labels":{"io.space-store.service":"space-store"}},{"Id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","Names":["/unrelated-app"],"Labels":{}}]`))
+	})
+	w := dockerRequest(t, h, "/api/docker/containers", "", true)
+	var result struct {
+		Containers []containerView `json:"containers"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Containers) != 2 {
+		t.Fatal(w.Body.String())
+	}
+	for _, item := range result.Containers {
+		if item.Protected != (item.Name == "zspace-suite-ui-1") {
+			t.Errorf("%s protected=%v", item.Name, item.Protected)
+		}
+	}
+}
 
 func dockerFixture(t *testing.T, master bool, engine http.HandlerFunc) http.Handler {
 	t.Helper()

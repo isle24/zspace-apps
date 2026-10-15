@@ -65,7 +65,7 @@ export function Status({
         <h3>暂时无法读取</h3>
         <p>{error}</p>
         {retry && (
-          <button className="primary" onClick={retry}>
+          <button type="button" className="primary" onClick={retry}>
             <ArrowClockwise />
             重新读取
           </button>

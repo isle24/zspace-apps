@@ -4,7 +4,7 @@
 
 界面采用**飞牛 fnOS 视觉语言**（用户选定）：桌面外壳、左侧应用栏、应用窗口、登录页、右上角资源挂件与全部应用窗口都按 fnOS 的真实界面复刻，数值来自对 fnOS Web 端的实测，素材来自用户本机 fnOS。详见[飞牛 UI 实施计划](docs/superpowers/plans/2026-10-11-fnos-full-ui.md)。
 
-项目提供 NAS H5 与独立商店部署，GitHub Actions 构建 macOS、Windows 与 Linux 桌面客户端；安装包当前未签名。原生 iOS/Android/HarmonyOS 尚未交付。源码仓库为私有的 isle24/zspace-apps，公共应用素材仍在 isle24/nas-app-store-catalog。
+项目提供 NAS H5 与独立商店部署，GitHub Actions 构建 macOS、Windows 与 Linux 桌面客户端；安装包当前未签名。原生 iOS/Android/HarmonyOS 尚未交付。源码与构建见 [isle24/zspace-apps](https://github.com/isle24/zspace-apps)，公开目录与部署文件见 [isle24/nas-app-store-catalog](https://github.com/isle24/nas-app-store-catalog)。
 
 <!-- combined-ui-shop-start -->
 ## UI 和商店合并部署
@@ -71,7 +71,7 @@ volumes:
 
 `SHOP_UI_ORIGIN` 明确允许 UI 调用商店；首次创建账号仍在 18443 的直接页面完成。商店会自动生成自己的运行容器，无需另行安装执行器。镜像默认 `latest`；更新时保留原项目、目录和数据卷。
 
-本配置用于新部署。已有未配置 `SHOP_UI_ORIGIN` 的独立商店不要直接更换项目名、卷或添加此变量；旧部署配置变化会安全拒绝，需另行迁移。
+已有独立商店接入 UI 时，保留原项目名、`shop-control` 卷、NAS 地址、端口和数据目录，升级至 `2026.10.15-r2` 或更新镜像，并新增 `SHOP_UI_ORIGIN`。不要将上面的新项目名套用到旧商店。升级会核对并保留原账号与目录；已有 UI 来源的替换或删除不在自动迁移范围。
 <!-- combined-ui-shop-end -->
 
 <!-- standalone-shop-start -->
@@ -118,9 +118,9 @@ volumes:
 
 ## 本轮部署与管理员能力
 
-- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui` 与 `isle204/zspace-store`，已发布 `2026.10.14-r2` / `latest`（Linux AMD64），无需源码编译。
+- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui`、`isle204/zspace-shop` 与 `isle204/zspace-store`，发布 `2026.10.15-r2` / `latest`（Linux AMD64），无需源码编译。
 - [2026-10-13 UI、镜像与目录验收](docs/verification/2026-10-13-ui-docker-catalog-delivery.md)：统一商店、全局影视背景、深色主题、启动器与缓存修复；NAS 已更新。
-- [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：175 个来源全部收录后台，新增 169 草稿，原有 7 条记录保留；原生或复杂定义继续适配后发布。
+- [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：176 条应用已全部公开展示；13 条有安装入口，163 条标记待适配。公开展示不代表已经适配极空间安装。
 - [两个 Docker Compose 部署入口](docs/deployment/docker-compose.md)：NAS 三方 UI、云商店与 PostgreSQL 后台；另说明 NAS 本地应用安装执行器的受管部署。
 - [逐项反馈与交付核对清单](docs/verification/2026-10-12-delivery-checklist.md)。
 - [客户端 Actions](https://github.com/isle24/zspace-apps/actions/workflows/client-build.yml)。
@@ -195,14 +195,14 @@ bash scripts/build-mac.sh
 
 历史文件名不代表它是 NAS 网关。未配置安装引擎时仍可连接 NAS；变更本机商店配置后重新打开客户端，不要在安装任务进行中重启。
 
-- 安装数据必须位于已登记、可写且通过安全检查的数据盘专用目录；目录登记不自动创建输入路径。系统盘、eMMC 和不能确认的 Docker 镜像位置阻止安装。
+- 安装数据必须位于已登记、可写且通过安全检查的数据盘专用目录；可登记已有目录，或勾选“创建目录”在已核验的数据根下创建专用子目录。系统盘、eMMC 和不能确认的 Docker 镜像位置阻止安装。
 - SSD/HDD、虚拟存储池、未知介质分别显示真实检测结果。极空间 `/tmp/zfsv3` 可能是持久化数据池，不能按普通临时目录处理，也不能按名称认定 SSD。
 - 应用数据根 `rootId` 与媒体根 `mediaRootId` 分开。Navidrome 的 `mediaPath` 必须位于所选媒体根内部；媒体只读挂载。可读不可写的现有音乐库允许登记为 `mediaReadOnly`，不能用来安装应用数据。
 - Docker 镜像位置、应用数据位置及媒体卷身份分别核验。服务端生成固定计划，确认后再执行；源文件与应用数据目录不能互相包含。
 - 失败安装可生成新的不可变重试计划，再次核对并确认；保留原实例、数据目录、端口、计划及任务历史，不隐式升级镜像。已存在的容器仅在完整复核归属后恢复；活动任务不能重复提交。
 - 关闭窗口只改变 UI，停止实例保留数据。不提供删除、格式化、清空、prune 或 `down -v`，不修改 NAS 5055 和原网页。
 
-引导阶段创建了用户批准的全新 `space-desktop` 专用目录，并仅对该新目录设置 `0700`。独立商店已在 NAS 的 18435 端口运行，管理员已由用户本人配置。Uptime Kuma 真实验证任务在 Docker Hub 拉取阶段失败，数据与记录保留；更新后的重试服务已部署，真实重试、健康与首次配置尚未通过，不能由商店首屏可访问推定。
+独立商店默认访问端口为 `18443`，安装器内部监听 `18435`。2026-10-14 已在极空间独立验收环境完成账号创建、目录创建、Uptime Kuma 安装、首次配置页访问、重启后登录及停止操作，见[验收记录](docs/verification/2026-10-14-shop-usability-repair.md)。此记录不代表目录中每款应用均已完成运行验收。
 
 ## 飞牛 fnOS 界面复刻
 
@@ -270,7 +270,7 @@ bash scripts/verify.sh --all    # 类型检查 + 单测 + 构建 + 两种主题�
 <!-- copy-compose-start -->
 ## Docker Compose 直接复制部署
 
-镜像版本为 `2026.10.13-r3`，平台 `linux/amd64`。以下每段完整保存为各自目录的 `compose.yaml`，无需 `.env` 或宿主密码文件，也无需源码编译。
+以下镜像使用 `latest`，平台为 `linux/amd64`。新用户优先使用本文顶部的 UI 与独立商店组合配置；下面的 UI 配置适用于已有受管控制器的部署，云后台配置用于自行运营应用目录。
 
 ## NAS 三方 UI
 
@@ -460,7 +460,7 @@ docker compose stop catalog && docker compose run --rm -it setup && docker compo
 
 按提示输入用户名、密码和确认密码，密码不回显。然后打开 `https://你的域名/admin/`，扫码并输入正确动态验证码完成 2FA 绑定。此命令的元数据引导服务仅监听容器内回环地址。
 
-四个持久卷保存 UI 数据、云私有元数据、PG 数据和 DB 密码。更新时只更换镜像版本并 `docker compose up -d`，保留数据卷。生产账户和目录状态不装入 Docker 镜像；新实例与已有服务的数据迁移见[备份与迁移](docs/deployment/store-backup-migration.md)。
+持久卷分别保存 UI 数据、云私有元数据、PG 数据和 DB 密码。更新时执行 `docker compose pull` 后再执行 `docker compose up -d`，保留数据卷；仅执行 `up -d` 不保证拉取新的 `latest`。生产账户和目录状态不装入 Docker 镜像；新实例与已有服务的数据迁移见[备份与迁移](docs/deployment/store-backup-migration.md)。
 
 应用公开目录提供 176 条记录：13 款有安装入口（6 个已有 NAS 配方及 7 个签名云交付），163 条公开资料待适配。新增 6 款通过本轮镜像与部署清单核验；未把核验失败的镜像或飞牛原生 FPK 声明为可安装。
 

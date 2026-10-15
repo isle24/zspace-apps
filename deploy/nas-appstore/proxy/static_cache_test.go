@@ -43,3 +43,32 @@ func TestHTMLAndRuntimeConfigCannotBeHeuristicallyCached(t *testing.T) {
 		}
 	}
 }
+
+func TestPrecompressedResponseHonorsEncodingPreferences(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "app.js"), []byte("plain javascript"), 0600)
+	os.WriteFile(filepath.Join(dir, "app.js.gz"), []byte("compressed representation"), 0600)
+	root := http.Dir(dir)
+	handler := precompressedFiles{root: root, next: http.FileServer(root)}
+	for _, test := range []struct {
+		accept     string
+		compressed bool
+	}{
+		{"gzip", true}, {"gzip;q=0", false}, {"br, gzip;q=0.5", true},
+		{"*;q=0.8", true}, {"*;q=1, gzip;q=0", false},
+		{"gzip;q=invalid", false}, {"gzip;q=2", false}, {"", false},
+	} {
+		t.Run(test.accept, func(t *testing.T) {
+			r := httptest.NewRequest("GET", "/app.js", nil)
+			r.Header.Set("Accept-Encoding", test.accept)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if got := w.Header().Get("Content-Encoding") == "gzip"; got != test.compressed {
+				t.Errorf("compressed=%v, want %v", got, test.compressed)
+			}
+			if w.Header().Get("Vary") != "Accept-Encoding" {
+				t.Error("all encoding variants must vary by Accept-Encoding")
+			}
+		})
+	}
+}

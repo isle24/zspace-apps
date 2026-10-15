@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { api } from '../api/client';
 import { StoreFrame } from './StoreFrame';
-afterEach(()=>{cleanup();vi.restoreAllMocks();api.base='';api.storeSession='';delete document.documentElement.dataset.theme;});
+afterEach(()=>{cleanup();vi.restoreAllMocks();api.logoutNas();api.base='';api.storeSession='';delete document.documentElement.dataset.theme;});
 it('synchronizes initial and changed desktop themes only after a valid frame handshake',async()=>{
  api.base=location.origin;api.storeSession='a'.repeat(48);
  vi.spyOn(api,'init').mockResolvedValue();
@@ -21,4 +21,23 @@ it('synchronizes initial and changed desktop themes only after a valid frame han
  cleanup();post.mockClear();
  await act(async()=>{document.documentElement.dataset.theme='dark'});
  expect(post).not.toHaveBeenCalled();
+});
+
+it.each(['logout', 'expired'] as const)('closes the host session immediately after frame %s without a second logout request', async reason => {
+ api.base=location.origin;api.storeSession='a'.repeat(48);
+ vi.spyOn(api,'init').mockResolvedValue();
+ vi.spyOn(api,'grantForStoreFrame').mockResolvedValue({sessionId:api.storeSession,expiresAt:new Date(Date.now()+60000).toISOString(),storeAddress:location.origin});
+ const logout=vi.spyOn(api,'logoutStore').mockImplementation(()=>new Promise(()=>{}));
+ render(<StoreFrame/>);
+ const frame=await screen.findByTitle('空间商店') as HTMLIFrameElement;
+ const nonce='b'.repeat(32);
+ const send=(data:unknown,origin=location.origin)=>window.dispatchEvent(new MessageEvent('message',{origin,source:frame.contentWindow,data}));
+ await act(async()=>send({type:'space-store-host-ready',nonce}));
+ await act(async()=>send({type:'space-store-host-ended',nonce:'wrong'}));
+ await act(async()=>send({type:'space-store-host-ended',nonce},'https://unrelated.test'));
+ expect(api.storeSession).toBe('a'.repeat(48));
+ await act(async()=>send({type:'space-store-host-ended',nonce,reason}));
+ expect(api.storeSession).toBe('');
+ expect(api.storeNasAutoLoginPaused).toBe(reason==='logout');
+ expect(logout).not.toHaveBeenCalled();
 });

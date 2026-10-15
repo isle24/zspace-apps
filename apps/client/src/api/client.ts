@@ -72,11 +72,15 @@ export class Gateway {
   private storeSessionValue = "";
   private storeSessionSource: "nas" | "password" | "" = "";
   private storeNasGeneration = 0;
+  private storeNasPaused = false;
   private storeNasExpiry?: ReturnType<typeof setTimeout>;
   private presentedBinding?: { binding: StoreNasBinding; config: number; nas: number };
   private trustedBinding?: StoreNasBinding;
   private nasGrantBinding?: StoreNasBinding;
   get storeAuthSource() { return this.storeSessionSource; }
+  get storeNasAutoLoginPaused() { return this.storeNasPaused; }
+  pauseStoreNasAutoLogin() { this.storeNasPaused = true; this.cancelStoreNasConnection(); }
+  resumeStoreNasAutoLogin() { this.storeNasPaused = false; }
   private storeSessionGeneration = 0;
   get storeSession() {
     return this.storeSessionValue;
@@ -88,6 +92,12 @@ export class Gateway {
     this.storeSessionValue = value;
     this.storeSessionSource = value ? "password" : "";
     clearTimeout(this.storeNasExpiry);
+    if (this.storeFrameExpiry) {
+      const generation = this.storeSessionGeneration;
+      this.storeNasExpiry = setTimeout(() => {
+        if (generation === this.storeSessionGeneration) this.storeSession = "";
+      }, Math.max(0, Date.parse(this.storeFrameExpiry) - Date.now()));
+    }
     if (typeof window !== "undefined")
       window.dispatchEvent(new Event("space-store-session"));
   }
@@ -122,6 +132,7 @@ export class Gateway {
     if (change !== this.configGeneration) return;
     this.addressChanging = 0;
     this.storeAddress = address;
+    this.storeNasPaused = false;
     this.base = "";
     this.configGeneration++;
     this.initializedGeneration = -1;
@@ -160,6 +171,7 @@ export class Gateway {
     }
   }
   private nasSessionChanged() {
+    this.storeNasPaused = false;
     this.cancelStoreNasConnection();
     if (this.storeSessionSource === "nas") this.storeSession = "";
     if (typeof window !== "undefined") window.dispatchEvent(new Event("space-nas-session"));
@@ -475,7 +487,7 @@ export class Gateway {
     this.nas.logout();
   }
   async logoutStore() {
-    this.cancelStoreNasConnection();
+    this.pauseStoreNasAutoLogin();
     if (!this.storeSession) return;
     const generation = this.storeSessionGeneration;
     try {

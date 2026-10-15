@@ -425,6 +425,90 @@ class UpgradeTests(unittest.TestCase):
         self.assertEqual(shop.read_private(self.control/'deployment.json'), receipt)
         self.assertEqual(self.ensure(), receipt)
 
+    def test_upgrade_can_add_explicit_ui_origin_to_an_existing_shop(self):
+        self.prepare_upgrade()
+        self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+        receipt = self.ensure()
+        self.assertEqual(receipt['imageId'], self.own['Image'])
+        self.assertEqual(receipt['plan']['command'][-2:], ['--public-origin', self.config['uiOrigin']])
+        self.assertNotIn('--public-origin', self.source['plan']['command'])
+        for key in ('root', 'storage', 'uid', 'gid', 'ip', 'port', 'mounts'):
+            self.assertEqual(receipt['plan'][key], self.source['plan'][key])
+        self.assertEqual(shop.read_private(self.control/'deployment.json'), receipt)
+        self.assertEqual(self.ensure(), receipt)
+
+    def test_ui_origin_migration_failure_restores_original_configuration(self):
+        self.prepare_upgrade()
+        self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+        self.api.fail_after = 'runtime-start'
+        self.assertEqual(self.ensure(), self.source)
+        self.assertEqual(self.ensure(), self.source)
+        self.assertEqual(shop.owned_runtime(self.api, self.own, self.config, 989), self.source)
+        self.assertEqual(self.api.self_receipt, self.old_self)
+        self.assertEqual(shop.read_private(self.control/'deployment.json'), self.source)
+        self.assertTrue(self.api.inspect(self.source['containerId'])['State']['Running'])
+
+    def test_ui_origin_migration_preserves_store_identity_and_setup_state(self):
+        for change in ({'nasAuth': {'enabled': False, 'storeId': 'e' * 48}}, {'configured': False}):
+            with self.subTest(change=change):
+                for file in self.control.iterdir(): file.unlink()
+                self.api = FakeDocker(); self.own = self.api.inspect('a' * 12)
+                self.config.pop('uiOrigin', None)
+                self.prepare_upgrade()
+                self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+                def status(config):
+                    current = next(row for row in self.api.containers.values() if row['State']['Running'])
+                    return {**self.state, **change} if current['Image'] == self.own['Image'] else dict(self.state)
+                self.state_patch.stop()
+                self.state_patch = patch.object(shop, 'bootstrap_state', side_effect=status)
+                self.state_patch.start(); self.addCleanup(self.state_patch.stop)
+                self.assertEqual(self.ensure(), self.source)
+                self.assertEqual(self.api.self_receipt, self.old_self)
+                self.assertEqual(shop.read_private(self.control/'deployment.json'), self.source)
+                state = shop.read_private(next(self.control.glob('upgrade-*-source-state.json')))
+                self.assertEqual(state, {'storeId': 'd' * 48, 'configured': True})
+
+    def test_ui_origin_migration_still_rejects_a_foreign_source(self):
+        self.prepare_upgrade()
+        self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+        self.api.inspect(self.source['containerId'])['HostConfig']['Privileged'] = True
+        self.api.commands.clear()
+        with self.assertRaises(ValueError): self.ensure()
+        self.assertEqual(self.api.mutations('start'), [])
+        self.assertEqual(self.api.mutations('stop'), [])
+        self.assertEqual(len(self.api.containers), 3)
+
+    def test_ui_origin_migration_never_relaxes_other_deployment_settings(self):
+        self.prepare_upgrade()
+        self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+        for key, value in [('ip', '192.168.3.57'), ('port', 18444), ('root', '/data_disk/other'), ('uid', 10002), ('gid', 10002), ('cache', '/data_disk/other-docker')]:
+            with self.subTest(key=key):
+                changed = {**self.config, key: value}; self.api.commands.clear()
+                with self.assertRaises(ValueError):
+                    shop.ensure_runtime(self.api, self.own, changed, 989)
+                self.assertEqual(self.api.mutations('start'), [])
+                self.assertEqual(self.api.mutations('stop'), [])
+                self.assertEqual(len(self.api.containers), 3)
+
+    def test_ui_origin_change_requires_new_image_and_cannot_replace_existing_origin(self):
+        receipt = self.ensure()
+        self.config['uiOrigin'] = 'http://192.168.3.56:18436'
+        self.api.commands.clear()
+        with self.assertRaises(ValueError): self.ensure()
+        self.assertEqual(self.api.mutations('start'), [])
+        self.assertEqual(self.api.mutations('stop'), [])
+        self.assertEqual(shop.read_private(self.control/'deployment.json'), receipt)
+        for file in self.control.iterdir(): file.unlink()
+        self.api = FakeDocker(); self.own = self.api.inspect('a' * 12)
+        self.prepare_upgrade()
+        for origin in ('', 'http://192.168.3.56:18437'):
+            with self.subTest(origin=origin):
+                self.config['uiOrigin'] = origin; self.api.commands.clear()
+                with self.assertRaises(ValueError): self.ensure()
+                self.assertEqual(self.api.mutations('start'), [])
+                self.assertEqual(self.api.mutations('stop'), [])
+                self.assertEqual(len(self.api.containers), 3)
+
     def test_candidate_failure_restores_exact_old_self_and_runtime(self):
         self.prepare_upgrade(); self.api.fail_after = 'runtime-start'
         self.assertEqual(self.ensure(), self.source)

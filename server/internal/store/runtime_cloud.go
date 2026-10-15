@@ -540,5 +540,5 @@ func (s *Service) runtimeCloudInstallPlanWithClient(w http.ResponseWriter, r *ht
 	if len(submission.values) > 0 {
 		r = r.WithContext(context.WithValue(r.Context(), runtimeSecretSubmissionKey{}, submission))
 	}
-	s.runtimeCreatePlan(w, r, runtimePlanInput{Kind: "install", AppID: recipe.AppID, TargetVersion: recipe.Version, RootID: in.RootID, Directory: in.Name, HostPort: in.HostPort}, nil)
+	s.runtimeCreatePlan(w, r, runtimePlanInput{Kind: "install", AppID: recipe.AppID, TargetVersion: recipe.Version, RootID: in.RootID, Directory: in.Name, HostPort: in.HostPort}, nil, &recipe)
 }

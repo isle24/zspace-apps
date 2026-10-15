@@ -131,12 +131,14 @@ func dockerContainers(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		sort.Strings(ports)
+		inspection := containerInspection{ID: row.ID, Name: name}
+		inspection.Config.Labels = row.Labels
 		out = append(out, containerView{
 			ID: row.ID, Name: name, Image: row.Image, State: row.State,
 			Status: row.Status, Created: row.Created, Ports: ports,
 			Project:   row.Labels["com.docker.compose.project"],
 			Service:   row.Labels["com.docker.compose.service"],
-			Protected: name == "space-desktop" || row.Labels["com.docker.compose.project"] == "space-desktop",
+			Protected: protectedContainer(inspection),
 		})
 	}
 	sort.Slice(out, func(a, b int) bool { return out[a].Name < out[b].Name })

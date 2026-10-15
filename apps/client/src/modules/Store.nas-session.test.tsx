@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { Store } from './Store';
-import { api } from '../api/client';
+import { api, GatewayError } from '../api/client';
 import { officialFixture, officialJson } from '../api/direct-test-fixture';
 const provider = 'http://synthetic.invalid:5055', shop = 'https://shop.invalid', storeId = 'a'.repeat(48), sid = 'b'.repeat(48);
 let exchanges = 0, deny = false;
@@ -60,6 +60,23 @@ it('embedded expiry refreshes authorization but explicit shop logout stays logge
   fireEvent.click(await screen.findByRole('button', { name: '退出商店账号' }));
   await waitFor(() => expect(api.storeSession).toBe(''));
   expect(exchanges).toBe(2);
+  cleanup();
+  render(<Store embedded onInstances={() => {}} />);
+  const reconnect = await screen.findByRole('button', { name: '使用当前 NAS 管理员登录商店' });
+  expect(exchanges).toBe(2);
+  fireEvent.click(reconnect);
+  await waitFor(() => expect(exchanges).toBe(3));
+});
+
+it('allows automatic binding again after a new NAS login following explicit shop logout', async () => {
+  api.trustStoreNasBinding(await api.getStoreNasBinding());
+  await api.connectStoreWithNas();
+  await api.logoutStore();
+  expect(api.storeNasAutoLoginPaused).toBe(true);
+  await api.login(provider, 'fixture', 'synthetic-only');
+  expect(api.storeNasAutoLoginPaused).toBe(false);
+  render(<Store embedded onInstances={() => {}} />);
+  await waitFor(() => expect(exchanges).toBe(2));
 });
 
 it("uses public bootstrap before NAS sign-in and keeps the catalogue protected",async()=>{
@@ -71,4 +88,39 @@ it("uses public bootstrap before NAS sign-in and keeps the catalogue protected",
  render(<Store embedded onInstances={()=>{}}/>);
  await waitFor(()=>expect(calls.length).toBeGreaterThan(0));
  expect(calls.every(c=>c.path==="bootstrap"&&c.public===true)).toBe(true);
+});
+
+it('treats disabled NAS auth as normal independent administrator login', async () => {
+  vi.spyOn(api, 'getStoreNasBinding').mockRejectedValue(new GatewayError('商店尚未启用 NAS 管理员登录', 'STORE_NAS_DISABLED', 403));
+  render(<Store embedded onInstances={() => {}} />);
+  expect(await screen.findByText(/使用独立商店管理员账号登录/)).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '管理员登录' }));
+  expect(await screen.findByLabelText('管理员账号')).toBeInTheDocument();
+  expect(exchanges).toBe(0);
+});
+
+it('does not offer unavailable NAS login after an independent shop logout', async () => {
+  api.pauseStoreNasAutoLogin();
+  vi.spyOn(api, 'store').mockResolvedValue({configured:true,nasAuth:{enabled:false},items:[]});
+  render(<Store embedded onInstances={() => {}} />);
+  expect(await screen.findByText('已退出商店，请使用商店管理员账号重新登录。')).toBeInTheDocument();
+  expect(screen.queryByRole('button', {name:'使用当前 NAS 管理员登录商店'})).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', {name:'管理员登录'}));
+  expect(await screen.findByLabelText('管理员账号')).toBeInTheDocument();
+});
+
+it('directs first-time embedded users to the independent shop and refreshes after creation', async () => {
+  let configured = false;
+  const store = vi.spyOn(api, 'store').mockImplementation(async () => ({ configured, authMode: 'independent', setupRequiresLoopback: false, items: [] }) as never);
+  vi.spyOn(api, 'getStoreNasBinding').mockRejectedValue(new GatewayError('disabled', 'STORE_NAS_DISABLED', 403));
+  render(<Store embedded onInstances={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: '管理员登录' }));
+  expect(await screen.findByText(/请先直接打开独立商店页面创建管理员/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '创建并登录' })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('密码')).not.toBeInTheDocument();
+  configured = true;
+  fireEvent.click(screen.getByRole('button', { name: '已创建管理员，重新读取' }));
+  expect(await screen.findByRole('button', { name: '登录商店' })).toBeEnabled();
+  expect(store.mock.calls.every(([path]) => path === 'bootstrap')).toBe(true);
 });

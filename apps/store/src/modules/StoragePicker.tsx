@@ -97,6 +97,7 @@ export function StoragePicker({
       <div className="storage-section-title">
         <h3>应用数据位置</h3>
         <button
+          type="button"
           className="icon-button"
           aria-label="重新检测存储设备"
           onClick={discovery.reload}
@@ -132,6 +133,7 @@ export function StoragePicker({
         <div className="storage-candidates">
           {discovery.data?.items.map((disk, index) => (
             <button
+              type="button"
               key={`${disk.path}-${index}`}
               className={`storage-disk ${candidate?.path === disk.path ? "selected" : ""}`}
               disabled={!allowedStorage(disk)}
@@ -195,6 +197,7 @@ export function StoragePicker({
           />
         </label>
         <button
+          type="button"
           className="secondary"
           disabled={busy || !path.trim().startsWith("/")}
           onClick={register}

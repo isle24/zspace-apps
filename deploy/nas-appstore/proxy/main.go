@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -161,16 +162,36 @@ var compressible = map[string]bool{
 }
 
 func acceptsGzip(r *http.Request) bool {
-	for _, part := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
-		name := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
+	wildcard := false
+	for _, part := range strings.Split(strings.Join(r.Header.Values("Accept-Encoding"), ","), ",") {
+		fields := strings.Split(part, ";")
+		name := strings.TrimSpace(fields[0])
+		quality := 1.0
+		for _, field := range fields[1:] {
+			key, value, ok := strings.Cut(strings.TrimSpace(field), "=")
+			if ok && strings.EqualFold(strings.TrimSpace(key), "q") {
+				parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+				if err != nil || !(parsed >= 0 && parsed <= 1) {
+					quality = 0
+				} else {
+					quality = parsed
+				}
+			}
+		}
 		if strings.EqualFold(name, "gzip") {
-			return true
+			return quality > 0
+		}
+		if name == "*" {
+			wildcard = quality > 0
 		}
 	}
-	return false
+	return wildcard
 }
 
 func (h precompressedFiles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Uncompressed responses also participate in content negotiation. Otherwise
+	// a shared cache may reuse one representation for clients with other support.
+	w.Header().Add("Vary", "Accept-Encoding")
 	// Entry documents must be fetched after an upgrade, even when their last
 	// modification time would otherwise permit a browser's heuristic cache.
 	if r.URL.Path == "/" || strings.HasSuffix(strings.ToLower(r.URL.Path), ".html") || r.URL.Path == "/runtime-config.json" {
@@ -183,7 +204,6 @@ func (h precompressedFiles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if info, statErr := f.Stat(); statErr == nil && !info.IsDir() {
 				w.Header().Set("Content-Encoding", "gzip")
 				// 让缓存按编码分开存，避免把 gzip 内容发给不支持它的客户端
-				w.Header().Add("Vary", "Accept-Encoding")
 				http.ServeContent(w, r, clean, info.ModTime(), f)
 				return
 			}

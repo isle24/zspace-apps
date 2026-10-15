@@ -24,7 +24,7 @@ import {
   FolderOpen,
   WarningCircle,
 } from "@phosphor-icons/react";
-import { api, confirmInstallation, message } from "../api/client";
+import { api, confirmInstallation, GatewayError, message } from "../api/client";
 import { Search, Status, useResource, DataValues } from "./common";
 import { ExternalLink } from "./ExternalLink";
 import { AppArtwork } from "./AppArtwork";
@@ -112,6 +112,8 @@ type StoreStatus = {
   engineMessage: string;
   nativeIntegration: string;
   authMode?: string;
+  nasAuth?: { enabled?: boolean };
+  setupRequiresLoopback?: boolean;
 };
 const retryHubImage = "louislam/uptime-kuma:2.5.6";
 const retryGhcrImage = "ghcr.io/louislam/uptime-kuma:2.5.6";
@@ -166,6 +168,7 @@ export function Store({
   useEffect(() => {
     const update = () => {
       setSession(api.storeSession);
+      setNasPaused(api.storeNasAutoLoginPaused);
       setSelected(undefined);
       retryGeneration.current++;
       retryRequestPending.current = false;
@@ -186,10 +189,11 @@ export function Store({
   );
   const [nasRevision, setNasRevision] = useState(0);
   const [pairRevision, setPairRevision] = useState(0);
-  const [nasPaused, setNasPaused] = useState(false);
+  const [nasPaused, setNasPaused] = useState(api.storeNasAutoLoginPaused);
   const [nasBinding, setNasBinding] = useState<Awaited<ReturnType<typeof api.getStoreNasBinding>>>();
   const [nasAuthBusy, setNasAuthBusy] = useState(false);
   const [nasAuthError, setNasAuthError] = useState("");
+  const [independentLogin, setIndependentLogin] = useState(false);
   useEffect(() => {
     if (!embedded) return;
     const changed = () => { setNasRevision(n => n + 1); setNasPaused(false); };
@@ -202,6 +206,7 @@ export function Store({
     setNasBinding(undefined);
     setNasAuthBusy(false);
     setNasAuthError("");
+    setIndependentLogin(false);
     if (!api.nasSession || session || nasPaused) return;
     let alive = true;
     const controller = new AbortController();
@@ -212,7 +217,9 @@ export function Store({
       setNasBinding(binding);
       if (api.isStoreNasTrusted(binding)) await api.connectStoreWithNas({ signal: controller.signal });
     })().catch(error => {
-      if (alive) setNasAuthError(message(error));
+      if (!alive) return;
+      if (error instanceof GatewayError && error.code === "STORE_NAS_DISABLED") setIndependentLogin(true);
+      else setNasAuthError(message(error));
     }).finally(() => { if (alive) setNasAuthBusy(false); });
     return () => { alive = false; controller.abort(); };
   }, [embedded, serviceAddress, session, nasRevision, pairRevision, nasPaused]);
@@ -564,9 +571,13 @@ export function Store({
           </div>
         </div>
         <div className="store-main">
+        {embedded && !session && nasPaused && api.nasSession && (
+          <div className="auth-box">{status.data?.nasAuth?.enabled === true ? <><p>已退出商店，当前 NAS 会话不会自动重新登录。</p><button className="secondary" onClick={() => { api.resumeStoreNasAutoLogin(); setNasPaused(false); }}>使用当前 NAS 管理员登录商店</button></> : <p>已退出商店，请使用商店管理员账号重新登录。</p>}</div>
+        )}
         {embedded && !session && !nasPaused && (
           <div className="auth-box">
             {nasAuthBusy && <p role="status">正在验证 NAS 商店授权…</p>}
+            {independentLogin && <p>使用独立商店管理员账号登录，此账号与 NAS 账号分别管理。</p>}
             {nasBinding && !api.isStoreNasTrusted(nasBinding) && (
               <div>
                 <h3>使用当前 NAS 管理员登录商店</h3>
@@ -598,6 +609,9 @@ export function Store({
           <StoreAuth
             configured={status.data?.configured}
             nasOnly={status.data?.authMode === "nas-admin-only"}
+            embedded={embedded}
+            setupRequiresLoopback={status.data?.setupRequiresLoopback}
+            onReload={status.reload}
             onDone={() => {
               setSession(api.storeSession);
               setAuth(false);
@@ -1057,11 +1071,17 @@ export function safeAppUrl(value: unknown) {
 function StoreAuth({
   configured,
   nasOnly = false,
+  embedded = false,
+  setupRequiresLoopback = true,
+  onReload,
   onDone,
   onLogout,
 }: {
   configured?: boolean;
   nasOnly?: boolean;
+  embedded?: boolean;
+  setupRequiresLoopback?: boolean;
+  onReload: () => void;
   onDone: () => void;
   onLogout: () => void;
 }) {
@@ -1096,6 +1116,7 @@ function StoreAuth({
     }
   }
   if (nasOnly) return <div className="store-auth"><p>此商店沿用 NAS 管理员身份。请在客户端登录 NAS 后，从“空间商店”入口连接。</p></div>;
+  if (setup && embedded) return <div className="auth-box"><h3>首次使用空间商店</h3><p>请先直接打开独立商店页面创建管理员，再回到这里登录。独立商店地址请查看部署配置。</p><button className="secondary" onClick={onReload}>已创建管理员，重新读取</button></div>;
   if (api.storeSession)
     return (
       <div className="auth-box">
@@ -1112,7 +1133,7 @@ function StoreAuth({
         <h3>{setup ? "创建商店管理员" : "商店管理员登录"}</h3>
         <p>
           {setup
-            ? "通过服务主机本地连接或 SSH 转发设置。创建后自动登录。"
+            ? (setupRequiresLoopback ? "通过服务主机本地连接或 SSH 转发设置。创建后自动登录。" : "首次使用，请在当前页面创建自己的商店管理员账号。")
             : "使用商店账号授权安装与实例管理。"}
         </p>
       </div>

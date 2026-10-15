@@ -522,7 +522,7 @@ func (s *Service) runtimePlans(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	s.runtimeCreatePlan(w, r, in, nil)
+	s.runtimeCreatePlan(w, r, in, nil, nil)
 }
 
 func (s *Service) runtimeRetryPlan(w http.ResponseWriter, r *http.Request) {
@@ -612,7 +612,7 @@ func (s *Service) runtimeRetryPlan(w http.ResponseWriter, r *http.Request) {
 		}
 		snapshot = &current
 	}
-	s.runtimeCreatePlan(w, r, in, &runtimeRetryReview{job: j, plan: p, binding: proof, snapshot: snapshot})
+	s.runtimeCreatePlan(w, r, in, &runtimeRetryReview{job: j, plan: p, binding: proof, snapshot: snapshot}, &p.Recipe)
 }
 
 type runtimePlanRecord struct {
@@ -648,7 +648,7 @@ type runtimeRetryReview struct {
 	snapshot *RuntimeSnapshot
 }
 
-func (s *Service) runtimeCreatePlan(w http.ResponseWriter, r *http.Request, in runtimePlanInput, retry *runtimeRetryReview) {
+func (s *Service) runtimeCreatePlan(w http.ResponseWriter, r *http.Request, in runtimePlanInput, retry *runtimeRetryReview, reviewedRecipe *RuntimeRecipe) {
 	valid := false
 	for _, k := range []string{"install", "update", "backup", "restore", "archive", "reactivate", "restart", "start", "stop"} {
 		valid = valid || in.Kind == k
@@ -694,7 +694,12 @@ func (s *Service) runtimeCreatePlan(w http.ResponseWriter, r *http.Request, in r
 		}
 	}
 	recipe, ok := s.runtimeRecipeFor(in.AppID, in.TargetVersion)
-	if strings.HasPrefix(in.AppID, "cloud-") && in.Kind != "install" && in.Kind != "update" {
+	if reviewedRecipe != nil {
+		// One cloud release may have several approved parameter revisions.
+		// Bind this request (or retry) to its exact reviewed configuration.
+		recipe = *reviewedRecipe
+		ok = recipe.AppID == in.AppID && recipe.Version == in.TargetVersion && validateRuntimeRecipe(recipe) == nil
+	} else if strings.HasPrefix(in.AppID, "cloud-") && in.Kind != "install" && in.Kind != "update" {
 		recipe = source.Recipe
 		if in.Kind == "restore" {
 			recipe = snap.Source.Recipe

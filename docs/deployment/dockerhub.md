@@ -131,9 +131,9 @@ docker compose --env-file catalog/.env -f catalog/compose.yaml logs --tail 100 c
 以下入口每次用同一构建同时推送版本与 `latest` 标签：
 
 ```bash
-bash scripts/publish-docker.sh shop 2026.10.14-r2
-bash scripts/publish-docker.sh ui 2026.10.14-r2
-bash scripts/publish-docker.sh store 2026.10.14-r2
+bash scripts/publish-docker.sh shop 2026.10.15-r2
+bash scripts/publish-docker.sh ui 2026.10.15-r2
+bash scripts/publish-docker.sh store 2026.10.15-r2
 ```
 
 独立 NAS 商店更新使用其部署文档中的受管切换流程。中央后台、UI 与应用数据卷均须保留，更新不要删除数据卷。

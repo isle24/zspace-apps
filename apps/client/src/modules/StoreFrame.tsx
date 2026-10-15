@@ -20,7 +20,16 @@ export function StoreFrame() {
   }).catch(e=>{if(active)setError(message(e))});
   const receive=async(event:MessageEvent)=>{
    if (!active || event.source!==frame.current?.contentWindow || event.origin!==expected)return;
-   if(event.data?.type==='space-store-host-ended'&&nonce&&event.data.nonce===nonce){void api.logoutStore();return}
+   if(event.data?.type==='space-store-host-ended'&&nonce&&event.data.nonce===nonce){
+    // The child ended its local session and handles server revocation separately.
+    // Close the matching host scope immediately without issuing a second logout.
+    if(session===api.storeSession&&address===api.storeAddress){
+     if(event.data.reason==='logout')api.pauseStoreNasAutoLogin();
+     else api.cancelStoreNasConnection();
+     api.storeSession='';
+    }
+    return;
+   }
    if(event.data?.type!=='space-store-host-ready'||typeof event.data.nonce!=='string'||!/^[a-f0-9-]{16,64}$/.test(event.data.nonce))return;
    nonce=event.data.nonce;
    sendTheme();

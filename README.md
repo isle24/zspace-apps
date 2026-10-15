@@ -118,6 +118,7 @@ volumes:
 
 ## 本轮部署与管理员能力
 
+- [2026-10-15 审查修复与验收](docs/verification/2026-10-15-review-repairs.md)：登录与退出、图标、目录与安装计划、旧商店升级及真实 NAS 验收。
 - [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui:2026.10.15-r3`、`isle204/zspace-shop:2026.10.15-r2` 与 `isle204/zspace-store:2026.10.15-r2`，各自同时提供 `latest`（Linux AMD64），无需源码编译。
 - [2026-10-13 UI、镜像与目录验收](docs/verification/2026-10-13-ui-docker-catalog-delivery.md)：统一商店、全局影视背景、深色主题、启动器与缓存修复；NAS 已更新。
 - [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：176 条应用已全部公开展示；13 条有安装入口，163 条标记待适配。公开展示不代表已经适配极空间安装。

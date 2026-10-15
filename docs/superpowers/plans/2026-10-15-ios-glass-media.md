@@ -53,4 +53,4 @@
 - [x] 更新 UI Docker 版本和 latest，匿名核验摘要与架构；部署到 NAS 并核对页面资源 SHA 与健康。
 - [x] 将修复、视觉与真实验收证据写入文档并推送 Github，客户端安装包后台构建。
 
-执行结果：1320 项客户端测试、typecheck、生产构建和真实 NAS 明暗/窄窗口验收通过，正式静态热更新与 Docker r4/latest 发布完成；见对应 verification 文档。
+执行结果：1323 项客户端测试、typecheck、生产构建和真实 NAS 明暗/窄窗口验收通过，正式静态热更新与 Docker r5/latest 发布完成；见对应 verification 文档。

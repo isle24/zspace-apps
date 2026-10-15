@@ -132,7 +132,7 @@ docker compose --env-file catalog/.env -f catalog/compose.yaml logs --tail 100 c
 
 ```bash
 bash scripts/publish-docker.sh shop 2026.10.15-r2
-bash scripts/publish-docker.sh ui 2026.10.15-r4
+bash scripts/publish-docker.sh ui 2026.10.15-r5
 bash scripts/publish-docker.sh store 2026.10.15-r2
 ```
 

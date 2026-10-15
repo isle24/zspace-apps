@@ -13,7 +13,8 @@ import "./styles/fnos-store.css";
 import "./styles/fnos-system.css";
 import "./styles/fnos-widget.css";
 import "./styles/fnos-management.css";
-import "./styles/fnos-dark.css"; // 深色覆盖必须最后加载
+import "./styles/fnos-dark.css";
+import "./styles/ios-media.css"; // 已确认的媒体材质，仅作用于影视、音乐和音乐播放器
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

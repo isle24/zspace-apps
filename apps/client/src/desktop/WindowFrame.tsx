@@ -73,6 +73,7 @@ export function WindowFrame({
     <section
       role="region"
       aria-label={`${title}窗口`}
+      data-window-app={w.appId}
       data-own-title={
         ["store", "photos", "video", "music"].includes(w.appId)
           ? "true"

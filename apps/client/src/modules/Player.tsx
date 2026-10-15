@@ -1,4 +1,5 @@
 import { MusicArtwork } from "./MusicArtwork";
+import { musicArtist, musicAlbum } from "./music-presentation";
 import { useEffect, useRef, useState } from "react";
 import {
   X,
@@ -361,10 +362,7 @@ function PlayerContent({
         {selection.kind === "video" ? (
           <FilmSlate weight="duotone" />
         ) : <MusicArtwork key={item.id} item={item} className="player-album-cover"/>}
-        <strong>{item.name}</strong>
-        {selection.kind === "music" && String(item.metadata?.artist || "").trim() && (
-          <span className="music-artist">{String(item.metadata?.artist)}</span>
-        )}
+        {selection.kind === "music" ? <div className="music-track-info"><strong>{item.name}</strong><span>{musicArtist(item)}{musicAlbum(item) !== "—" ? ` · ${musicAlbum(item)}` : ""}</span></div> : <strong>{item.name}</strong>}
         {selection.kind === "music" && (
           <button
             className={`icon-button${lyricsOpen ? " on" : ""}`}
@@ -390,7 +388,6 @@ function PlayerContent({
           <X />
         </button>
       </header>
-      {selection.kind==="music"&&<div className="qq-now-playing"><MusicArtwork key={item.id} item={item}/><div><small>正在播放</small><h2>{item.name}</h2><p>{String(item.metadata?.artist??"未知歌手")}</p><span>{String(item.metadata?.album??"")}</span></div></div>}
       <Status loading={resource.loading} error={resource.error || playError} />
       {!resource.loading && !resource.error && !url && (
         <p role="alert">设备未返回可用的鉴权播放地址，无法开始播放。</p>

@@ -2581,6 +2581,9 @@ export class OfficialNas {
           ])
         : text(
           safe,
+          // A generic row ID may identify a list record rather than the song,
+          // album or playlist required by the corresponding detail API.
+          ...(operation === "music.songs" ? ["song_id"] : operation === "music.albums" ? ["album_id"] : operation === "music.playlists" ? ["playlist_id"] : []),
           "id",
           "file_id",
           "feed_id",

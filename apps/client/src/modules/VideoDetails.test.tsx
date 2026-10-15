@@ -21,6 +21,19 @@ function detailRead(files: Item[] = [episode]) {
     operation === "video.info" ? { items: [], values: { title: "NAS title", storyline: "Returned storyline" } } : { items: files });
 }
 
+it('does not turn movie versions with episode zero into a made-up season or episode grid', async () => {
+  detailRead([
+    { ...episode, id: 'edition-4k', name: 'Movie 4K.mkv', metadata: { season: 0, episode: 0, resolution: '4K' } },
+    { ...episode, id: 'edition-hd', name: 'Movie HD.mkv', path: '/media/movie-hd.mkv', metadata: { season: 0, episode: 0, resolution: '1080p' } },
+  ]);
+  render(<VideoDetails {...props} />);
+  await screen.findByText('Movie 4K.mkv');
+  expect(screen.getByRole('button', { name: '播放' })).toBeInTheDocument();
+  expect(screen.queryByLabelText('选集')).not.toBeInTheDocument();
+  expect(screen.queryByText(/第 0 [季集]/)).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '版本与文件' })).toBeInTheDocument();
+});
+
 it("loads official collection metadata and passes the actual episode path and version in its queue", async () => {
   const read = detailRead([episode, { ...episode, id: "video-1-b", path: "/media/episode-1-1080.mkv", metadata: { video_id: 1, version: "1080p" } }]);
   const onPlay = vi.fn();

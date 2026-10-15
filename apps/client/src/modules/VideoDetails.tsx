@@ -26,6 +26,10 @@ const identifier = (value: unknown) =>
 const isDirectory = (item: Item) => ["directory", "folder", "root"].includes(item.kind || "");
 const hasPath = (item: Item) => typeof item.path === "string" && !!item.path.trim();
 const text = (value: unknown) => typeof value === "string" ? value : undefined;
+const positiveIndex = (value: unknown) => {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : undefined;
+};
 
 export function VideoDetails(props: Props) {
   const collectionId = identifier(props.collection.metadata?.collection_id) || identifier(props.collection.id);
@@ -49,6 +53,8 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
   const files = useResource(async () => connected ? normalizeCollection(await api.read("video.files", { ...params, ...(directory ? { file_path: directory.path } : {}) })) : { items: [] }, [api.nasSession, connected, collectionId, classificationId, collection.path, directory?.id, directory?.path]);
   const items = files.data?.items || [];
   const playable = items.filter((item) => !isDirectory(item) && hasPath(item));
+  const hasEpisodes = playable.some(item => positiveIndex(item.metadata?.episode) !== undefined);
+  const firstEpisode = positiveIndex(playable[0]?.metadata?.episode);
   const values = info.data?.values;
   const title = text(values?.title) || collection.name;
   const storyline = text(values?.storyline);
@@ -97,7 +103,7 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
               onClick={() => playable.length && onPlay({ items: playable, index: 0, kind: "video" })}
             >
               <Play weight="fill" />
-              {playable.length > 1 ? "播放第 1 集" : "播放"}
+              {hasEpisodes && firstEpisode ? `播放第 ${firstEpisode} 集` : "播放"}
             </button>
             {/* 圆形的状态按钮：设备返回了 is_seen / is_fav，客户端**没有写接口**，
                 所以按只读状态展示（不摆能点但点不动的假按钮）。 */}
@@ -116,16 +122,16 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
       {storyline && <p className="video-detail-story">{storyline}</p>}
       <Status {...info} connected={connected} retry={info.reload} />
       {connected && <>
-        <div className="video-file-heading"><h2>选集与文件</h2><span>{files.data ? `${playable.length} 个可播放文件` : "选择设备上的实际视频文件"}</span></div>
+        <div className="video-file-heading"><h2>{hasEpisodes ? "选集与文件" : "版本与文件"}</h2><span>{files.data ? `${playable.length} 个可播放文件` : "选择设备上的实际视频文件"}</span></div>
         {directories.length > 0 && <nav className="toolbar video-directory-nav" aria-label="影片目录">
           <button className="icon-button" aria-label="返回上一级目录" onClick={() => setDirectories((path) => path.slice(0, -1))}><ArrowLeft /></button>
           <button className="breadcrumb" onClick={() => setDirectories([])}>全部文件</button>
           {directories.map((item, index) => <span className="crumb" key={`${item.id}:${item.path}`}><CaretRight /><button onClick={() => setDirectories(directories.slice(0, index + 1))}>{item.name}</button></span>)}
         </nav>}
         <Status {...files} empty={!!files.data && !items.length} retry={files.reload} />
-        {!files.loading && !files.error && directories.length === 0 && playable.length > 1 && (
-          /* 选集：绿联是一排编号方块（当前集蓝色实心）。这里用序号 + 文件名提示，
-             序号只表示"第几个可播放文件"，文件名始终可查（悬停可见）。 */
+        {!files.loading && !files.error && directories.length === 0 && playable.length > 1 && hasEpisodes && (
+          /* 只有设备返回真实正集数时显示选集，电影版本不伪装成剧集。
+             使用设备集数，并保留具体文件名以区分同一集的不同版本。 */
           <div className="video-episode-grid" aria-label="选集">
             {playable.map((item, index) => (
               <button
@@ -134,7 +140,7 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
                 title={item.name}
                 onClick={() => onPlay({ items: playable, index, kind: "video" })}
               >
-                {index + 1}
+                {positiveIndex(item.metadata?.episode) ?? index + 1}
               </button>
             ))}
           </div>
@@ -143,7 +149,8 @@ function CollectionDetails({ collection, collectionId, classificationId, connect
           {items.map((item) => {
             const directoryItem = isDirectory(item);
             const metadata = item.metadata || {};
-            const details = [metadata.version, metadata.version_name, metadata.resolution, metadata.season !== undefined ? `第 ${metadata.season} 季` : undefined, metadata.episode !== undefined ? `第 ${metadata.episode} 集` : undefined].filter((value) => typeof value === "string" || typeof value === "number").join(" · ");
+            const season = positiveIndex(metadata.season), episode = positiveIndex(metadata.episode);
+            const details = [metadata.version, metadata.version_name, metadata.resolution, season ? `第 ${season} 季` : undefined, episode ? `第 ${episode} 集` : undefined].filter((value) => typeof value === "string" || typeof value === "number").join(" · ");
             return <button className="video-episode" key={`${item.id}:${item.path}`} disabled={!hasPath(item)} onClick={() => directoryItem ? setDirectories((path) => [...path, item]) : onPlay({ items: playable, index: playable.indexOf(item), kind: "video" })}>
               {directoryItem ? <Folder weight="duotone" /> : <Play weight="fill" />}
               <span><strong>{item.name}</strong>{details && <small>{details}</small>}<small>{hasPath(item) ? item.path : "设备未返回文件路径，暂不能打开或播放"}</small></span>

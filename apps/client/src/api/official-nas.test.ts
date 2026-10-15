@@ -487,6 +487,17 @@ describe("Official NAS direct adapter", () => {
     const play = (await nas.read("music.play", { path: song.path })).items[0];
     expect(play.stream).toContain("http://nas.test:5055/play/a.mp3");
   });
+  it('uses the music entity identifiers before a generic list row identifier', async () => {
+    const { nas } = fixture((url) => json({ code: 200, data: { list: [
+      url.pathname.includes('/album/') ? { id: 'row-1', album_id: 'album-42', album_name: 'Album' } :
+      url.pathname.includes('/playlist/') ? { id: 'row-1', playlist_id: 'playlist-42', playlist_name: 'Playlist' } :
+      { id: 'row-1', song_id: 'song-42', song_name: 'Song', song_path: '/music/song.mp3' },
+    ], total: 1 } }));
+    await login(nas);
+    expect((await nas.read('music.songs')).items[0].id).toBe('song-42');
+    expect((await nas.read('music.albums')).items[0].id).toBe('album-42');
+    expect((await nas.read('music.playlists')).items[0].id).toBe('playlist-42');
+  });
   it("keeps secret canonical fields and metadata out of read output", async () => {
     const { nas } = fixture(() =>
       json({

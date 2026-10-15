@@ -1,6 +1,6 @@
 # 极空间 UI 与独立商店一起部署
 
-适用于全新部署的 AMD64 极空间，Docker 27.3 或更新版本，NAS 官方服务使用默认 5055 端口。把下面所有 `192.168.3.56` 替换为自己的 NAS 局域网 IP，直接粘贴到 Docker Compose 即可；不需要 `.env`、SSH 初始化或 PostgreSQL。
+适用于全新部署的 AMD64 极空间，Docker 20.10 或更新版本，NAS 官方服务使用默认 5055 端口。把下面所有 `192.168.3.56` 替换为自己的 NAS 局域网 IP，直接粘贴到 Docker Compose 即可；不需要 `.env`、SSH 初始化或 PostgreSQL。
 
 ```yaml
 # Replace every 192.168.3.56 with your NAS LAN IP. Fresh AMD64 ZSpace deployment.

@@ -7,8 +7,19 @@ CLIENT_IMAGE_ID=BUILD_CLIENT_IMAGE_ID
 ARTIFACT_URL=https://github.com/isle24/nas-app-store-catalog/releases/download/docker-2026.10.12-r1/space-store-linux-amd64.tgz
 ip='';root='';uid="$(id -u)";gid="$(id -g)";client_port=18436;store_port=18441;client_name=space-desktop
 fail(){ printf '%s\n' "$*" >&2; exit 1; }
+# Preserve NonRecursive on old and new CLIs: bind-recursive was added in 25,
+# while 20.10-24 use bind-nonrecursive. Select by CLI, not daemon, version.
+nonrecursive_mount_option() {
+ printf '%s\n' "$1" | awk -F. '
+  NR == 1 && /^[0-9]+\.[0-9]+\.[0-9]+([-+][A-Za-z0-9_.+-]+)?$/ {
+   major=$1+0;minor=$2+0
+   valid=(major>20 || (major==20 && minor>=10))
+   option=(major>=25 ? "bind-recursive=disabled" : "bind-nonrecursive=true")
+  }
+  END {if (!valid || NR!=1) exit 1; print option}'
+}
 usage(){ cat <<'HELP'
-空间商店 Docker 一键安装（Linux amd64，Docker 27.3 或以上）
+空间商店 Docker 一键安装（Linux amd64，Docker 20.10 或以上）
   sh install-docker.sh --ip NAS_IP --root /data_数据盘/space-store
 可选：--uid NAS用户ID --gid NAS用户组ID --client-port 18436 --store-port 18441
       --client-name space-desktop
@@ -37,8 +48,10 @@ for tool in docker curl sha256sum tar readlink stat; do command -v "$tool" >/dev
 [ "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = linux/amd64 ] || fail '此安装包目前支持 Linux amd64'
 version="$(docker version --format '{{.Server.Version}}')";major="${version%%.*}";rest="${version#*.}";minor="${rest%%.*}"
 case "$major:$minor" in *[!0-9:]*) fail '无法确认 Docker 版本';;esac
-[ "$major" -gt 27 ] || { [ "$major" -eq 27 ] && [ "$minor" -ge 3 ]; } || fail '需要 Docker 27.3 或以上版本'
-! docker inspect "$client_name" >/dev/null 2>&1 || fail "已有客户端容器 $client_name，请保留现有服务并选择其他名称"
+[ "$major" -gt 20 ] || { [ "$major" -eq 20 ] && [ "$minor" -ge 10 ]; } || fail '需要 Docker 20.10 或以上版本'
+client_version="$(docker version --format '{{.Client.Version}}')" || fail '无法确认 Docker CLI 版本'
+nonrecursive_mount="$(nonrecursive_mount_option "$client_version")" || fail '需要 Docker CLI 20.10 或以上，且版本号必须可确认'
+! docker inspect "$client_name" >/dev/null 2>&1 || fail "已有客户端容器 ${client_name}，请保留现有服务并选择其他名称"
 [ ! -e "$root" ] && [ ! -L "$root" ] || fail '目标目录已存在；安装不会覆盖，请选择新的专用目录'
 parent="$(dirname "$root")";[ -d "$parent" ] && [ "$(readlink -f "$parent")" = "$parent" ] || fail '数据盘父目录不存在或不是实际路径'
 cache="$(docker info --format '{{.DockerRootDir}}')";case "$cache" in /data_*) ;;*) fail 'Docker 缓存须位于 NAS 数据盘';;esac
@@ -60,7 +73,7 @@ store_image="space-store:$RELEASE";client_image="space-desktop:$RELEASE"
 for pair in "$store_image:$STORE_IMAGE_ID" "$client_image:$CLIENT_IMAGE_ID"; do
  image="${pair%%:sha256:*}";expected="sha256:${pair##*:sha256:}"
  existing="$(docker image inspect "$image" --format '{{.Id}}' 2>/dev/null || true)"
- [ -z "$existing" ] || [ "$existing" = "$expected" ] || fail "已有同名不同内容的镜像 $image，保留原镜像并中止安装"
+ [ -z "$existing" ] || [ "$existing" = "$expected" ] || fail "已有同名不同内容的镜像 ${image}，保留原镜像并中止安装"
 done
 docker load --input "$root/install/images/store.tar.gz"
 docker load --input "$root/install/images/client.tar.gz"
@@ -71,13 +84,13 @@ deployment="$(printf '%s' "$deploy_root" | sha256sum | cut -c1-24)"
 store_name="space-store-$deployment-$RELEASE";origin="http://$ip:$client_port"
 cid="$(docker create --name "$store_name" --user "$uid:$gid" --group-add "$socket_gid" --network bridge --cgroupns private --restart unless-stopped --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp:rw,noexec,nosuid,size=32m -p "$ip:$store_port:18435/tcp" \
  --label io.space-store.service=space-store --label "io.space-store.deployment=$deployment" --label "io.space-store.release=$RELEASE" --label io.space-store.control-protocol=v1 --label io.space-store.host-metadata=v1 \
- --mount "type=bind,src=$metadata,dst=$metadata,bind-propagation=rprivate,bind-recursive=disabled" \
- --mount "type=bind,src=$data,dst=$data,bind-propagation=rprivate,bind-recursive=disabled" \
- --mount "type=bind,src=$cache,dst=$cache,readonly,bind-propagation=rslave,bind-recursive=disabled" \
- --mount type=bind,src=/proc/1/mountinfo,dst=/run/space-store-host/mountinfo,readonly,bind-propagation=rprivate,bind-recursive=disabled \
- --mount type=bind,src=/proc/1/net,dst=/run/space-store-host/net,readonly,bind-propagation=rprivate,bind-recursive=disabled \
- --mount type=bind,src=/sys,dst=/sys,readonly,bind-propagation=rprivate,bind-recursive=disabled \
- --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,bind-propagation=rprivate,bind-recursive=disabled \
+ --mount "type=bind,src=$metadata,dst=$metadata,bind-propagation=rprivate,$nonrecursive_mount" \
+ --mount "type=bind,src=$data,dst=$data,bind-propagation=rprivate,$nonrecursive_mount" \
+ --mount "type=bind,src=$cache,dst=$cache,readonly,bind-propagation=rslave,$nonrecursive_mount" \
+ --mount "type=bind,src=/proc/1/mountinfo,dst=/run/space-store-host/mountinfo,readonly,bind-propagation=rprivate,$nonrecursive_mount" \
+ --mount "type=bind,src=/proc/1/net,dst=/run/space-store-host/net,readonly,bind-propagation=rprivate,$nonrecursive_mount" \
+ --mount "type=bind,src=/sys,dst=/sys,readonly,bind-propagation=rprivate,$nonrecursive_mount" \
+ --mount "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,bind-propagation=rprivate,$nonrecursive_mount" \
  "$store_image" --listen 0.0.0.0:18435 --data-dir "$metadata" --storage-root "$data" --engine local --publish-host "$ip" --access-host "$ip" --nas-origin "$origin" --nas-admin-only --public-origin "$origin")"
 printf '%s\n' "$cid" | grep -Eq '^[a-f0-9]{64}$' || fail '商店容器创建身份未确认'
 image_id="$(docker inspect "$cid" --format '{{.Image}}')"

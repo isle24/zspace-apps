@@ -22,7 +22,7 @@ import time
 import urllib.parse
 import urllib.request
 
-RELEASE = 'shop-2026.10.15-r2'
+RELEASE = 'shop-2026.10.15-r3'
 SOCKET = '/var/run/docker.sock'
 CONTROL = Path('/control')
 
@@ -44,9 +44,10 @@ def configuration(env, info, control_source):
         raise ValueError('Invalid shop port')
     if info.get('OSType') != 'linux' or info.get('Architecture') not in ('x86_64', 'amd64'):
         raise ValueError('This release requires a Linux AMD64 NAS')
-    version = re.match(r'^(\d+)\.(\d+)\.', info.get('ServerVersion', ''))
-    if not version or tuple(map(int, version.groups())) < (27, 3):
-        raise ValueError('Docker 27.3 or newer is required')
+    raw_version = info.get('ServerVersion')
+    version = re.fullmatch(r'(\d+)\.(\d+)\.\d+(?:[-+~.][0-9A-Za-z][0-9A-Za-z.+~_-]*)?', raw_version) if isinstance(raw_version, str) else None
+    if not version or tuple(map(int, version.groups())) < (20, 10):
+        raise ValueError('Docker 20.10 or newer is required')
     if info.get('Driver') not in ('overlay2', 'fuse-overlayfs', 'vfs', 'btrfs', 'zfs') or 'containerd' in json.dumps(info.get('DriverStatus', [])).lower():
         raise ValueError('The Docker image cache location must be verifiable')
     cache = canonical(info.get('DockerRootDir', ''))

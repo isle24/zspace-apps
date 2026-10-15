@@ -2,7 +2,7 @@
 
 只部署商店即可创建自己的本地管理员账号、浏览目录和在 NAS 上安装应用。不需要第三方桌面、NAS 登录会话、SSH 初始化或 PostgreSQL。`zspace-shop` 是 NAS 商店；`zspace-store` 是已有的中央目录管理后台。
 
-适用于已验证的 AMD64 极空间、Docker 27.3 及以上。把下面的 `NAS_IP` 改为自己的 NAS 局域网地址，粘贴到极空间 Docker Compose 并启动：
+适用于已验证的 AMD64 极空间、Docker 20.10 及以上。把下面的 `NAS_IP` 改为自己的 NAS 局域网地址，粘贴到极空间 Docker Compose 并启动：
 
 ```yaml
 name: zspace-shop
@@ -45,7 +45,7 @@ docker compose pull
 docker compose up -d --wait
 ```
 
-源码构建：`python3 docker/shop/build.py --tag isle204/zspace-shop:2026.10.15-r2`。脚本构建商店前端与 Go 服务，校验固定版本 Docker CLI/Compose 下载内容，再构建 AMD64 镜像；同一次构建生成版本和 `latest` 两个标签；加 `--push` 同时推送。也可使用 `bash scripts/publish-docker.sh shop 2026.10.15-r2`。
+源码构建：`python3 docker/shop/build.py --tag isle204/zspace-shop:2026.10.15-r3`。脚本构建商店前端与 Go 服务，校验固定版本 Docker CLI/Compose 下载内容，再构建 AMD64 镜像；同一次构建生成版本和 `latest` 两个标签；加 `--push` 同时推送。也可使用 `bash scripts/publish-docker.sh shop 2026.10.15-r3`。
 
 需要同时部署 UI 的新用户，使用[UI 与商店合并配置](./ui-shop-compose.md)。该配置用 `SHOP_UI_ORIGIN` 明确允许 UI 的来源，首次账号创建仍直接访问商店端口。
 

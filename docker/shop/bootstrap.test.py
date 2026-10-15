@@ -126,9 +126,20 @@ class BootstrapTests(unittest.TestCase):
         for key, value in [('NAS_IP', '203.0.113.1'), ('NAS_IP', '0.0.0.0'), ('SHOP_PORT', '5055'), ('SHOP_DATA_ROOT', '/'), ('SHOP_DATA_ROOT', '/data_n008/data/udata/real/zdocker/apps'), ('SHOP_DATA_ROOT', '/data_n008/../etc/apps')]:
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
                 shop.configuration({**self.environment, key: value}, self.info, '/control/source')
-        for change in [{'DockerRootDir': '/var/lib/docker'}, {'ServerVersion': '26.1.0'}, {'Architecture': 'aarch64'}]:
+        for change in [{'DockerRootDir': '/var/lib/docker'}, {'ServerVersion': '20.9.9'}, {'Architecture': 'aarch64'}]:
             with self.assertRaises(ValueError):
                 shop.configuration(self.environment, {**self.info, **change}, '/control/source')
+
+    def test_old_supported_engines_keep_the_same_restricted_configuration(self):
+        expected = shop.configuration(self.environment, self.info, '/control/source')
+        for version in ['20.10.0', '20.10.24', '23.0.6', '24.0.0', '24.0.9', '26.0.0', '26.1.4', '27.0.0', '29.8.2']:
+            with self.subTest(version=version):
+                self.assertEqual(shop.configuration(self.environment, {**self.info, 'ServerVersion': version}, '/control/source'), expected)
+
+    def test_unverifiable_or_too_old_engine_is_rejected(self):
+        for version in ['', '24', '24.0', 'unknown', None, 24, '19.03.15', '20.9.9']:
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                shop.configuration(self.environment, {**self.info, 'ServerVersion': version}, '/control/source')
 
     def test_initialization_never_changes_an_existing_directory(self):
         with tempfile.TemporaryDirectory() as base:

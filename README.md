@@ -6,10 +6,20 @@
 
 项目提供 NAS H5 与独立商店部署，GitHub Actions 构建 macOS、Windows 与 Linux 桌面客户端；安装包当前未签名。原生 iOS/Android/HarmonyOS 尚未交付。源码与构建见 [isle24/zspace-apps](https://github.com/isle24/zspace-apps)，公开目录与部署文件见 [isle24/nas-app-store-catalog](https://github.com/isle24/nas-app-store-catalog)。
 
+## SSH 一键安装
+
+支持 Linux AMD64、Docker 20.10 及以上（包含 24、26），默认安装 UI＋独立商店。登录 NAS 的 SSH 后执行，自动识别本机局域网地址：
+
+```sh
+installer="$(mktemp /tmp/zspace-install.XXXXXX)" && curl -fsSL https://zstore.2iwm.com/install.sh -o "$installer" && sh "$installer"
+```
+
+首次账号在网页创建；只装商店加 `--shop-only`，指定地址加 `--ip NAS_IP`。已有项目会停止安装并保留数据。[完整说明与预检查](docs/deployment/ssh-install.md)。
+
 <!-- combined-ui-shop-start -->
 ## UI 和商店合并部署
 
-适用于全新部署的 AMD64 极空间，Docker 27.3 或更新版本，NAS 官方服务使用默认 5055 端口。把下面所有 `192.168.3.56` 替换为自己的 NAS 局域网 IP，直接粘贴到 Docker Compose 即可；不需要 `.env`、SSH 初始化或 PostgreSQL。
+适用于全新部署的 AMD64 极空间，Docker 20.10 或更新版本，NAS 官方服务使用默认 5055 端口。把下面所有 `192.168.3.56` 替换为自己的 NAS 局域网 IP，直接粘贴到 Docker Compose 即可；不需要 `.env`、SSH 初始化或 PostgreSQL。
 
 ```yaml
 # Replace every 192.168.3.56 with your NAS LAN IP. Fresh AMD64 ZSpace deployment.
@@ -77,7 +87,7 @@ volumes:
 <!-- standalone-shop-start -->
 ## 独立商店 Docker（无需第三方桌面）
 
-只需要应用商店的极空间玩家，部署 `isle204/zspace-shop:latest` 即可。首次在网页创建本地管理员账号，之后使用自己的商店账号登录；无需第三方 UI、NAS 会话、SSH 初始化或 PostgreSQL。支持 AMD64、Docker 27.3 及以上。
+只需要应用商店的极空间玩家，部署 `isle204/zspace-shop:latest` 即可。首次在网页创建本地管理员账号，之后使用自己的商店账号登录；无需第三方 UI、NAS 会话、SSH 初始化或 PostgreSQL。支持 AMD64、Docker 20.10 及以上。
 
 把 `NAS_IP` 改为自己的 NAS 地址，粘贴到极空间 Docker Compose：
 
@@ -120,7 +130,7 @@ volumes:
 
 - [iPhone 玻璃风格媒体验收](docs/verification/2026-10-15-ios-glass-media.md)：影视与音乐的玻璃导航、播放条、明暗主题和实际 UI 问题修复。
 - [2026-10-15 审查修复与验收](docs/verification/2026-10-15-review-repairs.md)：登录与退出、图标、目录与安装计划、旧商店升级及真实 NAS 验收。
-- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui:2026.10.15-r5`、`isle204/zspace-shop:2026.10.15-r2` 与 `isle204/zspace-store:2026.10.15-r2`，各自同时提供 `latest`（Linux AMD64），无需源码编译。
+- [DockerHub 镜像一键部署](docs/deployment/dockerhub.md)：`isle204/zspace-ui:2026.10.15-r5`、`isle204/zspace-shop:2026.10.15-r3` 与 `isle204/zspace-store:2026.10.15-r2`，各自同时提供 `latest`（Linux AMD64），无需源码编译。
 - [2026-10-13 UI、镜像与目录验收](docs/verification/2026-10-13-ui-docker-catalog-delivery.md)：统一商店、全局影视背景、深色主题、启动器与缓存修复；NAS 已更新。
 - [fnOS 全目录导入](docs/deployment/fnos-catalog-import.md)：176 条应用已全部公开展示；13 条有安装入口，163 条标记待适配。公开展示不代表已经适配极空间安装。
 - [两个 Docker Compose 部署入口](docs/deployment/docker-compose.md)：NAS 三方 UI、云商店与 PostgreSQL 后台；另说明 NAS 本地应用安装执行器的受管部署。

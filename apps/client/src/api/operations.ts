@@ -57,6 +57,7 @@ export function playRequest(kind: "video" | "music", item: Item): ReadRequest {
 export type VideoLibraryPage = {
   items: Item[];
   total?: number;
+  totalPages?: number;
   libraries: number;
   /** 读取失败的媒体库名（不会让整页失败，但要在界面上说清楚） */
   failedLibraries?: string[];
@@ -100,9 +101,15 @@ export async function aggregateVideoList(
     ? pages.reduce((sum, entry) => sum + (entry.total ?? 0), 0)
     : undefined;
   const failed = pages.map((entry) => entry.failed).filter((name): name is string => !!name);
+  // Each aggregate page contains one page from every library. Its range is
+  // governed by the longest library, not the sum divided by one page size.
+  const totalPages = !failed.length && pages.every(entry => typeof entry.total === 'number' && Number.isFinite(entry.total) && entry.total >= 0)
+    ? Math.max(1, ...pages.map(entry => Math.ceil(entry.total! / pageSize)))
+    : undefined;
   return {
     items: pages.flatMap((entry) => entry.items),
     total,
+    totalPages,
     libraries: ids.length,
     failedLibraries: failed,
   };

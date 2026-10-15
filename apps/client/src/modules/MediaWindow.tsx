@@ -139,7 +139,7 @@ function GenericMediaWindow({
       return aggregateVideoList(
         async (operation, params) =>
           normalizeCollection(
-            await api.read(operation, { ...params, page, pageSize: PAGE_SIZE }),
+            await api.read(operation, params),
           ),
         page,
         PAGE_SIZE,
@@ -356,7 +356,7 @@ function GenericMediaWindow({
   const tabLabel = tabs.find(([key]) => key === tab)?.[1] ?? "";
   const rootLabel = id === "video" ? "影视中心" : id === "music" ? "音乐" : "相册";
   const heading =
-    parent?.name || (id === "video" ? "首页" : id === "photos" ? tabLabel : "歌曲");
+    parent?.name || (id === "video" ? tab === "libraries" ? "首页" : "全部影片" : id === "photos" ? tabLabel : "歌曲");
   return (
     <div className={`media-module ${id}${shell ? " fnos-app" : ""}${immersiveHome ? " video-immersive-home" : ""}`}>
       {immersiveHome && <VideoWindowBackdrop key={`${api.nasSession}:${heroItem?.id}:${backdrop ?? ""}`} source={backdrop} onFailure={() => setBackdropFailed(true)} />}
@@ -455,7 +455,7 @@ function GenericMediaWindow({
           <button
             className="icon-button app-round"
             aria-label="返回媒体库"
-            onClick={() => setParent(undefined)}
+            onClick={() => { setParent(undefined); setTab(tabs[0][0]); setPage(1); }}
           >
             <ArrowLeft />
           </button>
@@ -698,6 +698,7 @@ function GenericMediaWindow({
         <Pagination
           page={page}
           total={resource.data.total}
+          totalPages={aggregated && 'totalPages' in resource.data ? resource.data.totalPages : undefined}
           count={resource.data.items.length}
           onPage={setPage}
           loading={resource.loading}

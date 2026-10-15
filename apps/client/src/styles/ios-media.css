@@ -30,6 +30,8 @@
 .app-window[data-window-app="music"],
 .app-window[data-window-app="video"] {
   color-scheme: dark;
+  --fn-danger: #ff828b;
+  --fn-danger-text: #ff828b;
   border-radius: 24px;
   border: 1px solid var(--media-line);
   background: var(--media-glass);
@@ -207,6 +209,8 @@
 .app-window[data-window-app="video"] .video-detail-actions .detail-play { border-radius: 999px; background: #f4f6fb; color: #12151d; }
 .app-window[data-window-app="video"] .video-episode-chip { color: #edf1fa; background: rgba(255, 255, 255, .08); border-color: var(--media-line); border-radius: 11px; }
 .app-window[data-window-app="video"] .video-detail-story { margin: 20px 24px; max-width: 85ch; color: #d1d6e2; }
+.app-window[data-window-app="video"] .state-panel button svg,
+.ios-music .state-panel button svg { width: 18px; height: 18px; }
 .app-window[data-window-app="video"] .video-file-heading { margin: 22px 24px 12px; }
 .app-window[data-window-app="video"] .video-episode-grid,
 .app-window[data-window-app="video"] .video-episode-list,

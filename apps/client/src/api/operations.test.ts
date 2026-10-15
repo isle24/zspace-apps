@@ -60,6 +60,13 @@ it("playlist songs use the verified playlist route adapter", () => {
 });
 
 describe("部分媒体库读取失败", () => {
+  it('uses the longest per-library page range for an aggregated page batch', async () => {
+    const result = await aggregateVideoList(async (operation, params) => operation === 'video.libraries'
+      ? { items: [{ id: 'short', name: 'Short' }, { id: 'long', name: 'Long' }] }
+      : { items: [], total: params.classification_id === 'short' ? 21 : 100 }, 1, 20);
+    expect(result.total).toBe(121);
+    expect(result.totalPages).toBe(5);
+  });
   /**
    * 官方接口强制按 classification_id 取，「全部影片」是逐库合并。
    * 某个库读不出来时不能让整页失败，但**必须记下来** ——

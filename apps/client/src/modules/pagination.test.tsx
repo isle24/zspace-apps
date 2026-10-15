@@ -9,6 +9,12 @@ import {
 } from "@testing-library/react";
 import { NasModule } from "./NasModule";
 import { api, type Collection } from "../api/client";
+import { Pagination } from './Pagination';
+it('uses the supplied aggregate page range while preserving the real item total', () => {
+  render(<Pagination page={5} total={121} totalPages={5} count={20} onPage={() => {}} />);
+  expect(screen.getByText(/第 5 页 \/ 5 页.*121/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '下一页' })).toBeDisabled();
+});
 const page = (number: number, kind = "file"): Collection => ({
   items: [
     {

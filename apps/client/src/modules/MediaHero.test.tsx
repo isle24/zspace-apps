@@ -11,6 +11,21 @@ const film: Item = {
   metadata: { classification_id: library.id, collection_id: "collection-9", release_year: 2024, genres: "冒险 / 科幻", storyline: "一段真实的影片简介。" },
 };
 const panorama = "https://nas.test/zvideo_static/landscape_backdrop.jpg";
+
+it('aggregates all films without passing pagination to the unpaged library endpoint', async () => {
+  const read = vi.spyOn(api, 'read').mockImplementation(async (operation, params = {}) => {
+    if (operation === 'video.libraries') {
+      if (Object.keys(params).length) throw new Error('读取请求包含不支持的参数');
+      return { items: [library], total: 1 };
+    }
+    return operation === 'video.list' ? { items: [film], total: 1 } : { items: [] };
+  });
+  const view = render(<MediaWindow id="video" connected onPlay={() => {}} />);
+  fireEvent.click(await screen.findByRole('button', { name: '全部影片' }));
+  await screen.findByRole('button', { name: /星际旅途/ });
+  expect(view.container.querySelector('.app-crumbs [aria-current="page"]')).toHaveTextContent('全部影片');
+  expect(read.mock.calls.filter(([operation]) => operation === 'video.libraries').every(([, params]) => !params || Object.keys(params).length === 0)).toBe(true);
+});
 function fixture(item: Item, backdrop?: string, files: Item[] = []) {
   vi.spyOn(api.nas, "safeMediaUrl").mockImplementation(value => typeof value === "string" && value.startsWith("https://nas.test/") ? value : undefined);
   return vi.spyOn(api, "read").mockImplementation(async operation =>

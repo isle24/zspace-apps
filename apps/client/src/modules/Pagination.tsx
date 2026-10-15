@@ -36,20 +36,23 @@ export function usePage(scope: unknown[]) {
 export function Pagination({
   page,
   total,
+  totalPages,
   count,
   onPage,
   loading = false,
 }: {
   page: number;
   total?: number;
+  totalPages?: number;
   count: number;
   onPage: (page: number) => void;
   loading?: boolean;
 }) {
   const known =
     typeof total === "number" && Number.isFinite(total) && total >= 0;
-  const pages = known ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : undefined;
-  const hasNext = known ? page * PAGE_SIZE < total : count >= PAGE_SIZE;
+  const suppliedPages = typeof totalPages === 'number' && Number.isInteger(totalPages) && totalPages > 0 ? totalPages : undefined;
+  const pages = suppliedPages ?? (known ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : undefined);
+  const hasNext = suppliedPages ? page < suppliedPages : known ? page * PAGE_SIZE < total : count >= PAGE_SIZE;
   return (
     <nav className="pagination" aria-label="列表分页">
       <span>

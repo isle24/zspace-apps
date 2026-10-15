@@ -49,4 +49,4 @@
 - HTTPS 公开首页 HTTP/1.1 与后台 HTTP/2 当前均返回 200。此前间歇性 HTTPS 故障本轮未复现，不据此推断其根因已消除。
 - QA 应用已正常停止，隔离 Compose 服务停止，测试目录、控制卷、镜像和历史记录保留。
 
-GitHub 初轮有官方 setup-go 归档下载瞬时失败；第二轮 H5、Windows、Linux、Mac ARM 成功，Mac Intel 的多步骤文件搜索测试遇到 5 秒超时（其余 1311 项通过）。仅为 Intel 运行器将测试并发限制为 2，不跳过测试或延长超时；相同命令在本机 1312 项全量通过。最终构建结果另行补充。
+GitHub 初轮有官方 setup-go 归档下载瞬时失败；第二轮 H5、Windows、Linux、Mac ARM 成功，Mac Intel 的多步骤文件搜索测试遇到 5 秒超时（其余 1311 项通过）。仅为 Intel 运行器将测试并发限制为 2，不跳过测试或延长超时；相同命令在本机 1312 项全量通过。最终修复提交 7816fa0 的构建 [38690662036](https://github.com/isle24/zspace-apps/actions/runs/38690662036) 五项全部成功，H5、Windows、Linux、Mac ARM 与 Mac Intel 产物均上传。

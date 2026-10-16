@@ -1,5 +1,6 @@
 #!/bin/sh
 # Linux AMD64 installer. Public images only; no passwords or terms are supplied.
+# 2026-10-16: latest includes private initializer namespaces and UI new-device verification.
 set -eu
 set -f
 

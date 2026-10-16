@@ -6,6 +6,7 @@ import {
   Planet,
 } from "@phosphor-icons/react";
 import { api, isNative, message, type NasSession } from "../api/client";
+import { OfficialNasVerificationRequired, type LoginVerificationChallenge } from "../api/official-nas";
 import { saveLoginPreference, type SavedCredentials } from "../api/credentials";
 import {
   loadRuntimeConfig,
@@ -16,9 +17,6 @@ import {
 
 /**
  * 登录页。
- *
- * 从 App.tsx 里搬出来的：那边已经有 1100 多行，登录页单独一块 220 多行，
- * 混在一起看不动。**只搬不改** —— 行为与之前逐字一致。
  *
  * 三条规则值得记在这里：
  * 1. 部署期配置给了 NAS 地址（容器部署 / 原生客户端）就不再让用户填地址，
@@ -69,7 +67,10 @@ export function LoginScreen({
   const askForAddress = !knownOrigin || showAddress;
   useEffect(() => {
     if (!configuredOrigin) return;
-    setBaseUrl((current) => (current && current !== origin ? current : configuredOrigin));
+    if ((!baseUrl || baseUrl === origin) && baseUrl !== configuredOrigin) {
+      resetVerification();
+      setBaseUrl(configuredOrigin);
+    }
   }, [configuredOrigin, origin]);
   const [username, setUsername] = useState(saved?.username || "");
   const [password, setPassword] = useState(saved?.password || "");
@@ -78,6 +79,33 @@ export function LoginScreen({
   const [autoLogin, setAutoLogin] = useState(saved?.autoLogin || false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initialError || "");
+  const [verification, setVerification] = useState<LoginVerificationChallenge | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [retryAt, setRetryAt] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const loginVersion = useRef(0);
+  const completed = useRef(false);
+  const resendSeconds = Math.max(0, Math.ceil((retryAt - now) / 1000));
+  function resetVerification() {
+    loginVersion.current++;
+    api.cancelLoginVerification();
+    setVerification(null); setVerificationCode(""); setCodeSent(false); setRetryAt(0); setBusy(false);
+  }
+  useEffect(() => () => {
+    loginVersion.current++;
+    if (!completed.current) api.cancelLoginVerification();
+  }, []);
+  useEffect(() => {
+    if (!verification) return;
+    const expiry = setTimeout(() => { resetVerification(); setError("本次验证已过期，请重新登录"); }, Math.max(0, verification.expiresAt - Date.now()));
+    return () => clearTimeout(expiry);
+  }, [verification]);
+  useEffect(() => {
+    if (!retryAt) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [retryAt]);
   const [probing, setProbing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("");
   const probeVersion = useRef(0);
@@ -96,25 +124,40 @@ export function LoginScreen({
       if (version === probeVersion.current) setProbing(false);
     }
   }
+  async function sendVerificationCode() {
+    if (!verification || busy || resendSeconds > 0) return;
+    const version = ++loginVersion.current;
+    setBusy(true); setError("");
+    try {
+      const result = await api.sendLoginVerificationCode(verification.id, baseUrl, username);
+      if (version !== loginVersion.current) return;
+      setCodeSent(true); setRetryAt(result.retryAt); setNow(Date.now());
+    } catch (e) {
+      if (version === loginVersion.current) setError(message(e));
+    } finally { if (version === loginVersion.current) setBusy(false); }
+  }
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setError("");
-    setBusy(true);
+    if (busy || (verification && (!codeSent || !/^(?:\d{4}|\d{6})$/.test(verificationCode)))) return;
+    const version = ++loginVersion.current;
+    setError(""); setBusy(true);
     try {
-      const session = await api.login(baseUrl, username, password);
-      const warning = await saveLoginPreference(remember && isNative(), {
-        baseUrl,
-        username,
-        password,
-        autoLogin,
-      });
-      setPassword("");
+      const session = verification
+        ? await api.completeLoginVerification(verification.id, { baseUrl, username, password, code: verificationCode })
+        : await api.login(baseUrl, username, password);
+      if (version !== loginVersion.current) return;
+      const warning = await saveLoginPreference(remember && isNative(), { baseUrl, username, password, autoLogin });
+      if (version !== loginVersion.current) return;
+      completed.current = true;
+      setPassword(""); setVerification(null); setVerificationCode("");
       onLogin(session, warning);
     } catch (e) {
+      if (version !== loginVersion.current) return;
+      if (e instanceof OfficialNasVerificationRequired) {
+        setVerification(e.verification); setVerificationCode(""); setCodeSent(false); setRetryAt(0);
+      }
       setError(message(e));
-    } finally {
-      setBusy(false);
-    }
+    } finally { if (version === loginVersion.current) setBusy(false); }
   }
   return (
     <main className="login-screen">
@@ -138,6 +181,7 @@ export function LoginScreen({
               placeholder="http://你的 NAS 地址:5055"
               value={baseUrl}
               onChange={(e) => {
+                resetVerification();
                 setBaseUrl(e.target.value);
                 probeVersion.current++;
                 setProbing(false);
@@ -171,7 +215,7 @@ export function LoginScreen({
             autoComplete="username"
             placeholder="请输入 NAS 账号"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => { resetVerification(); setUsername(e.target.value); setError(""); }}
           />
         </label>
         <label className="field">
@@ -183,7 +227,7 @@ export function LoginScreen({
               autoComplete="current-password"
               placeholder="请输入登录密码"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { resetVerification(); setPassword(e.target.value); setError(""); }}
             />
             <button
               type="button"
@@ -194,6 +238,22 @@ export function LoginScreen({
             </button>
           </span>
         </label>
+        {verification && (
+          <section className="login-verification" aria-label="新设备短信验证">
+            <p className="connection-result">通过极空间官方服务向账号绑定的手机号发送验证码。</p>
+            <button className="connection-test" type="button" disabled={busy || resendSeconds > 0} onClick={sendVerificationCode}>
+              {resendSeconds > 0 ? `${resendSeconds} 秒后重新发送` : codeSent ? "重新发送验证码" : "发送验证码"}
+            </button>
+            {codeSent && <p role="status" className="connection-result">验证码已发送，请查看账号绑定的手机。</p>}
+            <label className="field">
+              <span className="field-label">短信验证码</span>
+              <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="(?:[0-9]{4}|[0-9]{6})"
+                placeholder="4 位或 6 位数字" value={verificationCode} disabled={busy || !codeSent}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ""))} />
+            </label>
+            <button className="preview-button" type="button" onClick={() => { resetVerification(); setError(""); }}>取消验证</button>
+          </section>
+        )}
         <label className="check-field">
           <input
             type="checkbox"
@@ -225,8 +285,8 @@ export function LoginScreen({
             {error}
           </p>
         )}
-        <button className="primary login-submit" disabled={busy || probing}>
-          {busy ? "正在连接…" : "登录"}
+        <button className="primary login-submit" disabled={busy || probing || !!verification && (!codeSent || !/^(?:\d{4}|\d{6})$/.test(verificationCode))}>
+          {busy ? "正在连接…" : verification ? "验证并登录" : "登录"}
         </button>
         <div className="login-links">
           {/* 地址已知时隐藏了地址栏，这里留一个入口，换设备时不至于没路走 */}

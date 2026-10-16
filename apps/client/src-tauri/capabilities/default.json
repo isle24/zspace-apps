@@ -10,6 +10,9 @@
     {
       "identifier": "http:default",
       "allow": [
+        { "url": "https://api.zenithspace.net/key/pub" },
+        { "url": "https://api.zenithspace.net/sms/usend" },
+        { "url": "https://api.zenithspace.net/sms/ucheck" },
         {
           "url": "http://**:*/AppStore/v1/list"
         },

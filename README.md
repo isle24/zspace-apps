@@ -14,7 +14,13 @@
 installer="$(mktemp /tmp/zspace-install.XXXXXX)" && curl -fsSL https://zstore.2iwm.com/install.sh -o "$installer" && sh "$installer"
 ```
 
-首次账号在网页创建；只装商店加 `--shop-only`，指定地址加 `--ip NAS_IP`。已有项目会停止安装并保留数据。[完整说明与预检查](docs/deployment/ssh-install.md)。
+首次账号在网页创建；只装商店加 `--shop-only`，指定地址加 `--ip NAS_IP`。已有项目会停止安装并保留数据。[完整说明、预检查与中断安装恢复](docs/deployment/ssh-install.md)。
+
+2026-10-16 更新修复旧引擎默认命名空间导致的初始化失败，并支持 UI 新设备短信验证；已安装用户按上述说明更新原项目，镜像继续使用 `latest`。默认一键安装的用户可执行：
+
+```sh
+updater="$(mktemp /tmp/zspace-update.XXXXXX)" && curl -fsSL https://zstore.2iwm.com/update.sh -o "$updater" && sh "$updater"
+```
 
 <!-- combined-ui-shop-start -->
 ## UI 和商店合并部署

@@ -211,7 +211,7 @@ def plan(root, storage, ip, port, release, uid, gid, engine='disabled', docker_r
 
 def create_arguments(p, image):
     args = ['docker', 'create', '--name', p['name'], '--user', p['user'], '--network', 'bridge',
-            '--cgroupns','private',
+            '--cgroupns','private', '--ipc','private',
             '--restart', 'unless-stopped', '--read-only', '--cap-drop', 'ALL',
             '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m',
             '--publish', '%s:%d:18435/tcp' % (p['ip'], p['port'])]

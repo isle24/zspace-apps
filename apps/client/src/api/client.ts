@@ -480,6 +480,9 @@ export class Gateway {
   login(baseUrl: string, username: string, password: string) {
     return this.nas.login(baseUrl, username, password);
   }
+  cancelLoginVerification() { this.nas.cancelLoginVerification(); }
+  sendLoginVerificationCode(id: string, baseUrl: string, username: string) { return this.nas.sendLoginVerificationCode(id, baseUrl, username); }
+  completeLoginVerification(id: string, input: { baseUrl: string; username: string; password: string; code: string }) { return this.nas.completeLoginVerification(id, input); }
   checkConnection(baseUrl: string) {
     return this.nas.checkConnection(baseUrl);
   }

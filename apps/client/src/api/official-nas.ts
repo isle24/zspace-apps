@@ -48,6 +48,16 @@ export class OfficialNasError extends Error {
     this.diagnostic = safeOfficialDownloadDiagnostic(code, diagnostic);
   }
 }
+export type LoginVerificationChallenge = { id: string; expiresAt: number };
+type LoginVerificationState = LoginVerificationChallenge & {
+  base: string; username: string; nasId: string; generation: number; deviceId: string;
+  controller: AbortController; timer?: ReturnType<typeof setTimeout>; busy: boolean; sent: boolean; retryAt: number;
+};
+export class OfficialNasVerificationRequired extends OfficialNasError {
+  constructor(public readonly verification: LoginVerificationChallenge) {
+    super("此设备需要短信验证（N001414），请发送验证码后继续登录", "CHALLENGE_REQUIRED", 403);
+  }
+}
 export type PersonalSettingKey = "show_hidden" | "file_hash_check" | "file_hash_check_option" | "fs_evt_monitor" | "disk_stats_sec";
 export type DockerEndpoint = "capabilities" | "containers" | "images" | "compose" | "info" | "control" | "create" | "compose-create" | `logs/${string}` | `details/${string}`;
 export type NativeAppPlan = { appName: string; version: number; disks: Array<{ mp: string; name: string; free: number }> };
@@ -394,14 +404,11 @@ function businessError(code: unknown) {
       return fail("SESSION_EXPIRED", "NAS 登录已失效，请重新登录", 401);
     case "N001223":
       return fail("LOGIN_FAILED", "NAS 账号或密码验证失败", 403);
-    case "N001414":
     case "N001205":
     case "N001206":
-      return fail(
-        "CHALLENGE_REQUIRED",
-        "NAS 要求额外验证，请在官方页面完成验证",
-        403,
-      );
+      return fail("NAS_BUSINESS_ERROR", `NAS 拒绝此请求（${String(code)}），请在官方页面查看账号状态或登录限制后重试`, 403);
+    case "N001414":
+      return fail("CHALLENGE_REQUIRED", "此设备需要短信验证（N001414），请重新登录并发送验证码", 403);
     default:
       // Only the fixed official code format is suitable for diagnostics. The
       // server message and arbitrary code text may contain account secrets.
@@ -563,6 +570,7 @@ function playbackCodecs(): Record<string, string> {
 export class OfficialNas {
   #active: Active | null = null;
   #generation = 0;
+  #loginVerification?: LoginVerificationState;
   #storeGrant?: { base: string; sessionId: string };
   #uploadSources = new Map<string, { active: Active; controller: AbortController; adapter?: UploadSourceAdapter; file?: File; nativeId?: string; descriptor?: UploadSourceDescriptor }>();
   #uploadTasks = new Map<string, { active: Active; sourceId: string; engine: RetainedUploadTask; snapshot: () => UploadSnapshot; lock: string; lockOwner: object; source: object; created: DirectoryCreation }>();
@@ -656,6 +664,7 @@ export class OfficialNas {
   }
   logout(): void {
     this.#generation++;
+    this.#clearLoginVerification();
     const active = this.#active;
     if (active) clearSessionCookie(cookieFacts(active.public.baseUrl, this.#transport === "native"));
     this.#active = null;
@@ -1430,18 +1439,130 @@ export class OfficialNas {
       throw fail("INVALID_RESPONSE", "NAS 登录公钥无效", 502);
     return { baseUrl: base, reachable: true };
   }
-  async login(
-    baseUrl: string,
-    username: string,
-    password: string,
-  ): Promise<NasSession> {
-    const base = baseAddress(baseUrl);
-    if (!username || !password)
-      throw fail("INVALID_REQUEST", "请输入 NAS 账号和密码");
+  #clearLoginVerification() {
+    const challenge = this.#loginVerification;
+    this.#loginVerification = undefined;
+    if (challenge) { clearTimeout(challenge.timer); challenge.controller.abort(); challenge.username = ""; }
+  }
+  cancelLoginVerification() {
+    this.#generation++;
+    this.#clearLoginVerification();
+  }
+  #verification(id: string, baseUrl: string, username: string): LoginVerificationState {
+    const challenge = this.#loginVerification;
+    if (!challenge || challenge.id !== id) throw fail("VERIFICATION_EXPIRED", "本次验证已失效，请重新登录", 409);
+    if (challenge.base !== baseAddress(baseUrl) || challenge.username !== username || challenge.generation !== this.#generation ||
+      challenge.deviceId !== this.#deviceId || challenge.expiresAt <= Date.now()) {
+      this.cancelLoginVerification();
+      throw fail("VERIFICATION_EXPIRED", "本次验证已失效，请重新登录", 409);
+    }
+    return challenge;
+  }
+  #assertVerification(challenge: LoginVerificationState) {
+    if (this.#loginVerification !== challenge || challenge.generation !== this.#generation ||
+      challenge.deviceId !== this.#deviceId || challenge.controller.signal.aborted || challenge.expiresAt <= Date.now())
+      throw fail("REQUEST_CANCELLED", "本次登录验证已取消，请重新登录", 409);
+  }
+  async #verificationRequest(challenge: LoginVerificationState, path: "/key/pub" | "/sms/usend" | "/sms/ucheck", params: Record<string, string>): Promise<RecordData> {
+    // This fixed HTTPS boundary intentionally uses neither NAS common params nor NAS headers.
+    const url = new URL(path, "https://api.zenithspace.net");
+    const form = new URLSearchParams(params), method = path === "/key/pub" ? "GET" : "POST";
+    if (method === "GET") url.search = form.toString();
+    const controller = new AbortController();
+    let reject!: (reason: OfficialNasError) => void;
+    const deadline = new Promise<never>((_, fail) => { reject = fail; });
+    const cancel = () => { controller.abort(); reject(fail("REQUEST_CANCELLED", "本次登录验证已取消，请重新登录", 409)); };
+    challenge.controller.signal.addEventListener("abort", cancel, { once: true });
+    const timer = setTimeout(() => { controller.abort(); reject(fail("VERIFICATION_TIMEOUT", "官方短信验证服务响应超时，请重试", 504)); }, 15_000);
+    let response: Response | undefined;
+    try {
+      this.#assertVerification(challenge);
+      return await Promise.race([(async () => {
+        response = await this.#fetcher(url.href, {
+          method, credentials: "omit", redirect: "error", referrerPolicy: "no-referrer", signal: controller.signal,
+          ...(method === "POST" ? { headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() } : {}),
+        });
+        this.#assertVerification(challenge);
+        if (response.redirected || (response.url && (new URL(response.url).origin !== url.origin || new URL(response.url).pathname !== path)) || !response.ok)
+          throw fail("VERIFICATION_UNAVAILABLE", "无法连接官方短信验证服务，请稍后重试", 502);
+        const body = await this.#directoryBody(response, controller.signal, () => {
+          this.#assertVerification(challenge);
+          if (controller.signal.aborted) throw fail("VERIFICATION_TIMEOUT", "官方短信验证服务响应超时，请重试", 504);
+        }, () => {});
+        this.#assertVerification(challenge);
+        try {
+          const decoded = decodeOfficialResponse(body);
+          // The send endpoint confirms delivery through the envelope alone.
+          if (path === "/sms/usend") return {};
+          const data = record(decoded);
+          if (data) return data;
+        } catch {
+          const code = String(record(body)?.code ?? "");
+          throw fail("VERIFICATION_FAILED", `官方短信验证未完成${/^[NS]\d{6}$/.test(code) ? `（${code}）` : ""}，请检查验证码或稍后重试`, 400);
+        }
+        throw fail("INVALID_RESPONSE", "官方短信验证服务返回的数据无效，请重试", 502);
+      })(), deadline]);
+    } catch (error) {
+      this.#assertVerification(challenge);
+      if (error instanceof OfficialNasError && error.code.startsWith("VERIFICATION_")) throw error;
+      throw fail("VERIFICATION_UNAVAILABLE", "无法连接官方短信验证服务，请稍后重试", 502);
+    } finally {
+      clearTimeout(timer);
+      challenge.controller.signal.removeEventListener("abort", cancel);
+      controller.abort();
+      try { if (response?.body && !response.body.locked) void response.body.cancel().catch(() => {}); } catch { /* Disposal stays private. */ }
+    }
+  }
+  async #verificationIdentity(challenge: LoginVerificationState) {
+    const key = await this.#verificationRequest(challenge, "/key/pub", { signme: "1", webagent: "v2", rnd: identifier() });
+    if (!text(key, "key") || !text(key, "key_id")) throw fail("VERIFICATION_UNAVAILABLE", "官方短信验证服务未提供有效公钥，请重试", 502);
+    const rsa = new JSEncrypt(); rsa.setPublicKey(text(key, "key"));
+    const username = rsa.encrypt(challenge.username);
+    if (!username) throw fail("VERIFICATION_UNAVAILABLE", "官方短信验证公钥无效或账号长度超出范围", 502);
+    return { key_id: text(key, "key_id"), nasid: challenge.nasId, username };
+  }
+  async sendLoginVerificationCode(id: string, baseUrl: string, username: string): Promise<{ retryAt: number }> {
+    const challenge = this.#verification(id, baseUrl, username);
+    if (challenge.busy) throw fail("VERIFICATION_BUSY", "短信验证请求正在进行，请稍候", 409);
+    if (challenge.retryAt > Date.now()) throw fail("VERIFICATION_SEND_COOLDOWN", "验证码已发送，请稍候再试", 429);
+    challenge.busy = true;
+    try {
+      const identity = await this.#verificationIdentity(challenge);
+      await this.#verificationRequest(challenge, "/sms/usend", { ...identity, type: "new_device" });
+      this.#assertVerification(challenge);
+      challenge.sent = true;
+      return { retryAt: challenge.retryAt = Date.now() + 60_000 };
+    } finally { challenge.busy = false; }
+  }
+  async completeLoginVerification(id: string, input: { baseUrl: string; username: string; password: string; code: string }): Promise<NasSession> {
+    const challenge = this.#verification(id, input.baseUrl, input.username);
+    if (challenge.busy) throw fail("VERIFICATION_BUSY", "短信验证请求正在进行，请稍候", 409);
+    if (!challenge.sent) throw fail("VERIFICATION_NOT_SENT", "请先发送短信验证码", 400);
+    if (!/^(?:\d{4}|\d{6})$/.test(input.code)) throw fail("VERIFICATION_CODE_INVALID", "请输入 4 位或 6 位数字验证码", 400);
+    if (!input.password) throw fail("INVALID_REQUEST", "请输入 NAS 登录密码");
+    challenge.busy = true;
+    try {
+      const identity = await this.#verificationIdentity(challenge);
+      const data = await this.#verificationRequest(challenge, "/sms/ucheck", { ...identity, sms_code: input.code });
+      const proof = text(data, "sms_proof") || text(data, "email_proof");
+      if (!proof || proof.length > 8192 || /[\u0000-\u001f\u007f]/.test(proof)) throw fail("VERIFICATION_FAILED", "官方短信验证未返回有效凭证，请重新获取验证码", 502);
+      this.#assertVerification(challenge);
+      const session = await this.#login(challenge.base, input.username, input.password, challenge.generation, proof);
+      this.#clearLoginVerification();
+      return session;
+    } finally { challenge.busy = false; }
+  }
+  async login(baseUrl: string, username: string, password: string): Promise<NasSession> {
+    this.#clearLoginVerification();
     const generation = ++this.#generation;
+    const base = baseAddress(baseUrl);
+    if (!username || !password) throw fail("INVALID_REQUEST", "请输入 NAS 账号和密码");
     this.#releaseUploadSources();
     this.#onSessionChanged?.();
     this.#abortDirectories();
+    return this.#login(base, username, password, generation);
+  }
+  async #login(base: string, username: string, password: string, generation: number, proof?: string): Promise<NasSession> {
     const keyData = record(
       await this.#request(
         base,
@@ -1457,21 +1578,31 @@ export class OfficialNas {
     encryptor.setPublicKey(text(keyData, "key"));
     const encryptedUser = encryptor.encrypt(username),
       encryptedPassword = encryptor.encrypt(password);
-    username = "";
     password = "";
     if (!encryptedUser || !encryptedPassword)
       throw fail("INVALID_RESPONSE", "NAS 登录公钥无效或凭据长度超出范围", 502);
-    const data = record(
-      await this.#request(
-        base,
-        { method: "POST", path: "/auth/login", params: "" },
-        {
-          username: encryptedUser,
-          password: encryptedPassword,
-          ...(text(keyData, "sign") ? { sign: text(keyData, "sign") } : {}),
-        },
-      ),
-    );
+    let data: RecordData | undefined;
+    try {
+      data = record(await this.#request(base, { method: "POST", path: "/auth/login", params: "" }, {
+        username: encryptedUser, password: encryptedPassword,
+        ...(text(keyData, "sign") ? { sign: text(keyData, "sign") } : {}),
+        ...(proof ? { sms_proof: proof } : {}),
+      }));
+    } catch (error) {
+      if (generation !== this.#generation) throw fail("REQUEST_CANCELLED", "登录操作已取消", 409);
+      if (error instanceof OfficialNasError && error.code === "CHALLENGE_REQUIRED") {
+        this.#clearLoginVerification();
+        const nasId = text(keyData, "sign") || text(keyData, "nasid", "nas_id");
+        if (!nasId) throw fail("VERIFICATION_UNAVAILABLE", "NAS 未提供短信验证标识，请在官方页面检查设备绑定后重试（N001414）", 502);
+        const challenge: LoginVerificationState = { id: identifier(), expiresAt: Date.now() + 5 * 60_000,
+          base, username, nasId, generation, deviceId: this.#deviceId, controller: new AbortController(), busy: false, sent: false, retryAt: 0 };
+        this.#loginVerification = challenge;
+        challenge.timer = setTimeout(() => { if (this.#loginVerification === challenge) this.cancelLoginVerification(); }, 5 * 60_000);
+        throw new OfficialNasVerificationRequired({ id: challenge.id, expiresAt: challenge.expiresAt });
+      }
+      throw error;
+    } finally { username = ""; }
+    if (generation !== this.#generation) throw fail("REQUEST_CANCELLED", "登录操作已取消", 409);
     const token = data && text(data, "token");
     if (!data || !token)
       throw fail("INVALID_RESPONSE", "NAS 登录响应缺少会话", 502);
@@ -1524,6 +1655,7 @@ export class OfficialNas {
     const base = baseAddress(baseUrl);
     if (!token || token.length > 4096 || /[\u0000-\u001f\u007f-\u009f]/.test(token))
       throw fail("INVALID_SESSION", "cookie 中的会话无效", 401);
+    this.#clearLoginVerification();
     const generation = ++this.#generation;
     const candidate: Active = {
       public: { sessionId: identifier(), baseUrl: base, user: clean({ ...user }, token) as RecordData },

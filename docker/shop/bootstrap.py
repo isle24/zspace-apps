@@ -22,7 +22,7 @@ import time
 import urllib.parse
 import urllib.request
 
-RELEASE = 'shop-2026.10.15-r3'
+RELEASE = 'shop-2026.10.16-r1'
 SOCKET = '/var/run/docker.sock'
 CONTROL = Path('/control')
 
@@ -317,17 +317,32 @@ def helper(api, image, name, mount, arguments, intent, phase, root=False, owner=
         raise ValueError('Initializer checkpoint changed; all resources were preserved')
     identity = saved['containerId'] if saved is not None else api.find(name)
     if not identity and stop_only: return
-    if not identity:
+    def create():
         checkpoint(cancelled)
-        args = ['container', 'create', '--name', name, '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--network', 'none', '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m', '--mount', mount, '--user', user]
+        args = ['container', 'create', '--name', name, '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--network', 'none', '--cgroupns', 'private', '--ipc', 'private', '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m', '--mount', mount, '--user', user]
         for key, value in sorted(labels.items()): args += ['--label', key + '=' + value]
         # Root can traverse its attested 0700 directories after CHOWN when
         # resuming. These capabilities never reach the non-root runtime.
         if root: args += ['--cap-add', 'CHOWN', '--cap-add', 'DAC_OVERRIDE']
         args += ['--entrypoint', 'python3', image, '/opt/space-store/bootstrap.py', *arguments]
-        identity = api.command(*args)
+        return api.command(*args)
+    if not identity: identity = create()
     actual = api.inspect(identity)
     cid = saved['containerId'] if saved is not None else actual.get('Id', '')
+    # Older cgroup-v1 daemons defaulted to host cgroups. The old initializer
+    # was rejected before its first start or checkpoint. Only that exact,
+    # never-started, unjournaled helper may be replaced with private namespaces.
+    host = actual.get('HostConfig', {})
+    state = actual.get('State', {})
+    if saved is None and not stop_only and state.get('Status') == 'created' and state.get('Running') is False and (host.get('CgroupnsMode') == 'host' or host.get('IpcMode') == 'shareable'):
+        legacy = {**actual, 'HostConfig': {**host}}
+        if host.get('CgroupnsMode') == 'host': legacy['HostConfig']['CgroupnsMode'] = 'private'
+        if host.get('IpcMode') == 'shareable': legacy['HostConfig']['IpcMode'] = 'private'
+        validate_helper(legacy, cid, image, name, mount, arguments, user, labels, root)
+        checkpoint(cancelled)
+        # No force flag: Docker independently refuses removal if it started.
+        api.command('container', 'rm', cid)
+        identity = create(); actual = api.inspect(identity); cid = actual.get('Id', '')
     validate_helper(actual, cid, image, name, mount, arguments, user, labels, root)
     if stop_only:
         if actual.get('State', {}).get('Running'):
@@ -373,11 +388,17 @@ def validate_settings(receipt, p, image, socket_gid):
         raise ValueError('Deployment ownership intent changed; all resources were preserved')
 
 
-def pending_intent(p, image, socket_gid):
+def pending_intent(config, socket_gid):
     path = CONTROL / 'intent.json'
     if not os.path.lexists(path): return None
     intent = read_private(path)
-    validate_settings(intent, p, image, socket_gid)
+    release = intent.get('plan', {}).get('release', '')
+    image = intent.get('imageId', '')
+    if not isinstance(image, str) or not re.fullmatch('sha256:[a-f0-9]{64}', image):
+        raise ValueError('Pending image identity was not verified')
+    # A newer bootstrap must be able to finish its own interrupted initial
+    # install. Validate the entire historical plan before using its old image.
+    validate_settings(intent, runtime_plan(config, socket_gid, release), image, socket_gid)
     if not re.fullmatch('[a-f0-9]{64}', intent.get('intentId', '')):
         raise ValueError('Deployment ownership intent changed; all resources were preserved')
     return intent
@@ -409,7 +430,7 @@ def owned_runtime(api, own, config, socket_gid):
         validate_deployment(api, receipt, config, socket_gid, allow_origin_migration=receipt.get('imageId') != image)
         validate_runtime(api.inspect(receipt['containerId']), receipt)
         return receipt
-    intent = pending_intent(p, image, socket_gid)
+    intent = pending_intent(config, socket_gid)
     return resolve_pending_runtime(api, intent) if intent is not None else None
 
 
@@ -586,12 +607,13 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
         if receipt['imageId'] != image:
             return upgrade_runtime(api, own, config, socket_gid, receipt, cancelled)
     else:
-        intent = pending_intent(p, image, socket_gid)
+        intent = pending_intent(config, socket_gid)
         if intent is None:
             if api.find(p['name']): raise ValueError('The runtime name is already in use; no service was adopted')
             intent = {'schema': 1, 'intentId': os.urandom(32).hex(), 'imageId': image, 'plan': p, 'socketGid': socket_gid}
             checkpoint(cancelled)
             write_private(CONTROL / 'intent.json', intent)
+        p = intent['plan']; image = intent['imageId']
         nonce = intent['intentId'][:16]
         parent = str(Path(config['root']).parent)
         # Docker requires slave propagation when this existing parent contains
@@ -611,7 +633,7 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
         checkpoint(cancelled)
         commit_private(CONTROL / 'runtime.json', receipt)
         cid = receipt['containerId']
-        self_receipt = {'schema': 1, 'service': 'space-store', 'deployment': p['labels']['io.space-store.deployment'], 'release': RELEASE, 'containerId': cid, 'imageId': image}
+        self_receipt = {'schema': 1, 'service': 'space-store', 'deployment': p['labels']['io.space-store.deployment'], 'release': p['release'], 'containerId': cid, 'imageId': image}
         helper(api, image, 'shop-receipt-' + nonce, 'type=bind,src=' + config['root'] + '/service/metadata,dst=/write,bind-propagation=rprivate,bind-recursive=disabled', ['--write-receipt', json.dumps(self_receipt)], intent['intentId'], 'receipt', owner=p['user'], cancelled=cancelled)
         checkpoint(cancelled)
         write_private(path, receipt)
@@ -621,6 +643,8 @@ def ensure_runtime(api, own, config, socket_gid, cancelled=lambda: False):
         checkpoint(cancelled)
         api.command('container', 'start', receipt['containerId'])
     checkpoint(cancelled)
+    if receipt['imageId'] != own['Image']:
+        return ensure_runtime(api, own, config, socket_gid, cancelled)
     return receipt
 
 

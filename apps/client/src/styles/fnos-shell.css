@@ -1031,6 +1031,50 @@
 .login-screen .login-card .login-submit {
   margin-top: 22px;
 }
+.login-screen .login-verification {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(10, 16, 30, 0.28);
+}
+.login-screen .login-verification .connection-result {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.login-screen .login-card .login-verification .field {
+  margin: 0;
+}
+.login-screen .login-card .login-verification .field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.login-screen .login-card .login-verification .connection-test {
+  min-height: 40px;
+  width: 100%;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 14px;
+}
+.login-screen .login-card .login-verification .preview-button {
+  color: rgba(255, 255, 255, 0.9);
+  justify-self: center;
+}
+.login-screen .login-verification button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
 .login-screen .login-links {
   display: flex;
   justify-content: center;

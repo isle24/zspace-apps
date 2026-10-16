@@ -20,6 +20,9 @@ class FakeDocker:
         self.fail_after = None
         self.on_event = lambda event: None
         self.default_propagation = default_propagation
+        self.default_cgroupns = 'private'
+        self.default_ipc = 'private'
+        self.next_id = 0
         self.daemon_root = daemon_root
         self.self_receipt = None
         self.deferred_phases = set()
@@ -71,8 +74,11 @@ class FakeDocker:
                 else: values[key] = value
             image = options.pop(0)
             labels = {**shop.host_module().BASE_LABELS, **labels}
-            cid = format(len(self.containers) + 1, '064x')
+            self.next_id += 1
+            cid = format(self.next_id, '064x')
             host = {'Privileged': False, 'ReadonlyRootfs': values.get('--read-only', False), 'NetworkMode': values['--network'], 'CapDrop': [values['--cap-drop']], 'CapAdd': caps or None, 'SecurityOpt': [values['--security-opt']], 'Tmpfs': {'/tmp': 'rw,noexec,nosuid,size=32m'}, 'GroupAdd': [values['--group-add']] if '--group-add' in values else None, 'RestartPolicy': {'Name': values.get('--restart', 'no'), 'MaximumRetryCount': 0}, 'PortBindings': {}}
+            host['CgroupnsMode'] = values.get('--cgroupns', self.default_cgroupns)
+            host['IpcMode'] = values.get('--ipc', self.default_ipc)
             if '--publish' in values:
                 ip, port, target = values['--publish'].split(':')
                 host['PortBindings'] = {target if '/' in target else target + '/tcp': [{'HostIp': ip, 'HostPort': port}]}
@@ -101,6 +107,11 @@ class FakeDocker:
             running = runtime or cid in self.pending_helpers
             row['State'] = {'Status': 'running' if running else 'exited', 'Running': running, 'ExitCode': 0}
             self.effect('runtime-start' if runtime else (phase + '-start' if phase in ('switch', 'rollback') else ('init-start' if row['Name'].startswith('/shop-initialize-') else 'receipt-start')))
+            return cid
+        if args[:2] == ('container', 'rm'):
+            cid = args[-1]
+            if self.containers[cid]['State']['Running']: raise ValueError('Cannot remove running container')
+            del self.containers[cid]
             return cid
         if args[:2] == ('container', 'stop'):
             self.pending_helpers.pop(args[-1], None)
@@ -251,6 +262,62 @@ class RuntimeTests(unittest.TestCase):
 
     def ensure(self):
         return shop.ensure_runtime(self.api, self.own, self.config, 989)
+
+    def test_old_daemon_host_cgroup_and_shareable_ipc_defaults_are_never_inherited(self):
+        self.api.default_cgroupns = 'host'
+        self.api.default_ipc = 'shareable'
+        receipt = self.ensure()
+        self.assertTrue(self.api.inspect(receipt['containerId'])['State']['Running'])
+        for actual in self.api.containers.values():
+            self.assertEqual(actual['HostConfig']['CgroupnsMode'], 'private')
+            self.assertEqual(actual['HostConfig']['IpcMode'], 'private')
+
+    def test_never_started_unjournaled_legacy_helper_can_be_replaced_without_touching_data(self):
+        self.api.fail_after = 'init-create'
+        with self.assertRaises(ValueError): self.ensure()
+        old = next(iter(self.api.containers.values()))
+        old['HostConfig']['CgroupnsMode'] = 'host'
+        self.api.default_cgroupns = 'host'
+        self.api.commands.clear()
+        receipt = self.ensure()
+        self.assertEqual(self.api.mutations('rm'), [('container', 'rm', old['Id'])])
+        self.assertNotIn(old['Id'], self.api.containers)
+        self.assertTrue(self.api.inspect(receipt['containerId'])['State']['Running'])
+
+    def test_legacy_namespace_recovery_rejects_changed_or_executed_helper(self):
+        for change in ('running', 'exited', 'label', 'mount', 'capability', 'pid', 'journal'):
+            with self.subTest(change=change):
+                for file in self.control.iterdir(): file.unlink()
+                self.api = FakeDocker(); self.api.fail_after = 'init-create'
+                with self.assertRaises(ValueError): self.ensure()
+                row = next(iter(self.api.containers.values()))
+                row['HostConfig']['CgroupnsMode'] = 'host'
+                if change == 'running': row['State'] = {'Status': 'running', 'Running': True, 'ExitCode': 0}
+                if change == 'exited': row['State'] = {'Status': 'exited', 'Running': False, 'ExitCode': 0}
+                if change == 'label': row['Config']['Labels']['io.space-store.bootstrap-intent'] = 'foreign'
+                if change == 'mount': row['Mounts'][0]['RW'] = False
+                if change == 'capability': row['HostConfig']['CapAdd'].append('SYS_ADMIN')
+                if change == 'pid': row['HostConfig']['PidMode'] = 'host'
+                if change == 'journal':
+                    shop.write_private(self.control/'helper-initialize.json', {'schema': 1, 'containerId': row['Id'], 'intentId': row['Config']['Labels']['io.space-store.bootstrap-intent']})
+                self.api.commands.clear()
+                with self.assertRaises(ValueError): self.ensure()
+                self.assertEqual(self.api.mutations('rm'), [])
+                self.assertEqual(self.api.mutations('start'), [])
+                self.assertEqual(self.api.mutations('stop'), [])
+
+    def test_updated_bootstrap_recovers_an_old_pending_install_and_upgrades_owned_runtime(self):
+        self.api.fail_after = 'init-create'
+        with self.assertRaises(ValueError): self.ensure()
+        old = next(iter(self.api.containers.values()))
+        old['HostConfig']['CgroupnsMode'] = 'host'
+        self.own = {**self.own, 'Image': 'sha256:' + 'c'*64}
+        with patch.object(shop, 'RELEASE', 'shop-2026.10.16-r1'), patch.object(shop, 'wait_bootstrap', return_value={'nasAuth': {'storeId': 'e'*48}, 'configured': False}):
+            receipt = self.ensure()
+        self.assertEqual(receipt['imageId'], self.own['Image'])
+        self.assertEqual(shop.read_private(self.control/'deployment.json'), receipt)
+        self.assertTrue(self.api.inspect(receipt['containerId'])['State']['Running'])
+        self.assertEqual(len([r for r in self.api.containers.values() if r['State']['Running']]), 1)
 
     def test_helpers_use_exact_daemon_required_propagation_on_nas(self):
         self.api = FakeDocker(default_propagation='rslave')
